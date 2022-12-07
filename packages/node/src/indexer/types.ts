@@ -5,15 +5,17 @@ import { ApiPromise } from '@polkadot/api';
 import { ApiDecoration } from '@polkadot/api/types';
 import { HexString } from '@polkadot/util/types';
 import {
-  SubstrateBlock,
-  SubstrateEvent,
-  SubstrateExtrinsic,
-} from '@subql/types';
+  NearBlock,
+  NearTransaction,
+  NearAction,
+  NearLog,
+} from '@subql/types-near';
 
 export interface BlockContent {
-  block: SubstrateBlock;
-  extrinsics: SubstrateExtrinsic[];
-  events: SubstrateEvent[];
+  block: NearBlock;
+  transactions: NearTransaction[];
+  actions: NearAction[];
+  logs: NearLog[];
 }
 
 export type BestBlocks = Record<number, HexString>;

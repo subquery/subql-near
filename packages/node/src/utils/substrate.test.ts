@@ -4,7 +4,7 @@
 import { ApiPromise, WsProvider } from '@polkadot/api';
 import Cron from 'cron-converter';
 import { SubqlProjectBlockFilter } from '../configure/SubqueryProject';
-import { filterBlock } from './substrate';
+import { filterBlock } from './near';
 
 const endpoint = 'wss://polkadot.api.onfinality.io/public-ws';
 

@@ -9,7 +9,7 @@ import { delay } from '@subql/node-core';
 import { SubstrateBlock } from '@subql/types';
 import { GraphQLSchema } from 'graphql';
 import { SubqueryProject } from '../configure/SubqueryProject';
-import { wrapBlock } from '../utils/substrate';
+import { wrapBlock } from '../utils/near';
 import { ApiService } from './api.service';
 
 const WS_ENDPOINT = 'wss://kusama.api.onfinality.io/public-ws';

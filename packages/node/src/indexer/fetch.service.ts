@@ -5,7 +5,6 @@ import { Inject, Injectable, OnApplicationShutdown } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { Interval, SchedulerRegistry } from '@nestjs/schedule';
 import { ApiPromise } from '@polkadot/api';
-import { RuntimeVersion } from '@polkadot/types/interfaces';
 
 import {
   isCustomDs,
@@ -13,14 +12,14 @@ import {
   isRuntimeDataSourceV0_3_0,
   isRuntimeDs,
   RuntimeDataSourceV0_0_1,
-  SubstrateBlockFilter,
-  SubstrateCallFilter,
-  SubstrateDataSource,
-  SubstrateEventFilter,
-  SubstrateHandler,
-  SubstrateHandlerKind,
-  SubstrateRuntimeHandlerFilter,
-} from '@subql/common-substrate';
+  NearBlockFilter,
+  NearCallFilter,
+  NearDataSource,
+  NearEventFilter,
+  NearHandler,
+  NearHandlerKind,
+  NearRuntimeHandlerFilter,
+} from '@subql/common-near';
 import {
   checkMemoryUsage,
   delay,
@@ -28,12 +27,12 @@ import {
   IndexerEvent,
   NodeConfig,
 } from '@subql/node-core';
-import { DictionaryQueryEntry, SubstrateCustomHandler } from '@subql/types';
+import { DictionaryQueryEntry, NearCustomHandler } from '@subql/types';
 import { MetaData } from '@subql/utils';
 import { range, sortBy, uniqBy } from 'lodash';
 import { SubqlProjectDs, SubqueryProject } from '../configure/SubqueryProject';
+import { calcInterval } from '../utils/near';
 import { isBaseHandler, isCustomHandler } from '../utils/project';
-import { calcInterval } from '../utils/substrate';
 import { ApiService } from './api.service';
 import { IBlockDispatcher } from './blockDispatcher';
 import { DictionaryService, SpecVersion } from './dictionary.service';
@@ -50,7 +49,7 @@ const MINIMUM_BATCH_SIZE = 5;
 const INTERVAL_PERCENT = 0.9;
 
 function eventFilterToQueryEntry(
-  filter: SubstrateEventFilter,
+  filter: NearEventFilter,
 ): DictionaryQueryEntry {
   return {
     entity: 'events',
@@ -64,9 +63,7 @@ function eventFilterToQueryEntry(
   };
 }
 
-function callFilterToQueryEntry(
-  filter: SubstrateCallFilter,
-): DictionaryQueryEntry {
+function callFilterToQueryEntry(filter: NearCallFilter): DictionaryQueryEntry {
   return {
     entity: 'extrinsics',
     conditions: [
@@ -148,12 +145,12 @@ export class FetchService implements OnApplicationShutdown {
         : undefined;
       for (const handler of ds.mapping.handlers) {
         const baseHandlerKind = this.getBaseHandlerKind(ds, handler);
-        let filterList: SubstrateRuntimeHandlerFilter[];
+        let filterList: NearRuntimeHandlerFilter[];
         if (isCustomDs(ds)) {
           const processor = plugin.handlerProcessors[handler.kind];
           if (processor.dictionaryQuery) {
             const queryEntry = processor.dictionaryQuery(
-              (handler as SubstrateCustomHandler).filter,
+              (handler as NearCustomHandler).filter,
               ds,
             );
             if (queryEntry) {
@@ -161,11 +158,10 @@ export class FetchService implements OnApplicationShutdown {
               continue;
             }
           }
-          filterList =
-            this.getBaseHandlerFilters<SubstrateRuntimeHandlerFilter>(
-              ds,
-              handler.kind,
-            );
+          filterList = this.getBaseHandlerFilters<NearRuntimeHandlerFilter>(
+            ds,
+            handler.kind,
+          );
         } else {
           filterList = [handler.filter];
         }
@@ -173,15 +169,15 @@ export class FetchService implements OnApplicationShutdown {
         filterList = filterList.filter(Boolean);
         if (!filterList.length) return [];
         switch (baseHandlerKind) {
-          case SubstrateHandlerKind.Block:
-            for (const filter of filterList as SubstrateBlockFilter[]) {
+          case NearHandlerKind.Block:
+            for (const filter of filterList as NearBlockFilter[]) {
               if (filter.modulo === undefined) {
                 return [];
               }
             }
             break;
-          case SubstrateHandlerKind.Call: {
-            for (const filter of filterList as SubstrateCallFilter[]) {
+          case NearHandlerKind.Call: {
+            for (const filter of filterList as NearCallFilter[]) {
               if (filter.module !== undefined && filter.method !== undefined) {
                 queryEntries.push(callFilterToQueryEntry(filter));
               } else {
@@ -190,8 +186,8 @@ export class FetchService implements OnApplicationShutdown {
             }
             break;
           }
-          case SubstrateHandlerKind.Event: {
-            for (const filter of filterList as SubstrateEventFilter[]) {
+          case NearHandlerKind.Event: {
+            for (const filter of filterList as NearEventFilter[]) {
               if (filter.module !== undefined && filter.method !== undefined) {
                 queryEntries.push(eventFilterToQueryEntry(filter));
               } else {
@@ -362,7 +358,7 @@ export class FetchService implements OnApplicationShutdown {
       }
       for (const handler of ds.mapping.handlers) {
         if (
-          handler.kind === SubstrateHandlerKind.Block &&
+          handler.kind === NearHandlerKind.Block &&
           handler.filter &&
           handler.filter.modulo
         ) {
@@ -563,9 +559,9 @@ export class FetchService implements OnApplicationShutdown {
   }
 
   private getBaseHandlerKind(
-    ds: SubstrateDataSource,
-    handler: SubstrateHandler,
-  ): SubstrateHandlerKind {
+    ds: NearDataSource,
+    handler: NearHandler,
+  ): NearHandlerKind {
     if (isRuntimeDs(ds) && isBaseHandler(handler)) {
       return handler.kind;
     } else if (isCustomDs(ds) && isCustomHandler(handler)) {
@@ -581,8 +577,8 @@ export class FetchService implements OnApplicationShutdown {
     }
   }
 
-  private getBaseHandlerFilters<T extends SubstrateRuntimeHandlerFilter>(
-    ds: SubstrateDataSource,
+  private getBaseHandlerFilters<T extends NearRuntimeHandlerFilter>(
+    ds: NearDataSource,
     handlerKind: string,
   ): T[] {
     if (isCustomDs(ds)) {

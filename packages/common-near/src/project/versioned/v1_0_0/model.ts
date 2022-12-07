@@ -9,7 +9,7 @@ import {
   RunnerSpecs,
   SemverVersionValidator,
 } from '@subql/common';
-import {SubstrateRuntimeDatasource} from '@subql/types';
+import {NearRuntimeDatasource} from '@subql/types';
 import {plainToClass, Transform, TransformFnParams, Type} from 'class-transformer';
 import {
   Equals,
@@ -26,8 +26,8 @@ import {
   CustomDatasourceV0_2_0,
   FileType,
   RuntimeDataSourceV0_2_0,
-  SubstrateCustomDataSourceV0_2_0Impl,
-  SubstrateRuntimeDataSourceV0_2_0Impl,
+  NearCustomDataSourceV0_2_0Impl,
+  NearRuntimeDataSourceV0_2_0Impl,
 } from '../v0_2_0';
 import {
   CustomDatasourceTemplate,
@@ -35,12 +35,12 @@ import {
   RuntimeDatasourceTemplate,
   RuntimeDatasourceTemplateImpl,
 } from '../v0_2_1';
-import {SubstrateProjectManifestV1_0_0} from './types';
+import {NearProjectManifestV1_0_0} from './types';
 
-const SUBSTRATE_NODE_NAME = `@subql/node`;
+const Near_NODE_NAME = `@subql/node`;
 
-export class SubstrateRunnerNodeImpl implements NodeSpec {
-  @Equals(SUBSTRATE_NODE_NAME, {message: `Runner Substrate node name incorrect, suppose be '${SUBSTRATE_NODE_NAME}'`})
+export class NearRunnerNodeImpl implements NodeSpec {
+  @Equals(Near_NODE_NAME, {message: `Runner Near node name incorrect, suppose be '${Near_NODE_NAME}'`})
   name: string;
   @IsString()
   @Validate(SemverVersionValidator)
@@ -48,10 +48,10 @@ export class SubstrateRunnerNodeImpl implements NodeSpec {
   version: string;
 }
 
-export class SubstrateRunnerSpecsImpl implements RunnerSpecs {
+export class NearRunnerSpecsImpl implements RunnerSpecs {
   @IsObject()
   @ValidateNested()
-  @Type(() => SubstrateRunnerNodeImpl)
+  @Type(() => NearRunnerNodeImpl)
   node: NodeSpec;
   @IsObject()
   @ValidateNested()
@@ -94,17 +94,17 @@ export class DeploymentV1_0_0 {
   specVersion: string;
   @IsObject()
   @ValidateNested()
-  @Type(() => SubstrateRunnerSpecsImpl)
+  @Type(() => NearRunnerSpecsImpl)
   runner: RunnerSpecs;
   @ValidateNested()
   @Type(() => FileType)
   schema: FileType;
   @IsArray()
   @ValidateNested()
-  @Type(() => SubstrateCustomDataSourceV0_2_0Impl, {
+  @Type(() => NearCustomDataSourceV0_2_0Impl, {
     discriminator: {
       property: 'kind',
-      subTypes: [{value: SubstrateRuntimeDataSourceV0_2_0Impl, name: 'substrate/Runtime'}],
+      subTypes: [{value: NearRuntimeDataSourceV0_2_0Impl, name: 'Near/Runtime'}],
     },
     keepDiscriminatorProperty: true,
   })
@@ -115,7 +115,7 @@ export class DeploymentV1_0_0 {
   @Type(() => CustomDatasourceTemplateImpl, {
     discriminator: {
       property: 'kind',
-      subTypes: [{value: RuntimeDatasourceTemplateImpl, name: 'substrate/Runtime'}],
+      subTypes: [{value: RuntimeDatasourceTemplateImpl, name: 'Near/Runtime'}],
     },
     keepDiscriminatorProperty: true,
   })
@@ -124,18 +124,18 @@ export class DeploymentV1_0_0 {
 
 export class ProjectManifestV1_0_0Impl<D extends object = DeploymentV1_0_0>
   extends ProjectManifestBaseImpl<D>
-  implements SubstrateProjectManifestV1_0_0
+  implements NearProjectManifestV1_0_0
 {
   @Equals('1.0.0')
   specVersion: string;
-  @Type(() => SubstrateCustomDataSourceV0_2_0Impl, {
+  @Type(() => NearCustomDataSourceV0_2_0Impl, {
     discriminator: {
       property: 'kind',
-      subTypes: [{value: SubstrateRuntimeDataSourceV0_2_0Impl, name: 'substrate/Runtime'}],
+      subTypes: [{value: NearRuntimeDataSourceV0_2_0Impl, name: 'Near/Runtime'}],
     },
     keepDiscriminatorProperty: true,
   })
-  dataSources: (SubstrateRuntimeDatasource | CustomDatasourceV0_2_0)[];
+  dataSources: (NearRuntimeDatasource | CustomDatasourceV0_2_0)[];
   @Type(() => ProjectNetworkV1_0_0)
   network: ProjectNetworkV1_0_0;
   @IsString()
@@ -151,14 +151,14 @@ export class ProjectManifestV1_0_0Impl<D extends object = DeploymentV1_0_0>
   @Type(() => CustomDatasourceTemplateImpl, {
     discriminator: {
       property: 'kind',
-      subTypes: [{value: RuntimeDatasourceTemplateImpl, name: 'substrate/Runtime'}],
+      subTypes: [{value: RuntimeDatasourceTemplateImpl, name: 'Near/Runtime'}],
     },
     keepDiscriminatorProperty: true,
   })
   templates?: (RuntimeDatasourceTemplate | CustomDatasourceTemplate)[];
   @IsObject()
   @ValidateNested()
-  @Type(() => SubstrateRunnerSpecsImpl)
+  @Type(() => NearRunnerSpecsImpl)
   runner: RunnerSpecs;
   protected _deployment: D;
 

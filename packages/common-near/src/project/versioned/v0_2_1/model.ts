@@ -4,25 +4,22 @@
 import {plainToClass, Type} from 'class-transformer';
 import {Equals, IsArray, IsOptional, IsString, ValidateNested, validateSync} from 'class-validator';
 import {
-  SubstrateCustomDataSourceV0_2_0Impl,
+  NearCustomDataSourceV0_2_0Impl,
   DeploymentV0_2_0,
   ProjectManifestV0_2_0Impl,
-  SubstrateRuntimeDataSourceV0_2_0Impl,
+  NearRuntimeDataSourceV0_2_0Impl,
 } from '../v0_2_0';
-import {CustomDatasourceTemplate, SubstrateProjectManifestV0_2_1, RuntimeDatasourceTemplate} from './types';
+import {CustomDatasourceTemplate, NearProjectManifestV0_2_1, RuntimeDatasourceTemplate} from './types';
 
 export class RuntimeDatasourceTemplateImpl
-  extends SubstrateRuntimeDataSourceV0_2_0Impl
+  extends NearRuntimeDataSourceV0_2_0Impl
   implements RuntimeDatasourceTemplate
 {
   @IsString()
   name: string;
 }
 
-export class CustomDatasourceTemplateImpl
-  extends SubstrateCustomDataSourceV0_2_0Impl
-  implements CustomDatasourceTemplate
-{
+export class CustomDatasourceTemplateImpl extends NearCustomDataSourceV0_2_0Impl implements CustomDatasourceTemplate {
   @IsString()
   name: string;
 }
@@ -38,7 +35,7 @@ export class DeploymentV0_2_1 extends DeploymentV0_2_0 {
   @Type(() => CustomDatasourceTemplateImpl, {
     discriminator: {
       property: 'kind',
-      subTypes: [{value: RuntimeDatasourceTemplateImpl, name: 'substrate/Runtime'}],
+      subTypes: [{value: RuntimeDatasourceTemplateImpl, name: 'Near/Runtime'}],
     },
     keepDiscriminatorProperty: true,
   })
@@ -47,7 +44,7 @@ export class DeploymentV0_2_1 extends DeploymentV0_2_0 {
 
 export class ProjectManifestV0_2_1Impl
   extends ProjectManifestV0_2_0Impl<DeploymentV0_2_1>
-  implements SubstrateProjectManifestV0_2_1
+  implements NearProjectManifestV0_2_1
 {
   @IsOptional()
   @IsArray()
@@ -55,7 +52,7 @@ export class ProjectManifestV0_2_1Impl
   @Type(() => CustomDatasourceTemplateImpl, {
     discriminator: {
       property: 'kind',
-      subTypes: [{value: RuntimeDatasourceTemplateImpl, name: 'substrate/Runtime'}],
+      subTypes: [{value: RuntimeDatasourceTemplateImpl, name: 'Near/Runtime'}],
     },
     keepDiscriminatorProperty: true,
   })

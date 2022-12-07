@@ -5,21 +5,21 @@ import {RegisteredTypes, RegistryTypes, OverrideModuleType, OverrideBundleType} 
 
 import {BaseMapping, FileReference} from '@subql/common';
 import {
-  CustomDataSourceAsset as SubstrateCustomDataSourceAsset,
-  SubstrateBlockFilter,
-  SubstrateBlockHandler,
-  SubstrateCallFilter,
-  SubstrateCallHandler,
-  SubstrateCustomHandler,
-  SubstrateDatasourceKind,
-  SubstrateEventFilter,
-  SubstrateEventHandler,
-  SubstrateHandlerKind,
-  SubstrateNetworkFilter,
-  SubstrateRuntimeDatasource,
-  SubstrateRuntimeHandler,
-  SubstrateRuntimeHandlerFilter,
-  SubstrateCustomDatasource,
+  CustomDataSourceAsset as NearCustomDataSourceAsset,
+  NearBlockFilter,
+  NearBlockHandler,
+  NearCallFilter,
+  NearCallHandler,
+  NearCustomHandler,
+  NearDatasourceKind,
+  NearEventFilter,
+  NearEventHandler,
+  NearHandlerKind,
+  NearNetworkFilter,
+  NearRuntimeDatasource,
+  NearRuntimeHandler,
+  NearRuntimeHandlerFilter,
+  NearCustomDatasource,
 } from '@subql/types';
 import {plainToClass, Transform, Type} from 'class-transformer';
 import {
@@ -34,7 +34,7 @@ import {
   ValidateNested,
 } from 'class-validator';
 
-export class BlockFilter implements SubstrateBlockFilter {
+export class BlockFilter implements NearBlockFilter {
   @IsOptional()
   @IsArray()
   @ArrayMaxSize(2)
@@ -47,7 +47,7 @@ export class BlockFilter implements SubstrateBlockFilter {
   timestamp?: string;
 }
 
-export class EventFilter extends BlockFilter implements SubstrateEventFilter {
+export class EventFilter extends BlockFilter implements NearEventFilter {
   @IsOptional()
   @IsString()
   module?: string;
@@ -74,46 +74,46 @@ export class ChainTypes implements RegisteredTypes {
   typesSpec?: Record<string, RegistryTypes>;
 }
 
-export class CallFilter extends EventFilter implements SubstrateCallFilter {
+export class CallFilter extends EventFilter implements NearCallFilter {
   @IsOptional()
   @IsBoolean()
   success?: boolean;
 }
 
-export class BlockHandler implements SubstrateBlockHandler {
+export class BlockHandler implements NearBlockHandler {
   @IsOptional()
   @ValidateNested()
   @Type(() => BlockFilter)
-  filter?: SubstrateBlockFilter;
-  @IsEnum(SubstrateHandlerKind, {groups: [SubstrateHandlerKind.Block]})
-  kind: SubstrateHandlerKind.Block;
+  filter?: NearBlockFilter;
+  @IsEnum(NearHandlerKind, {groups: [NearHandlerKind.Block]})
+  kind: NearHandlerKind.Block;
   @IsString()
   handler: string;
 }
 
-export class CallHandler implements SubstrateCallHandler {
+export class CallHandler implements NearCallHandler {
   @IsOptional()
   @ValidateNested()
   @Type(() => CallFilter)
-  filter?: SubstrateCallFilter;
-  @IsEnum(SubstrateHandlerKind, {groups: [SubstrateHandlerKind.Call]})
-  kind: SubstrateHandlerKind.Call;
+  filter?: NearCallFilter;
+  @IsEnum(NearHandlerKind, {groups: [NearHandlerKind.Call]})
+  kind: NearHandlerKind.Call;
   @IsString()
   handler: string;
 }
 
-export class EventHandler implements SubstrateEventHandler {
+export class EventHandler implements NearEventHandler {
   @IsOptional()
   @ValidateNested()
   @Type(() => EventFilter)
-  filter?: SubstrateEventFilter;
-  @IsEnum(SubstrateHandlerKind, {groups: [SubstrateHandlerKind.Event]})
-  kind: SubstrateHandlerKind.Event;
+  filter?: NearEventFilter;
+  @IsEnum(NearHandlerKind, {groups: [NearHandlerKind.Event]})
+  kind: NearHandlerKind.Event;
   @IsString()
   handler: string;
 }
 
-export class CustomHandler implements SubstrateCustomHandler {
+export class CustomHandler implements NearCustomHandler {
   @IsString()
   kind: string;
   @IsString()
@@ -123,16 +123,16 @@ export class CustomHandler implements SubstrateCustomHandler {
   filter?: Record<string, unknown>;
 }
 
-export class RuntimeMapping implements BaseMapping<SubstrateRuntimeHandlerFilter, SubstrateRuntimeHandler> {
+export class RuntimeMapping implements BaseMapping<NearRuntimeHandlerFilter, NearRuntimeHandler> {
   @Transform((params) => {
-    const handlers: SubstrateRuntimeHandler[] = params.value;
+    const handlers: NearRuntimeHandler[] = params.value;
     return handlers.map((handler) => {
       switch (handler.kind) {
-        case SubstrateHandlerKind.Event:
+        case NearHandlerKind.Event:
           return plainToClass(EventHandler, handler);
-        case SubstrateHandlerKind.Call:
+        case NearHandlerKind.Call:
           return plainToClass(CallHandler, handler);
-        case SubstrateHandlerKind.Block:
+        case NearHandlerKind.Block:
           return plainToClass(BlockHandler, handler);
         default:
           throw new Error(`handler ${(handler as any).kind} not supported`);
@@ -141,12 +141,12 @@ export class RuntimeMapping implements BaseMapping<SubstrateRuntimeHandlerFilter
   })
   @IsArray()
   @ValidateNested()
-  handlers: SubstrateRuntimeHandler[];
+  handlers: NearRuntimeHandler[];
   @IsString()
   file: string;
 }
 
-export class CustomMapping implements BaseMapping<Record<string, unknown>, SubstrateCustomHandler> {
+export class CustomMapping implements BaseMapping<Record<string, unknown>, NearCustomHandler> {
   @IsArray()
   @Type(() => CustomHandler)
   @ValidateNested()
@@ -155,15 +155,15 @@ export class CustomMapping implements BaseMapping<Record<string, unknown>, Subst
   file: string;
 }
 
-export class SubqlNetworkFilterImpl implements SubstrateNetworkFilter {
+export class SubqlNetworkFilterImpl implements NearNetworkFilter {
   @IsString()
   @IsOptional()
   specName?: string;
 }
 
-export class RuntimeDataSourceBase implements SubstrateRuntimeDatasource {
-  @IsEnum(SubstrateDatasourceKind, {groups: [SubstrateDatasourceKind.Runtime]})
-  kind: SubstrateDatasourceKind.Runtime;
+export class RuntimeDataSourceBase implements NearRuntimeDatasource {
+  @IsEnum(NearDatasourceKind, {groups: [NearDatasourceKind.Runtime]})
+  kind: NearDatasourceKind.Runtime;
   @Type(() => RuntimeMapping)
   @ValidateNested()
   mapping: RuntimeMapping;
@@ -173,7 +173,7 @@ export class RuntimeDataSourceBase implements SubstrateRuntimeDatasource {
   @IsOptional()
   @ValidateNested()
   @Type(() => SubqlNetworkFilterImpl)
-  filter?: SubstrateNetworkFilter;
+  filter?: NearNetworkFilter;
 }
 
 export class FileReferenceImpl implements FileReference {
@@ -181,8 +181,8 @@ export class FileReferenceImpl implements FileReference {
   file: string;
 }
 
-export class CustomDataSourceBase<K extends string, T extends SubstrateNetworkFilter, M extends CustomMapping, O = any>
-  implements SubstrateCustomDatasource<K, T, M, O>
+export class CustomDataSourceBase<K extends string, T extends NearNetworkFilter, M extends CustomMapping, O = any>
+  implements NearCustomDatasource<K, T, M, O>
 {
   @IsString()
   kind: K;
@@ -194,7 +194,7 @@ export class CustomDataSourceBase<K extends string, T extends SubstrateNetworkFi
   startBlock?: number;
   @Type(() => FileReferenceImpl)
   @ValidateNested({each: true})
-  assets: Map<string, SubstrateCustomDataSourceAsset>;
+  assets: Map<string, NearCustomDataSourceAsset>;
   @Type(() => FileReferenceImpl)
   @IsObject()
   processor: FileReference;

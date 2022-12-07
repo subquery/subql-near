@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import {BaseMapping, ProjectManifestBaseImpl} from '@subql/common';
-import {SubstrateCustomDatasource, SubstrateNetworkFilter} from '@subql/types';
+import {NearCustomDatasource, NearNetworkFilter} from '@subql/types';
 import {plainToClass, Transform, TransformFnParams, Type} from 'class-transformer';
 import {
   Equals,
@@ -15,7 +15,7 @@ import {
   validateSync,
 } from 'class-validator';
 import {CustomDataSourceBase, RuntimeDataSourceBase} from '../../models';
-import {CustomDatasourceV0_2_0, SubstrateProjectManifestV0_2_0, RuntimeDataSourceV0_2_0} from './types';
+import {CustomDatasourceV0_2_0, NearProjectManifestV0_2_0, RuntimeDataSourceV0_2_0} from './types';
 
 export class FileType {
   @IsString()
@@ -51,19 +51,19 @@ function validateObject(object: any, errorMessage = 'failed to validate object.'
   }
 }
 
-export class SubstrateRuntimeDataSourceV0_2_0Impl extends RuntimeDataSourceBase implements RuntimeDataSourceV0_2_0 {
+export class NearRuntimeDataSourceV0_2_0Impl extends RuntimeDataSourceBase implements RuntimeDataSourceV0_2_0 {
   validate(): void {
     return validateObject(this, 'failed to validate runtime datasource.');
   }
 }
 
-export class SubstrateCustomDataSourceV0_2_0Impl<
+export class NearCustomDataSourceV0_2_0Impl<
     K extends string = string,
-    T extends SubstrateNetworkFilter = SubstrateNetworkFilter,
+    T extends NearNetworkFilter = NearNetworkFilter,
     M extends BaseMapping<any, any> = BaseMapping<Record<string, unknown>, any>
   >
   extends CustomDataSourceBase<K, T, M>
-  implements SubstrateCustomDatasource<K, T, M>
+  implements NearCustomDatasource<K, T, M>
 {
   validate(): void {
     return validateObject(this, 'failed to validate custom datasource.');
@@ -79,10 +79,10 @@ export class DeploymentV0_2_0 {
   schema: FileType;
   @IsArray()
   @ValidateNested()
-  @Type(() => SubstrateCustomDataSourceV0_2_0Impl, {
+  @Type(() => NearCustomDataSourceV0_2_0Impl, {
     discriminator: {
       property: 'kind',
-      subTypes: [{value: SubstrateRuntimeDataSourceV0_2_0Impl, name: 'substrate/Runtime'}],
+      subTypes: [{value: NearRuntimeDataSourceV0_2_0Impl, name: 'Near/Runtime'}],
     },
     keepDiscriminatorProperty: true,
   })
@@ -94,7 +94,7 @@ export class DeploymentV0_2_0 {
 
 export class ProjectManifestV0_2_0Impl<D extends object = DeploymentV0_2_0>
   extends ProjectManifestBaseImpl<D>
-  implements SubstrateProjectManifestV0_2_0
+  implements NearProjectManifestV0_2_0
 {
   @Equals('0.2.0')
   specVersion: string;
@@ -111,10 +111,10 @@ export class ProjectManifestV0_2_0Impl<D extends object = DeploymentV0_2_0>
   schema: FileType;
   @IsArray()
   @ValidateNested()
-  @Type(() => SubstrateCustomDataSourceV0_2_0Impl, {
+  @Type(() => NearCustomDataSourceV0_2_0Impl, {
     discriminator: {
       property: 'kind',
-      subTypes: [{value: SubstrateRuntimeDataSourceV0_2_0Impl, name: 'substrate/Runtime'}],
+      subTypes: [{value: NearRuntimeDataSourceV0_2_0Impl, name: 'Near/Runtime'}],
     },
     keepDiscriminatorProperty: true,
   })

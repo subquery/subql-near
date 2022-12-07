@@ -5,8 +5,8 @@ import { Injectable, OnApplicationShutdown } from '@nestjs/common';
 import { ApiPromise } from '@polkadot/api';
 import { RuntimeVersion } from '@polkadot/types/interfaces';
 import { profiler } from '@subql/node-core';
-import { SubstrateBlock } from '@subql/types';
-import * as SubstrateUtil from '../utils/substrate';
+import { NearBlock } from '@subql/types';
+import * as NearUtil from '../utils/near';
 import { yargsOptions } from '../yargs';
 import { ApiService } from './api.service';
 import {
@@ -103,11 +103,11 @@ export class RuntimeService implements OnApplicationShutdown {
           const blockHash = await this.api.rpc.chain.getBlockHash(
             specVersion.start,
           );
-          await SubstrateUtil.prefetchMetadata(this.api, blockHash);
+          await NearUtil.prefetchMetadata(this.api, blockHash);
         }
       }
     } else {
-      await SubstrateUtil.prefetchMetadata(this.api, blockHash);
+      await NearUtil.prefetchMetadata(this.api, blockHash);
     }
   }
 
@@ -158,7 +158,7 @@ export class RuntimeService implements OnApplicationShutdown {
     return specVersion;
   }
 
-  async getRuntimeVersion(block: SubstrateBlock): Promise<RuntimeVersion> {
+  async getRuntimeVersion(block: NearBlock): Promise<RuntimeVersion> {
     if (
       !this.currentRuntimeVersion ||
       this.currentRuntimeVersion.specVersion.toNumber() !== block.specVersion

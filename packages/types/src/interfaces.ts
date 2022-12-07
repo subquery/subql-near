@@ -1,10 +1,9 @@
 // Copyright 2020-2022 OnFinality Limited authors & contributors
 // SPDX-License-Identifier: Apache-2.0
 
-import {AnyTuple, Codec} from '@polkadot/types-codec/types';
-import {GenericExtrinsic} from '@polkadot/types/extrinsic';
-import {EventRecord, SignedBlock} from '@polkadot/types/interfaces';
-import {IEvent} from '@polkadot/types/types';
+import BN from 'bn.js';
+import {Chunk} from 'near-api-js/lib/providers/provider';
+import {Action} from 'near-api-js/lib/transaction';
 
 export interface Entity {
   id: string;
@@ -25,31 +24,81 @@ export interface Store {
   remove(entity: string, id: string): Promise<void>;
 }
 
-export interface SubstrateBlock extends SignedBlock {
-  // parent block's spec version, can be used to decide the correct metadata that should be used for this block.
-  specVersion: number;
-  timestamp: Date;
-  events: EventRecord[];
+export interface NearBlock {
+  author: string;
+  header: BlockHeader;
+  chunks: Chunk[];
+  transactions: NearTransaction[];
+  actions: NearAction[];
+  receipts: any[];
 }
 
-export interface SubstrateExtrinsic<A extends AnyTuple = AnyTuple> {
-  // index in the block
-  idx: number;
-  extrinsic: GenericExtrinsic<A>;
-  block: SubstrateBlock;
-  events: TypedEventRecord<Codec[]>[];
-  success: boolean;
+export interface BlockHeader {
+  height: number;
+  epoch_id: string;
+  next_epoch_id: string;
+  hash: string;
+  prev_hash: string;
+  prev_state_root: string;
+  chunk_receipts_root: string;
+  chunk_headers_root: string;
+  chunk_tx_root: string;
+  outcome_root: string;
+  chunks_included: number;
+  challenges_root: string;
+  timestamp: number;
+  timestamp_nanosec: string;
+  random_value: string;
+  validator_proposals: any[];
+  chunk_mask: boolean[];
+  gas_price: string;
+  rent_paid: string;
+  validator_reward: string;
+  total_supply: string;
+  challenges_result: any[];
+  last_final_block: string;
+  last_ds_final_block: string;
+  next_bp_hash: string;
+  block_merkle_root: string;
+  approvals: string[];
+  signature: string;
+  latest_protocol_version: number;
 }
 
-export interface SubstrateEvent<T extends AnyTuple = AnyTuple> extends TypedEventRecord<T> {
-  // index in the block
-  idx: number;
-  extrinsic?: SubstrateExtrinsic;
-  block: SubstrateBlock;
+export interface BlockBody {
+  txns: NearTransaction[];
 }
 
-export type DynamicDatasourceCreator = (name: string, args: Record<string, unknown>) => Promise<void>;
+export interface BlockReceipt {
+  txn_results: TransactionResult[];
+}
 
-export type TypedEventRecord<T extends AnyTuple> = Omit<EventRecord, 'event'> & {
-  event: IEvent<T>;
-};
+export interface NearTransaction {
+  nonce: BN;
+  signer_id: string;
+  public_key: string;
+  receiver_id: string;
+  actions: NearAction[];
+  block_hash: string;
+  block_height: number;
+  gas_price: string;
+  gas_used: string;
+  timestamp: number;
+  //transfer_amount: number;
+  result: TransactionResult;
+}
+
+export interface TransactionResult {
+  id: string;
+  logs: string[];
+}
+
+export interface NearAction {
+  type: string;
+  action: any; //TODO: set action type
+}
+
+export interface NearLog {
+  name: string;
+  data: any[];
+}

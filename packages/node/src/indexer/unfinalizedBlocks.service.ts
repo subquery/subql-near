@@ -13,7 +13,7 @@ import {
   MetadataRepo,
   NodeConfig,
 } from '@subql/node-core';
-import { SubstrateBlock } from '@subql/types';
+import { NearBlock } from '@subql/types';
 import { last } from 'lodash';
 import { Sequelize, Transaction } from 'sequelize';
 import { ApiService } from './api.service';
@@ -85,7 +85,7 @@ export class UnfinalizedBlocksService {
   }
 
   async processUnfinalizedBlocks(
-    block: SubstrateBlock | undefined,
+    block: NearBlock | undefined,
     tx: Transaction,
   ): Promise<number | null> {
     if (block) {

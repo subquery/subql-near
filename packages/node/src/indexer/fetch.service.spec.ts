@@ -18,7 +18,7 @@ import {
 } from '@subql/node-core';
 import { GraphQLSchema } from 'graphql';
 import { SubqueryProject } from '../configure/SubqueryProject';
-import { calcInterval, fetchBlocksBatches } from '../utils/substrate';
+import { calcInterval, fetchBlocksBatches } from '../utils/near';
 import { ApiService } from './api.service';
 import { BlockDispatcherService } from './blockDispatcher';
 import { DictionaryService } from './dictionary.service';

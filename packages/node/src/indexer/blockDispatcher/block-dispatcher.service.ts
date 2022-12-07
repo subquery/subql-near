@@ -13,7 +13,7 @@ import {
   Queue,
 } from '@subql/node-core';
 import { last } from 'lodash';
-import * as SubstrateUtil from '../../utils/substrate';
+import * as SubstrateUtil from '../../utils/near';
 import { ApiService } from '../api.service';
 import { IndexerManager } from '../indexer.manager';
 import { ProjectService } from '../project.service';

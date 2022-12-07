@@ -11,12 +11,12 @@ import {
   isEventHandlerProcessor,
   isCustomDs,
   isRuntimeDs,
-  SubstrateCustomDataSource,
-  SubstrateCustomHandler,
-  SubstrateHandlerKind,
-  SubstrateNetworkFilter,
-  SubstrateRuntimeHandlerInputMap,
-} from '@subql/common-substrate';
+  NearCustomDataSource,
+  NearCustomHandler,
+  NearHandlerKind,
+  NearNetworkFilter,
+  NearRuntimeHandlerInputMap,
+} from '@subql/common-near';
 import {
   PoiBlock,
   StoreService,
@@ -27,14 +27,10 @@ import {
   profilerWrap,
   IndexerSandbox,
 } from '@subql/node-core';
-import {
-  SubstrateBlock,
-  SubstrateEvent,
-  SubstrateExtrinsic,
-} from '@subql/types';
+import { NearBlock, NearEvent, NearExtrinsic } from '@subql/types';
 import { Sequelize, Transaction } from 'sequelize';
 import { SubqlProjectDs, SubqueryProject } from '../configure/SubqueryProject';
-import * as SubstrateUtil from '../utils/substrate';
+import * as NearUtil from '../utils/near';
 import { yargsOptions } from '../yargs';
 import { ApiService } from './api.service';
 import {
@@ -189,7 +185,7 @@ export class IndexerManager {
   }
 
   private async processUnfinalizedBlocks(
-    block: SubstrateBlock,
+    block: NearBlock,
     tx: Transaction,
   ): Promise<number | null> {
     if (this.nodeConfig.unfinalizedBlocks) {
@@ -261,38 +257,38 @@ export class IndexerManager {
   }
 
   private async indexBlockContent(
-    block: SubstrateBlock,
+    block: NearBlock,
     dataSources: SubqlProjectDs[],
     getVM: (d: SubqlProjectDs) => Promise<IndexerSandbox>,
   ): Promise<void> {
     for (const ds of dataSources) {
-      await this.indexData(SubstrateHandlerKind.Block, block, ds, getVM);
+      await this.indexData(NearHandlerKind.Block, block, ds, getVM);
     }
   }
 
   private async indexExtrinsic(
-    extrinsic: SubstrateExtrinsic,
+    extrinsic: NearExtrinsic,
     dataSources: SubqlProjectDs[],
     getVM: (d: SubqlProjectDs) => Promise<IndexerSandbox>,
   ): Promise<void> {
     for (const ds of dataSources) {
-      await this.indexData(SubstrateHandlerKind.Call, extrinsic, ds, getVM);
+      await this.indexData(NearHandlerKind.Call, extrinsic, ds, getVM);
     }
   }
 
   private async indexEvent(
-    event: SubstrateEvent,
+    event: NearEvent,
     dataSources: SubqlProjectDs[],
     getVM: (d: SubqlProjectDs) => Promise<IndexerSandbox>,
   ): Promise<void> {
     for (const ds of dataSources) {
-      await this.indexData(SubstrateHandlerKind.Event, event, ds, getVM);
+      await this.indexData(NearHandlerKind.Event, event, ds, getVM);
     }
   }
 
-  private async indexData<K extends SubstrateHandlerKind>(
+  private async indexData<K extends NearHandlerKind>(
     kind: K,
-    data: SubstrateRuntimeHandlerInputMap[K],
+    data: NearRuntimeHandlerInputMap[K],
     ds: SubqlProjectDs,
     getVM: (ds: SubqlProjectDs) => Promise<IndexerSandbox>,
   ): Promise<void> {
@@ -319,21 +315,16 @@ export class IndexerManager {
         ProcessorTypeMap[kind],
         (data, baseFilter) => {
           switch (kind) {
-            case SubstrateHandlerKind.Block:
-              return !!SubstrateUtil.filterBlock(
-                data as SubstrateBlock,
-                baseFilter,
-              );
-            case SubstrateHandlerKind.Call:
-              return !!SubstrateUtil.filterExtrinsics(
-                [data as SubstrateExtrinsic],
+            case NearHandlerKind.Block:
+              return !!NearUtil.filterBlock(data as NearBlock, baseFilter);
+            case NearHandlerKind.Call:
+              return !!NearUtil.filterExtrinsics(
+                [data as NearExtrinsic],
                 baseFilter,
               ).length;
-            case SubstrateHandlerKind.Event:
-              return !!SubstrateUtil.filterEvents(
-                [data as SubstrateEvent],
-                baseFilter,
-              ).length;
+            case NearHandlerKind.Event:
+              return !!NearUtil.filterEvents([data as NearEvent], baseFilter)
+                .length;
             default:
               throw new Error('Unsupported handler kind');
           }
@@ -347,15 +338,15 @@ export class IndexerManager {
     }
   }
 
-  private filterCustomDsHandlers<K extends SubstrateHandlerKind>(
-    ds: SubstrateCustomDataSource<string, SubstrateNetworkFilter>,
-    data: SubstrateRuntimeHandlerInputMap[K],
+  private filterCustomDsHandlers<K extends NearHandlerKind>(
+    ds: NearCustomDataSource<string, NearNetworkFilter>,
+    data: NearRuntimeHandlerInputMap[K],
     baseHandlerCheck: ProcessorTypeMap[K],
     baseFilter: (
-      data: SubstrateRuntimeHandlerInputMap[K],
+      data: NearRuntimeHandlerInputMap[K],
       baseFilter: any,
     ) => boolean,
-  ): SubstrateCustomHandler[] {
+  ): NearCustomHandler[] {
     const plugin = this.dsProcessorService.getDsProcessor(ds);
 
     return ds.mapping.handlers
@@ -385,11 +376,11 @@ export class IndexerManager {
       });
   }
 
-  private async transformAndExecuteCustomDs<K extends SubstrateHandlerKind>(
-    ds: SubstrateCustomDataSource<string, SubstrateNetworkFilter>,
+  private async transformAndExecuteCustomDs<K extends NearHandlerKind>(
+    ds: NearCustomDataSource<string, NearNetworkFilter>,
     vm: IndexerSandbox,
-    handler: SubstrateCustomHandler,
-    data: SubstrateRuntimeHandlerInputMap[K],
+    handler: NearCustomHandler,
+    data: NearRuntimeHandlerInputMap[K],
   ): Promise<void> {
     const plugin = this.dsProcessorService.getDsProcessor(ds);
     const assets = await this.dsProcessorService.getAssets(ds);
@@ -412,7 +403,7 @@ export class IndexerManager {
       });
 
     // We can not run this in parallel. the transformed data items may be dependent on one another.
-    // An example of this is with Acala EVM packing multiple EVM logs into a single Substrate event
+    // An example of this is with Acala EVM packing multiple EVM logs into a single Near event
     for (const _data of transformedData) {
       await vm.securedExec(handler.handler, [_data]);
     }
@@ -420,19 +411,19 @@ export class IndexerManager {
 }
 
 type ProcessorTypeMap = {
-  [SubstrateHandlerKind.Block]: typeof isBlockHandlerProcessor;
-  [SubstrateHandlerKind.Event]: typeof isEventHandlerProcessor;
-  [SubstrateHandlerKind.Call]: typeof isCallHandlerProcessor;
+  [NearHandlerKind.Block]: typeof isBlockHandlerProcessor;
+  [NearHandlerKind.Event]: typeof isEventHandlerProcessor;
+  [NearHandlerKind.Call]: typeof isCallHandlerProcessor;
 };
 
 const ProcessorTypeMap = {
-  [SubstrateHandlerKind.Block]: isBlockHandlerProcessor,
-  [SubstrateHandlerKind.Event]: isEventHandlerProcessor,
-  [SubstrateHandlerKind.Call]: isCallHandlerProcessor,
+  [NearHandlerKind.Block]: isBlockHandlerProcessor,
+  [NearHandlerKind.Event]: isEventHandlerProcessor,
+  [NearHandlerKind.Call]: isCallHandlerProcessor,
 };
 
 const FilterTypeMap = {
-  [SubstrateHandlerKind.Block]: SubstrateUtil.filterBlock,
-  [SubstrateHandlerKind.Event]: SubstrateUtil.filterEvent,
-  [SubstrateHandlerKind.Call]: SubstrateUtil.filterExtrinsic,
+  [NearHandlerKind.Block]: NearUtil.filterBlock,
+  [NearHandlerKind.Event]: NearUtil.filterEvent,
+  [NearHandlerKind.Call]: NearUtil.filterExtrinsic,
 };

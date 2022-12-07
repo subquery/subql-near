@@ -2,10 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { Inject, Injectable } from '@nestjs/common';
-import {
-  isDatasourceV0_2_0,
-  SubstrateDataSource,
-} from '@subql/common-substrate';
+import { isDatasourceV0_2_0, NearDataSource } from '@subql/common-near';
 import { NodeConfig, StoreService, IndexerSandbox } from '@subql/node-core';
 import { SubqlProjectDs, SubqueryProject } from '../configure/SubqueryProject';
 import { getProjectEntry } from '../utils/project';
@@ -46,7 +43,7 @@ export class SandboxService {
     return processor;
   }
 
-  private getDataSourceEntry(ds: SubstrateDataSource): string {
+  private getDataSourceEntry(ds: NearDataSource): string {
     if (isDatasourceV0_2_0(ds)) {
       return ds.mapping.file;
     } else {

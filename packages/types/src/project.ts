@@ -1,30 +1,33 @@
 // Copyright 2020-2022 OnFinality Limited authors & contributors
 // SPDX-License-Identifier: Apache-2.0
 
-import {ApiPromise} from '@polkadot/api';
 import {AnyTuple, RegistryTypes} from '@polkadot/types/types';
-import {SubstrateBlock, SubstrateEvent, SubstrateExtrinsic} from './interfaces';
+import {JsonRpcProvider} from 'near-api-js/lib/providers';
+import {NearBlock, NearTransaction, NearLog, NearAction} from './interfaces';
 
-export enum SubstrateDatasourceKind {
-  Runtime = 'substrate/Runtime',
+export enum NearDatasourceKind {
+  Runtime = 'Near/Runtime',
 }
 
-export enum SubstrateHandlerKind {
-  Block = 'substrate/BlockHandler',
-  Call = 'substrate/CallHandler',
-  Event = 'substrate/EventHandler',
+export enum NearHandlerKind {
+  Block = 'Near/BlockHandler',
+  Transaction = 'Near/TransactionHandler',
+  Action = 'Near/ActionHandler',
+  Log = 'Near/LogHandler',
 }
 
-export type RuntimeHandlerInputMap<T extends AnyTuple = AnyTuple> = {
-  [SubstrateHandlerKind.Block]: SubstrateBlock;
-  [SubstrateHandlerKind.Event]: SubstrateEvent<T>;
-  [SubstrateHandlerKind.Call]: SubstrateExtrinsic<T>;
+export type RuntimeHandlerInputMap = {
+  [NearHandlerKind.Block]: NearBlock;
+  [NearHandlerKind.Transaction]: NearTransaction;
+  [NearHandlerKind.Action]: NearAction;
+  [NearHandlerKind.Log]: NearLog;
 };
 
 type RuntimeFilterMap = {
-  [SubstrateHandlerKind.Block]: SubstrateNetworkFilter;
-  [SubstrateHandlerKind.Event]: SubstrateEventFilter;
-  [SubstrateHandlerKind.Call]: SubstrateCallFilter;
+  [NearHandlerKind.Block]: NearBlockFilter;
+  [NearHandlerKind.Transaction]: NearTransactionFilter;
+  [NearHandlerKind.Action]: NearAction;
+  [NearHandlerKind.Log]: NearLogFilter;
 };
 
 export interface ProjectManifest {
@@ -39,49 +42,48 @@ export interface ProjectManifest {
     customTypes?: RegistryTypes;
   };
 
-  dataSources: SubstrateDatasource[];
+  dataSources: NearDatasource[];
 }
 
 // [startSpecVersion?, endSpecVersion?] closed range
 export type SpecVersionRange = [number, number];
 
-interface SubstrateBaseHandlerFilter {
-  specVersion?: SpecVersionRange;
-}
-
-export interface SubstrateBlockFilter extends SubstrateBaseHandlerFilter {
+export interface NearBlockFilter {
   modulo?: number;
   timestamp?: string;
 }
 
-export interface SubstrateEventFilter extends SubstrateBaseHandlerFilter {
-  module?: string;
-  method?: string;
+export interface NearTransactionFilter {
+  sender: string;
 }
 
-export interface SubstrateCallFilter extends SubstrateEventFilter {
-  success?: boolean;
+export interface NearActionFilter {
+  type: string;
 }
 
-export type SubstrateBlockHandler = SubstrateCustomHandler<SubstrateHandlerKind.Block, SubstrateBlockFilter>;
-export type SubstrateCallHandler = SubstrateCustomHandler<SubstrateHandlerKind.Call, SubstrateCallFilter>;
-export type SubstrateEventHandler = SubstrateCustomHandler<SubstrateHandlerKind.Event, SubstrateEventFilter>;
+export interface NearLogFilter {
+  name?: string;
+}
 
-export interface SubstrateCustomHandler<K extends string = string, F = Record<string, unknown>> {
+export type NearBlockHandler = NearCustomHandler<NearHandlerKind.Block, NearBlockFilter>;
+export type NearTransactionHandler = NearCustomHandler<NearHandlerKind.Transaction, NearTransactionFilter>;
+export type NearLogHandler = NearCustomHandler<NearHandlerKind.Log, NearLogFilter>;
+
+export interface NearCustomHandler<K extends string = string, F = Record<string, unknown>> {
   handler: string;
   kind: K;
   filter?: F;
 }
 
-export type SubstrateRuntimeHandler = SubstrateBlockHandler | SubstrateCallHandler | SubstrateEventHandler;
-export type SubstrateHandler = SubstrateRuntimeHandler | SubstrateCustomHandler<string, unknown>;
-export type SubstrateRuntimeHandlerFilter = SubstrateBlockFilter | SubstrateCallFilter | SubstrateEventFilter;
+export type NearRuntimeHandler = NearBlockHandler | NearTransactionHandler | NearLogHandler;
+export type NearHandler = NearRuntimeHandler | NearCustomHandler<string, unknown>;
+export type NearRuntimeHandlerFilter = NearBlockFilter | NearTransactionFilter | NearLogFilter;
 
-export interface SubstrateMapping<T extends SubstrateHandler = SubstrateHandler> extends FileReference {
+export interface NearMapping<T extends NearHandler = NearHandler> extends FileReference {
   handlers: T[];
 }
 
-interface ISubstrateDatasource<M extends SubstrateMapping, F extends SubstrateNetworkFilter = SubstrateNetworkFilter> {
+interface INearDatasource<M extends NearMapping, F extends NearNetworkFilter = NearNetworkFilter> {
   name?: string;
   kind: string;
   filter?: F;
@@ -89,17 +91,16 @@ interface ISubstrateDatasource<M extends SubstrateMapping, F extends SubstrateNe
   mapping: M;
 }
 
-export interface SubstrateRuntimeDatasource<
-  M extends SubstrateMapping<SubstrateRuntimeHandler> = SubstrateMapping<SubstrateRuntimeHandler>
-> extends ISubstrateDatasource<M> {
-  kind: SubstrateDatasourceKind.Runtime;
+export interface NearRuntimeDatasource<M extends NearMapping<NearRuntimeHandler> = NearMapping<NearRuntimeHandler>>
+  extends INearDatasource<M> {
+  kind: NearDatasourceKind.Runtime;
 }
 
-export interface SubstrateNetworkFilter {
+export interface NearNetworkFilter {
   specName?: string;
 }
 
-export type SubstrateDatasource = SubstrateRuntimeDatasource | SubstrateCustomDatasource; // | SubstrateBuiltinDataSource;
+export type NearDatasource = NearRuntimeDatasource | NearCustomDatasource; // | NearBuiltinDataSource;
 
 export interface FileReference {
   file: string;
@@ -109,67 +110,64 @@ export type CustomDataSourceAsset = FileReference;
 
 export type Processor<O = any> = FileReference & {options?: O};
 
-export interface SubstrateCustomDatasource<
+export interface NearCustomDatasource<
   K extends string = string,
-  T extends SubstrateNetworkFilter = SubstrateNetworkFilter,
-  M extends SubstrateMapping = SubstrateMapping<SubstrateCustomHandler>,
+  T extends NearNetworkFilter = NearNetworkFilter,
+  M extends NearMapping = NearMapping<NearCustomHandler>,
   O = any
-> extends ISubstrateDatasource<M, T> {
+> extends INearDatasource<M, T> {
   kind: K;
   assets: Map<string, CustomDataSourceAsset>;
   processor: Processor<O>;
 }
 
-//export type SubstrateBuiltinDataSource = ISubstrateDatasource;
+//export type NearBuiltinDataSource = INearDatasource;
 
 export interface HandlerInputTransformer_0_0_0<
-  T extends SubstrateHandlerKind,
+  T extends NearHandlerKind,
   E,
-  IT extends AnyTuple,
-  DS extends SubstrateCustomDatasource = SubstrateCustomDatasource
+  DS extends NearCustomDatasource = NearCustomDatasource
 > {
-  (input: RuntimeHandlerInputMap<IT>[T], ds: DS, api: ApiPromise, assets?: Record<string, string>): Promise<E>; //  | SubstrateBuiltinDataSource
+  (input: RuntimeHandlerInputMap[T], ds: DS, api: JsonRpcProvider, assets?: Record<string, string>): Promise<E>; //  | NearBuiltinDataSource
 }
 
 export interface HandlerInputTransformer_1_0_0<
-  T extends SubstrateHandlerKind,
+  T extends NearHandlerKind,
   F,
   E,
-  IT extends AnyTuple,
-  DS extends SubstrateCustomDatasource = SubstrateCustomDatasource
+  DS extends NearCustomDatasource = NearCustomDatasource
 > {
   (params: {
-    input: RuntimeHandlerInputMap<IT>[T];
+    input: RuntimeHandlerInputMap[T];
     ds: DS;
     filter?: F;
-    api: ApiPromise;
+    api: JsonRpcProvider;
     assets?: Record<string, string>;
-  }): Promise<E[]>; //  | SubstrateBuiltinDataSource
+  }): Promise<E[]>; //  | NearBuiltinDataSource
 }
 
 type SecondLayerHandlerProcessorArray<
   K extends string,
-  F extends SubstrateNetworkFilter,
+  F extends NearNetworkFilter,
   T,
-  IT extends AnyTuple = AnyTuple,
-  DS extends SubstrateCustomDatasource<K, F> = SubstrateCustomDatasource<K, F>
+  DS extends NearCustomDatasource<K, F> = NearCustomDatasource<K, F>
 > =
-  | SecondLayerHandlerProcessor<SubstrateHandlerKind.Block, F, T, IT, DS>
-  | SecondLayerHandlerProcessor<SubstrateHandlerKind.Call, F, T, IT, DS>
-  | SecondLayerHandlerProcessor<SubstrateHandlerKind.Event, F, T, IT, DS>;
+  | SecondLayerHandlerProcessor<NearHandlerKind.Block, F, T, DS>
+  | SecondLayerHandlerProcessor<NearHandlerKind.Transaction, F, T, DS>
+  | SecondLayerHandlerProcessor<NearHandlerKind.Log, F, T, DS>;
 
-export interface SubstrateDatasourceProcessor<
+export interface NearDatasourceProcessor<
   K extends string,
-  F extends SubstrateNetworkFilter,
-  DS extends SubstrateCustomDatasource<K, F> = SubstrateCustomDatasource<K, F>,
-  P extends Record<string, SecondLayerHandlerProcessorArray<K, F, any, any, DS>> = Record<
+  F extends NearNetworkFilter,
+  DS extends NearCustomDatasource<K, F> = NearCustomDatasource<K, F>,
+  P extends Record<string, SecondLayerHandlerProcessorArray<K, F, any, DS>> = Record<
     string,
-    SecondLayerHandlerProcessorArray<K, F, any, any, DS>
+    SecondLayerHandlerProcessorArray<K, F, any, DS>
   >
 > {
   kind: K;
   validate(ds: DS, assets: Record<string, string>): void;
-  dsFilterProcessor(ds: DS, api: ApiPromise): boolean;
+  dsFilterProcessor(ds: DS, api: JsonRpcProvider): boolean;
   handlerProcessors: P;
 }
 
@@ -185,9 +183,9 @@ export interface DictionaryQueryEntry {
 }
 
 interface SecondLayerHandlerProcessorBase<
-  K extends SubstrateHandlerKind,
+  K extends NearHandlerKind,
   F,
-  DS extends SubstrateCustomDatasource = SubstrateCustomDatasource
+  DS extends NearCustomDatasource = NearCustomDatasource
 > {
   baseHandlerKind: K;
   baseFilter: RuntimeFilterMap[K] | RuntimeFilterMap[K][];
@@ -197,33 +195,30 @@ interface SecondLayerHandlerProcessorBase<
 
 // only allow one custom handler for each baseHandler kind
 export interface SecondLayerHandlerProcessor_0_0_0<
-  K extends SubstrateHandlerKind,
+  K extends NearHandlerKind,
   F,
   E,
-  IT extends AnyTuple = AnyTuple,
-  DS extends SubstrateCustomDatasource = SubstrateCustomDatasource
+  DS extends NearCustomDatasource = NearCustomDatasource
 > extends SecondLayerHandlerProcessorBase<K, F, DS> {
   specVersion: undefined;
-  transformer: HandlerInputTransformer_0_0_0<K, E, IT, DS>;
-  filterProcessor: (filter: F | undefined, input: RuntimeHandlerInputMap<IT>[K], ds: DS) => boolean;
+  transformer: HandlerInputTransformer_0_0_0<K, E, DS>;
+  filterProcessor: (filter: F | undefined, input: RuntimeHandlerInputMap[K], ds: DS) => boolean;
 }
 
 export interface SecondLayerHandlerProcessor_1_0_0<
-  K extends SubstrateHandlerKind,
+  K extends NearHandlerKind,
   F,
   E,
-  IT extends AnyTuple = AnyTuple,
-  DS extends SubstrateCustomDatasource = SubstrateCustomDatasource
+  DS extends NearCustomDatasource = NearCustomDatasource
 > extends SecondLayerHandlerProcessorBase<K, F, DS> {
   specVersion: '1.0.0';
-  transformer: HandlerInputTransformer_1_0_0<K, F, E, IT, DS>;
-  filterProcessor: (params: {filter: F | undefined; input: RuntimeHandlerInputMap<IT>[K]; ds: DS}) => boolean;
+  transformer: HandlerInputTransformer_1_0_0<K, F, E, DS>;
+  filterProcessor: (params: {filter: F | undefined; input: RuntimeHandlerInputMap[K]; ds: DS}) => boolean;
 }
 
 export type SecondLayerHandlerProcessor<
-  K extends SubstrateHandlerKind,
+  K extends NearHandlerKind,
   F,
   E,
-  IT extends AnyTuple = AnyTuple,
-  DS extends SubstrateCustomDatasource = SubstrateCustomDatasource
-> = SecondLayerHandlerProcessor_0_0_0<K, F, E, IT, DS> | SecondLayerHandlerProcessor_1_0_0<K, F, E, IT, DS>;
+  DS extends NearCustomDatasource = NearCustomDatasource
+> = SecondLayerHandlerProcessor_0_0_0<K, F, E, DS> | SecondLayerHandlerProcessor_1_0_0<K, F, E, DS>;

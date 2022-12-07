@@ -5,7 +5,7 @@ import assert from 'assert';
 import path from 'path';
 import { DynamicModule, Global, Module } from '@nestjs/common';
 import { getProjectRootAndManifest, IPFS_REGEX } from '@subql/common';
-import { SubstrateProjectNetworkConfig } from '@subql/common-substrate';
+import { NearProjectNetworkConfig } from '@subql/common-near';
 import {
   IConfig,
   MinConfig,
@@ -106,7 +106,7 @@ export class ConfigureModule {
     const project = async () => {
       const p = await SubqueryProject.create(
         config.subquery,
-        omitBy<SubstrateProjectNetworkConfig>(
+        omitBy<NearProjectNetworkConfig>(
           {
             endpoint: config.networkEndpoint,
             dictionary: config.networkDictionary,
@@ -168,7 +168,7 @@ export class ConfigureModule {
     const project = async () => {
       const p = await SubqueryProject.create(
         argv.subquery,
-        omitBy<SubstrateProjectNetworkConfig>(
+        omitBy<NearProjectNetworkConfig>(
           {
             endpoint: config.networkEndpoint,
             dictionary: config.networkDictionary,

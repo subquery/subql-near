@@ -2,12 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import {ProjectManifestBaseImpl} from '@subql/common';
-import {
-  SubstrateDatasourceKind,
-  SubstrateHandlerKind,
-  SubstrateNetworkFilter,
-  SubstrateRuntimeHandler,
-} from '@subql/types';
+import {NearDatasourceKind, NearHandlerKind, NearNetworkFilter, NearRuntimeHandler} from '@subql/types';
 import {plainToClass, Transform, Type} from 'class-transformer';
 import {
   Equals,
@@ -21,10 +16,10 @@ import {
   validateSync,
 } from 'class-validator';
 import {ChainTypes, SubqlNetworkFilterImpl, EventHandler, CallHandler, BlockHandler} from '../../models';
-import {SubstrateProjectNetworkConfig} from '../../types';
+import {NearProjectNetworkConfig} from '../../types';
 import {ManifestV0_0_1Mapping, ProjectManifestV0_0_1, RuntimeDataSourceV0_0_1} from './types';
 
-export class ProjectNetworkV0_0_1 extends ChainTypes implements SubstrateProjectNetworkConfig {
+export class ProjectNetworkV0_0_1 extends ChainTypes implements NearProjectNetworkConfig {
   @IsString()
   endpoint: string;
   @IsString()
@@ -34,14 +29,14 @@ export class ProjectNetworkV0_0_1 extends ChainTypes implements SubstrateProject
 
 export class RuntimeMappingV0_0_1 implements ManifestV0_0_1Mapping {
   @Transform((params) => {
-    const handlers: SubstrateRuntimeHandler[] = params.value;
+    const handlers: NearRuntimeHandler[] = params.value;
     return handlers.map((handler) => {
       switch (handler.kind) {
-        case SubstrateHandlerKind.Event:
+        case NearHandlerKind.Event:
           return plainToClass(EventHandler, handler);
-        case SubstrateHandlerKind.Call:
+        case NearHandlerKind.Call:
           return plainToClass(CallHandler, handler);
-        case SubstrateHandlerKind.Block:
+        case NearHandlerKind.Block:
           return plainToClass(BlockHandler, handler);
         default:
           throw new Error(`handler ${(handler as any).kind} not supported`);
@@ -50,14 +45,14 @@ export class RuntimeMappingV0_0_1 implements ManifestV0_0_1Mapping {
   })
   @IsArray()
   @ValidateNested()
-  handlers: SubstrateRuntimeHandler[];
+  handlers: NearRuntimeHandler[];
 }
 
 export class RuntimeDataSourceV0_0_1Impl implements RuntimeDataSourceV0_0_1 {
   @IsString()
   name: string;
-  @IsEnum(SubstrateDatasourceKind, {groups: [SubstrateDatasourceKind.Runtime]})
-  kind: SubstrateDatasourceKind.Runtime;
+  @IsEnum(NearDatasourceKind, {groups: [NearDatasourceKind.Runtime]})
+  kind: NearDatasourceKind.Runtime;
   @Type(() => RuntimeMappingV0_0_1)
   @ValidateNested()
   mapping: RuntimeMappingV0_0_1;
@@ -67,7 +62,7 @@ export class RuntimeDataSourceV0_0_1Impl implements RuntimeDataSourceV0_0_1 {
   @IsOptional()
   @ValidateNested()
   @Type(() => SubqlNetworkFilterImpl)
-  filter?: SubstrateNetworkFilter;
+  filter?: NearNetworkFilter;
 }
 
 export class ProjectManifestV0_0_1Impl extends ProjectManifestBaseImpl<null> implements ProjectManifestV0_0_1 {

@@ -5,7 +5,7 @@ import { threadId } from 'node:worker_threads';
 import { Injectable } from '@nestjs/common';
 import { RuntimeVersion } from '@polkadot/types/interfaces';
 import { NodeConfig, getLogger, AutoQueue } from '@subql/node-core';
-import { fetchBlocksBatches } from '../../utils/substrate';
+import { fetchBlocksBatches } from '../../utils/near';
 import { ApiService } from '../api.service';
 import { IndexerManager } from '../indexer.manager';
 import { RuntimeService } from '../runtimeService';
