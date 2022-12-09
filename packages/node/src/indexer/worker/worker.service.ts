@@ -8,7 +8,6 @@ import { NodeConfig, getLogger, AutoQueue } from '@subql/node-core';
 import { fetchBlocksBatches } from '../../utils/near';
 import { ApiService } from '../api.service';
 import { IndexerManager } from '../indexer.manager';
-import { RuntimeService } from '../runtimeService';
 import { BlockContent } from '../types';
 
 export type FetchBlockResponse =
@@ -59,31 +58,12 @@ export class WorkerService {
 
         const block = this.fetchedBlocks[height];
 
-        // We have the current version, don't need a new one when processing
-        if (
-          this.currentRuntimeVersion?.specVersion.toNumber() ===
-          block.block.specVersion
-        ) {
-          return;
-        }
-
         // Return info to get the runtime version, this lets the worker thread know
-        return {
-          specVersion: block.block.specVersion,
-          parentHash: block.block.block.header.parentHash.toHex(),
-        };
+        return undefined;
       });
     } catch (e) {
       logger.error(e, `Failed to fetch block ${height}`);
     }
-  }
-
-  setCurrentRuntimeVersion(runtimeHex: string): void {
-    const runtimeVersion = this.apiService
-      .getApi()
-      .registry.createType('RuntimeVersion', runtimeHex);
-
-    this.currentRuntimeVersion = runtimeVersion;
   }
 
   async processBlock(height: number): Promise<ProcessBlockResponse> {
@@ -97,10 +77,7 @@ export class WorkerService {
 
       delete this.fetchedBlocks[height];
 
-      const response = await this.indexerManager.indexBlock(
-        block,
-        this.currentRuntimeVersion,
-      );
+      const response = await this.indexerManager.indexBlock(block);
 
       this._isIndexing = false;
       return {

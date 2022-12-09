@@ -9,7 +9,7 @@ import {
   RunnerSpecs,
   SemverVersionValidator,
 } from '@subql/common';
-import {NearRuntimeDatasource} from '@subql/types';
+import {NearRuntimeDatasource} from '@subql/types-near';
 import {plainToClass, Transform, TransformFnParams, Type} from 'class-transformer';
 import {
   Equals,

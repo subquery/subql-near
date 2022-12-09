@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import {IProjectManifest, ProjectNetworkConfig} from '@subql/common';
-import {NearDatasource} from '@subql/types';
+import {NearDatasource} from '@subql/types-near';
 import {RuntimeDataSourceV0_0_1} from '../project/versioned/v0_0_1';
 
 // All of these used to be redefined in this file, re-exporting for simplicity
@@ -14,14 +14,14 @@ export {
   NearDatasource as NearDataSource,
   NearCustomDatasource as NearCustomDataSource,
   NearBlockFilter,
-  NearCallFilter,
-  NearEventFilter,
+  NearTransactionFilter,
+  NearActionFilter,
   NearDatasourceProcessor,
   NearNetworkFilter,
   NearRuntimeHandlerFilter,
   NearDatasourceKind,
   RuntimeHandlerInputMap as NearRuntimeHandlerInputMap,
-} from '@subql/types';
+} from '@subql/types-near';
 
 //make exception for runtime datasource 0.0.1
 export type INearProjectManifest = IProjectManifest<NearDatasource | RuntimeDataSourceV0_0_1>;

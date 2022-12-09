@@ -2,7 +2,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { Injectable } from '@nestjs/common';
-import { ApiPromise } from '@polkadot/api';
 import { RegisteredTypes } from '@polkadot/types/types';
 import {
   ReaderFactory,
@@ -23,16 +22,14 @@ import {
   NearBlockFilter,
   isRuntimeDs,
   NearHandlerKind,
+  NearRuntimeHandler,
 } from '@subql/common-near';
 import { buildSchemaFromString } from '@subql/utils';
 import Cron from 'cron-converter';
 import { GraphQLSchema } from 'graphql';
-import { getBlockByHeight, getTimestamp } from '../utils/near';
-import {
-  getChainTypes,
-  getProjectRoot,
-  updateDataSourcesV0_2_0,
-} from '../utils/project';
+import { JsonRpcProvider } from 'near-api-js/lib/providers';
+import { getBlockByHeight } from '../utils/near';
+import { getProjectRoot, updateDataSourcesV0_2_0 } from '../utils/project';
 
 export type SubqlProjectDs = NearDataSource & {
   mapping: NearDataSource['mapping'] & { entryScript: string };
@@ -158,10 +155,6 @@ async function loadProjectFromManifestBase(
   }
   const schema = buildSchemaFromString(schemaString);
 
-  const chainTypes = projectManifest.network.chaintypes
-    ? await getChainTypes(reader, root, projectManifest.network.chaintypes.file)
-    : undefined;
-
   const dataSources = await updateDataSourcesV0_2_0(
     projectManifest.dataSources,
     reader,
@@ -173,7 +166,6 @@ async function loadProjectFromManifestBase(
     network,
     dataSources,
     schema,
-    chainTypes,
     templates: [],
   };
 }
@@ -247,7 +239,7 @@ async function loadProjectTemplates(
 // eslint-disable-next-line @typescript-eslint/require-await
 export async function generateTimestampReferenceForBlockFilters(
   dataSources: SubqlProjectDs[],
-  api: ApiPromise,
+  api: JsonRpcProvider,
 ): Promise<SubqlProjectDs[]> {
   const cron = new Cron();
 
@@ -259,12 +251,12 @@ export async function generateTimestampReferenceForBlockFilters(
         let timestampReference;
 
         ds.mapping.handlers = await Promise.all(
-          ds.mapping.handlers.map(async (handler) => {
+          (ds.mapping.handlers as NearRuntimeHandler[]).map(async (handler) => {
             if (handler.kind === NearHandlerKind.Block) {
               if (handler.filter?.timestamp) {
                 if (!block) {
                   block = await getBlockByHeight(api, startBlock);
-                  timestampReference = getTimestamp(block);
+                  timestampReference = block.header.timestamp;
                 }
                 try {
                   cron.fromString(handler.filter.timestamp);

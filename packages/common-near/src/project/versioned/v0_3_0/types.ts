@@ -5,7 +5,7 @@ import {
   // ISubqlProjectManifest as INearProjectManifest,
   NearDatasource,
   NearDatasourceKind,
-} from '@subql/types';
+} from '@subql/types-near';
 import {INearProjectManifest} from '../../types';
 import {RuntimeDataSourceV0_2_0, CustomDatasourceV0_2_0} from '../v0_2_0/types';
 

@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import {ProjectManifestBaseImpl} from '@subql/common';
-import {NearDatasourceKind, NearHandlerKind, NearNetworkFilter, NearRuntimeHandler} from '@subql/types';
+import {NearDatasourceKind, NearHandlerKind, NearNetworkFilter, NearRuntimeHandler} from '@subql/types-near';
 import {plainToClass, Transform, Type} from 'class-transformer';
 import {
   Equals,
@@ -15,11 +15,11 @@ import {
   ValidateNested,
   validateSync,
 } from 'class-validator';
-import {ChainTypes, SubqlNetworkFilterImpl, EventHandler, CallHandler, BlockHandler} from '../../models';
+import {SubqlNetworkFilterImpl, ActionHandler, TransactionHandler, BlockHandler} from '../../models';
 import {NearProjectNetworkConfig} from '../../types';
 import {ManifestV0_0_1Mapping, ProjectManifestV0_0_1, RuntimeDataSourceV0_0_1} from './types';
 
-export class ProjectNetworkV0_0_1 extends ChainTypes implements NearProjectNetworkConfig {
+export class ProjectNetworkV0_0_1 implements NearProjectNetworkConfig {
   @IsString()
   endpoint: string;
   @IsString()
@@ -32,10 +32,10 @@ export class RuntimeMappingV0_0_1 implements ManifestV0_0_1Mapping {
     const handlers: NearRuntimeHandler[] = params.value;
     return handlers.map((handler) => {
       switch (handler.kind) {
-        case NearHandlerKind.Event:
-          return plainToClass(EventHandler, handler);
-        case NearHandlerKind.Call:
-          return plainToClass(CallHandler, handler);
+        case NearHandlerKind.Action:
+          return plainToClass(ActionHandler, handler);
+        case NearHandlerKind.Transaction:
+          return plainToClass(TransactionHandler, handler);
         case NearHandlerKind.Block:
           return plainToClass(BlockHandler, handler);
         default:

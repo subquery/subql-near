@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import {ProjectManifestV0_2_0} from '@subql/common';
-import {NearCustomDatasource, NearDatasource, NearDatasourceKind, NearRuntimeDatasource} from '@subql/types';
+import {NearCustomDatasource, NearDatasource, NearDatasourceKind, NearRuntimeDatasource} from '@subql/types-near';
 
 // export interface NearMappingV0_2_0<F, T extends NearRuntimeHandler> extends BaseMapping<T> {
 //   file: string;

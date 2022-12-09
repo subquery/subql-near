@@ -17,7 +17,6 @@ import * as SubstrateUtil from '../../utils/near';
 import { ApiService } from '../api.service';
 import { IndexerManager } from '../indexer.manager';
 import { ProjectService } from '../project.service';
-import { RuntimeService } from '../runtimeService';
 import { BaseBlockDispatcher } from './base-block-dispatcher';
 
 const logger = getLogger('BlockDispatcherService');
@@ -64,12 +63,10 @@ export class BlockDispatcherService
   // eslint-disable-next-line @typescript-eslint/require-await
   async init(
     onDynamicDsCreated: (height: number) => Promise<void>,
-    runtimeService?: RuntimeService,
   ): Promise<void> {
     this.onDynamicDsCreated = onDynamicDsCreated;
     const blockAmount = await this.projectService.getProcessedBlockCount();
     this.setProcessedBlockCount(blockAmount ?? 0);
-    this.runtimeService = runtimeService;
   }
 
   onApplicationShutdown(): void {
@@ -133,16 +130,9 @@ export class BlockDispatcherService
           }], total ${blockNums.length} blocks`,
         );
 
-        const specChanged = await this.runtimeService.specChanged(
-          blockNums[blockNums.length - 1],
-        );
-
-        // If specVersion not changed, a known overallSpecVer will be pass in
-        // Otherwise use api to fetch runtimes
         const blocks = await this.fetchBlocksBatches(
           this.apiService.getApi(),
           blockNums,
-          specChanged ? undefined : this.runtimeService.parentSpecVersion,
         );
 
         if (bufferedHeight > this._latestBufferedHeight) {
@@ -150,17 +140,12 @@ export class BlockDispatcherService
           continue;
         }
         const blockTasks = blocks.map((block) => async () => {
-          const height = block.block.block.header.number.toNumber();
+          const height = block.block.header.height;
           try {
-            const runtimeVersion = await this.runtimeService.getRuntimeVersion(
-              block.block,
-            );
-
             this.preProcessBlock(height);
             // Inject runtimeVersion here to enhance api.at preparation
             const processBlockResponse = await this.indexerManager.indexBlock(
               block,
-              runtimeVersion,
             );
 
             await this.postProcessBlock(height, processBlockResponse);

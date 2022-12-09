@@ -9,7 +9,7 @@ import {
   NearRuntimeHandlerFilter,
   NearRuntimeHandler,
   NearDatasourceKind,
-} from '@subql/types';
+} from '@subql/types-near';
 import {NearProjectNetworkConfig} from '../../types';
 
 export type ProjectNetworkConfigV0_0_1 = NearProjectNetworkConfig & RegisteredTypes;

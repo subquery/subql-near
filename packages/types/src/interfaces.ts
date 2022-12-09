@@ -102,3 +102,5 @@ export interface NearLog {
   name: string;
   data: any[];
 }
+
+export type DynamicDatasourceCreator = (name: string, args: Record<string, unknown>) => Promise<void>;

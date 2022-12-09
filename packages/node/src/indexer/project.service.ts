@@ -352,7 +352,7 @@ export class ProjectService {
   }
 
   private getStartBlockFromDataSources() {
-    const startBlocksList = this.getDataSourcesForSpecName().map(
+    const startBlocksList = this.project.dataSources.map(
       (item) => item.startBlock ?? 1,
     );
     if (startBlocksList.length === 0) {
@@ -363,15 +363,6 @@ export class ProjectService {
     } else {
       return Math.min(...startBlocksList);
     }
-  }
-
-  private getDataSourcesForSpecName(): SubqlProjectDs[] {
-    return this.project.dataSources.filter(
-      (ds) =>
-        !ds.filter?.specName ||
-        ds.filter.specName ===
-          this.apiService.getApi().runtimeVersion.specName.toString(),
-    );
   }
 
   async reindex(targetBlockHeight: number): Promise<void> {

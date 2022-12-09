@@ -13,9 +13,9 @@ import {
   isRuntimeDs,
   RuntimeDataSourceV0_0_1,
   NearBlockFilter,
-  NearCallFilter,
+  NearTransactionFilter,
   NearDataSource,
-  NearEventFilter,
+  NearActionFilter,
   NearHandler,
   NearHandlerKind,
   NearRuntimeHandlerFilter,
@@ -27,9 +27,10 @@ import {
   IndexerEvent,
   NodeConfig,
 } from '@subql/node-core';
-import { DictionaryQueryEntry, NearCustomHandler } from '@subql/types';
+import { DictionaryQueryEntry, NearCustomHandler } from '@subql/types-near';
 import { MetaData } from '@subql/utils';
 import { range, sortBy, uniqBy } from 'lodash';
+import { JsonRpcProvider } from 'near-api-js/lib/providers';
 import { SubqlProjectDs, SubqueryProject } from '../configure/SubqueryProject';
 import { calcInterval } from '../utils/near';
 import { isBaseHandler, isCustomHandler } from '../utils/project';
@@ -38,7 +39,6 @@ import { IBlockDispatcher } from './blockDispatcher';
 import { DictionaryService, SpecVersion } from './dictionary.service';
 import { DsProcessorService } from './ds-processor.service';
 import { DynamicDsService } from './dynamic-ds.service';
-import { RuntimeService } from './runtimeService';
 import { UnfinalizedBlocksService } from './unfinalizedBlocks.service';
 
 const logger = getLogger('fetch');
@@ -48,31 +48,21 @@ const CHECK_MEMORY_INTERVAL = 60000;
 const MINIMUM_BATCH_SIZE = 5;
 const INTERVAL_PERCENT = 0.9;
 
-function eventFilterToQueryEntry(
-  filter: NearEventFilter,
+function txFilterToQueryEntry(
+  filter: NearTransactionFilter,
 ): DictionaryQueryEntry {
   return {
-    entity: 'events',
-    conditions: [
-      { field: 'module', value: filter.module },
-      {
-        field: 'event',
-        value: filter.method,
-      },
-    ],
+    entity: 'transactions',
+    conditions: [{ field: 'sender', value: filter.sender }],
   };
 }
 
-function callFilterToQueryEntry(filter: NearCallFilter): DictionaryQueryEntry {
+function actionFilterToQueryEntry(
+  filter: NearActionFilter,
+): DictionaryQueryEntry {
   return {
-    entity: 'extrinsics',
-    conditions: [
-      { field: 'module', value: filter.module },
-      {
-        field: 'call',
-        value: filter.method,
-      },
-    ],
+    entity: 'actions',
+    conditions: [{ field: 'type', value: filter.type }],
   };
 }
 
@@ -96,7 +86,6 @@ export class FetchService implements OnApplicationShutdown {
     private unfinalizedBlocksService: UnfinalizedBlocksService,
     private eventEmitter: EventEmitter2,
     private schedulerRegistry: SchedulerRegistry,
-    private runtimeService: RuntimeService,
   ) {
     this.batchSizeScale = 1;
   }
@@ -111,7 +100,7 @@ export class FetchService implements OnApplicationShutdown {
     this.isShutdown = true;
   }
 
-  get api(): ApiPromise {
+  get api(): JsonRpcProvider {
     return this.apiService.getApi();
   }
 
@@ -124,12 +113,7 @@ export class FetchService implements OnApplicationShutdown {
     const queryEntries: DictionaryQueryEntry[] = [];
 
     const dataSources = this.project.dataSources.filter(
-      (ds) =>
-        isRuntimeDataSourceV0_3_0(ds) ||
-        isRuntimeDataSourceV0_2_0(ds) ||
-        !(ds as RuntimeDataSourceV0_0_1).filter?.specName ||
-        (ds as RuntimeDataSourceV0_0_1).filter.specName ===
-          this.api.runtimeVersion.specName.toString(),
+      (ds) => isRuntimeDataSourceV0_3_0(ds) || isRuntimeDataSourceV0_2_0(ds),
     );
 
     // Only run the ds that is equal or less than startBlock
@@ -176,20 +160,20 @@ export class FetchService implements OnApplicationShutdown {
               }
             }
             break;
-          case NearHandlerKind.Call: {
-            for (const filter of filterList as NearCallFilter[]) {
-              if (filter.module !== undefined && filter.method !== undefined) {
-                queryEntries.push(callFilterToQueryEntry(filter));
+          case NearHandlerKind.Transaction: {
+            for (const filter of filterList as NearTransactionFilter[]) {
+              if (filter.sender !== undefined) {
+                queryEntries.push(txFilterToQueryEntry(filter));
               } else {
                 return [];
               }
             }
             break;
           }
-          case NearHandlerKind.Event: {
-            for (const filter of filterList as NearEventFilter[]) {
-              if (filter.module !== undefined && filter.method !== undefined) {
-                queryEntries.push(eventFilterToQueryEntry(filter));
+          case NearHandlerKind.Action: {
+            for (const filter of filterList as NearActionFilter[]) {
+              if (filter.type !== undefined) {
+                queryEntries.push(actionFilterToQueryEntry(filter));
               } else {
                 return [];
               }
@@ -261,21 +245,7 @@ export class FetchService implements OnApplicationShutdown {
 
     const validChecker = this.dictionaryValidation(rawSpecVersions);
 
-    this.runtimeService.init(
-      this.getUseDictionary.bind(this),
-      this.getLatestFinalizedHeight.bind(this),
-    );
-
-    if (validChecker) {
-      this.runtimeService.setSpecVersionMap(rawSpecVersions);
-    } else {
-      this.runtimeService.setSpecVersionMap(undefined);
-    }
-
-    await this.blockDispatcher.init(
-      this.resetForNewDs.bind(this),
-      this.runtimeService,
-    );
+    await this.blockDispatcher.init(this.resetForNewDs.bind(this));
 
     void this.startLoop(startHeight);
   }
@@ -305,10 +275,9 @@ export class FetchService implements OnApplicationShutdown {
       return;
     }
     try {
-      const finalizedHash = await this.api.rpc.chain.getFinalizedHead();
-      const finalizedHeader = await this.api.rpc.chain.getHeader(finalizedHash);
+      const finalizedHeader = (await this.api.block('final')).header;
       this.unfinalizedBlocksService.registerFinalizedBlock(finalizedHeader);
-      const currentFinalizedHeight = finalizedHeader.number.toNumber();
+      const currentFinalizedHeight = finalizedHeader.height;
       if (this.latestFinalizedHeight !== currentFinalizedHeight) {
         this.latestFinalizedHeight = currentFinalizedHeight;
         if (!this.nodeConfig.unfinalizedBlocks) {
@@ -328,8 +297,8 @@ export class FetchService implements OnApplicationShutdown {
       return;
     }
     try {
-      const bestHeader = await this.api.rpc.chain.getHeader();
-      const currentBestHeight = bestHeader.number.toNumber();
+      const bestHeader = (await this.api.block('optimistic')).header;
+      const currentBestHeight = bestHeader.height;
       if (this.latestBestHeight !== currentBestHeight) {
         this.latestBestHeight = currentBestHeight;
         this.eventEmitter.emit(IndexerEvent.BlockBest, {
@@ -389,10 +358,6 @@ export class FetchService implements OnApplicationShutdown {
   }
 
   async fillNextBlockBuffer(initBlockHeight: number): Promise<void> {
-    // setup parentSpecVersion
-    await this.runtimeService.specChanged(initBlockHeight);
-    await this.runtimeService.prefetchMeta(initBlockHeight);
-
     let startBlockHeight: number;
     let scaledBatchSize: number;
     const handlers = [].concat(
@@ -448,7 +413,7 @@ export class FetchService implements OnApplicationShutdown {
 
           if (
             dictionary &&
-            this.dictionaryValidation(dictionary, startBlockHeight)
+            (await this.dictionaryValidation(dictionary, startBlockHeight))
           ) {
             let { batchBlocks } = dictionary;
 
@@ -525,14 +490,17 @@ export class FetchService implements OnApplicationShutdown {
     this.blockDispatcher.flushQueue(blockHeight);
   }
 
-  private dictionaryValidation(
+  private async dictionaryValidation(
     dictionary: { _metadata: MetaData },
     startBlockHeight?: number,
-  ): boolean {
+  ): Promise<boolean> {
     if (dictionary !== undefined) {
       const { _metadata: metaData } = dictionary;
 
-      if (metaData.genesisHash !== this.api.genesisHash.toString()) {
+      if (
+        metaData.genesisHash !==
+        (await this.api.block('genesis')).header.hash.toString()
+      ) {
         logger.error(
           'The dictionary that you have specified does not match the chain you are indexing, it will be ignored. Please update your project manifest to reference the correct dictionary',
         );

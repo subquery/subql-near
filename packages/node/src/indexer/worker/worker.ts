@@ -73,13 +73,6 @@ async function processBlock(height: number): Promise<ProcessBlockResponse> {
 }
 
 // eslint-disable-next-line @typescript-eslint/require-await
-async function setCurrentRuntimeVersion(runtimeHex: string): Promise<void> {
-  assert(workerService, 'Not initialised');
-
-  return workerService.setCurrentRuntimeVersion(runtimeHex);
-}
-
-// eslint-disable-next-line @typescript-eslint/require-await
 async function numFetchedBlocks(): Promise<number> {
   return workerService.numFetchedBlocks;
 }
@@ -106,7 +99,6 @@ registerWorker({
   processBlock,
   numFetchedBlocks,
   numFetchingBlocks,
-  setCurrentRuntimeVersion,
   getStatus,
 });
 
@@ -116,7 +108,6 @@ export type FetchBlock = typeof fetchBlock;
 export type ProcessBlock = typeof processBlock;
 export type NumFetchedBlocks = typeof numFetchedBlocks;
 export type NumFetchingBlocks = typeof numFetchingBlocks;
-export type SetCurrentRuntimeVersion = typeof setCurrentRuntimeVersion;
 export type GetWorkerStatus = typeof getStatus;
 
 process.on('uncaughtException', (e) => {

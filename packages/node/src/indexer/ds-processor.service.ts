@@ -18,7 +18,7 @@ import {
   SecondLayerHandlerProcessor_1_0_0,
   NearCustomDatasource,
   NearHandlerKind,
-} from '@subql/types';
+} from '@subql/types-near';
 
 import { VMScript } from 'vm2';
 import { SubqueryProject } from '../configure/SubqueryProject';
@@ -35,13 +35,12 @@ export function isSecondLayerHandlerProcessor_0_0_0<
   K extends NearHandlerKind,
   F,
   E,
-  IT extends AnyTuple = AnyTuple,
   DS extends NearCustomDatasource = NearCustomDatasource,
 >(
   processor:
-    | SecondLayerHandlerProcessor_0_0_0<K, F, E, IT, DS>
-    | SecondLayerHandlerProcessor_1_0_0<K, F, E, IT, DS>,
-): processor is SecondLayerHandlerProcessor_0_0_0<K, F, E, IT, DS> {
+    | SecondLayerHandlerProcessor_0_0_0<K, F, E, DS>
+    | SecondLayerHandlerProcessor_1_0_0<K, F, E, DS>,
+): processor is SecondLayerHandlerProcessor_0_0_0<K, F, E, DS> {
   // Exisiting datasource processors had no concept of specVersion, therefore undefined is equivalent to 0.0.0
   return processor.specVersion === undefined;
 }
@@ -50,13 +49,12 @@ export function isSecondLayerHandlerProcessor_1_0_0<
   K extends NearHandlerKind,
   F,
   E,
-  IT extends AnyTuple = AnyTuple,
   DS extends NearCustomDatasource = NearCustomDatasource,
 >(
   processor:
-    | SecondLayerHandlerProcessor_0_0_0<K, F, E, IT, DS>
-    | SecondLayerHandlerProcessor_1_0_0<K, F, E, IT, DS>,
-): processor is SecondLayerHandlerProcessor_1_0_0<K, F, E, IT, DS> {
+    | SecondLayerHandlerProcessor_0_0_0<K, F, E, DS>
+    | SecondLayerHandlerProcessor_1_0_0<K, F, E, DS>,
+): processor is SecondLayerHandlerProcessor_1_0_0<K, F, E, DS> {
   return processor.specVersion === '1.0.0';
 }
 
@@ -64,13 +62,12 @@ export function asSecondLayerHandlerProcessor_1_0_0<
   K extends NearHandlerKind,
   F,
   E,
-  IT extends AnyTuple = AnyTuple,
   DS extends NearCustomDatasource = NearCustomDatasource,
 >(
   processor:
-    | SecondLayerHandlerProcessor_0_0_0<K, F, E, IT, DS>
-    | SecondLayerHandlerProcessor_1_0_0<K, F, E, IT, DS>,
-): SecondLayerHandlerProcessor_1_0_0<K, F, E, IT, DS> {
+    | SecondLayerHandlerProcessor_0_0_0<K, F, E, DS>
+    | SecondLayerHandlerProcessor_1_0_0<K, F, E, DS>,
+): SecondLayerHandlerProcessor_1_0_0<K, F, E, DS> {
   if (isSecondLayerHandlerProcessor_1_0_0(processor)) {
     return processor;
   }

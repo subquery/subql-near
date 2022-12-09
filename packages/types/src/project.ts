@@ -1,9 +1,8 @@
 // Copyright 2020-2022 OnFinality Limited authors & contributors
 // SPDX-License-Identifier: Apache-2.0
 
-import {AnyTuple, RegistryTypes} from '@polkadot/types/types';
 import {JsonRpcProvider} from 'near-api-js/lib/providers';
-import {NearBlock, NearTransaction, NearLog, NearAction} from './interfaces';
+import {NearBlock, NearTransaction, NearAction} from './interfaces';
 
 export enum NearDatasourceKind {
   Runtime = 'Near/Runtime',
@@ -13,21 +12,18 @@ export enum NearHandlerKind {
   Block = 'Near/BlockHandler',
   Transaction = 'Near/TransactionHandler',
   Action = 'Near/ActionHandler',
-  Log = 'Near/LogHandler',
 }
 
 export type RuntimeHandlerInputMap = {
   [NearHandlerKind.Block]: NearBlock;
   [NearHandlerKind.Transaction]: NearTransaction;
   [NearHandlerKind.Action]: NearAction;
-  [NearHandlerKind.Log]: NearLog;
 };
 
 type RuntimeFilterMap = {
   [NearHandlerKind.Block]: NearBlockFilter;
   [NearHandlerKind.Transaction]: NearTransactionFilter;
   [NearHandlerKind.Action]: NearAction;
-  [NearHandlerKind.Log]: NearLogFilter;
 };
 
 export interface ProjectManifest {
@@ -39,7 +35,6 @@ export interface ProjectManifest {
 
   network: {
     endpoint: string;
-    customTypes?: RegistryTypes;
   };
 
   dataSources: NearDatasource[];
@@ -61,13 +56,9 @@ export interface NearActionFilter {
   type: string;
 }
 
-export interface NearLogFilter {
-  name?: string;
-}
-
 export type NearBlockHandler = NearCustomHandler<NearHandlerKind.Block, NearBlockFilter>;
 export type NearTransactionHandler = NearCustomHandler<NearHandlerKind.Transaction, NearTransactionFilter>;
-export type NearLogHandler = NearCustomHandler<NearHandlerKind.Log, NearLogFilter>;
+export type NearActionHandler = NearCustomHandler<NearHandlerKind.Action, NearActionFilter>;
 
 export interface NearCustomHandler<K extends string = string, F = Record<string, unknown>> {
   handler: string;
@@ -75,9 +66,9 @@ export interface NearCustomHandler<K extends string = string, F = Record<string,
   filter?: F;
 }
 
-export type NearRuntimeHandler = NearBlockHandler | NearTransactionHandler | NearLogHandler;
+export type NearRuntimeHandler = NearBlockHandler | NearTransactionHandler | NearActionHandler;
 export type NearHandler = NearRuntimeHandler | NearCustomHandler<string, unknown>;
-export type NearRuntimeHandlerFilter = NearBlockFilter | NearTransactionFilter | NearLogFilter;
+export type NearRuntimeHandlerFilter = NearBlockFilter | NearTransactionFilter | NearActionFilter;
 
 export interface NearMapping<T extends NearHandler = NearHandler> extends FileReference {
   handlers: T[];
@@ -154,7 +145,7 @@ type SecondLayerHandlerProcessorArray<
 > =
   | SecondLayerHandlerProcessor<NearHandlerKind.Block, F, T, DS>
   | SecondLayerHandlerProcessor<NearHandlerKind.Transaction, F, T, DS>
-  | SecondLayerHandlerProcessor<NearHandlerKind.Log, F, T, DS>;
+  | SecondLayerHandlerProcessor<NearHandlerKind.Action, F, T, DS>;
 
 export interface NearDatasourceProcessor<
   K extends string,

@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import {BaseMapping, ProjectManifestBaseImpl} from '@subql/common';
-import {NearCustomDatasource, NearNetworkFilter} from '@subql/types';
+import {NearCustomDatasource, NearNetworkFilter} from '@subql/types-near';
 import {plainToClass, Transform, TransformFnParams, Type} from 'class-transformer';
 import {
   Equals,

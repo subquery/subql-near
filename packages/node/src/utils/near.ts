@@ -7,22 +7,13 @@ import {
   NearBlockFilter,
   NearTransactionFilter,
   NearActionFilter,
-  NearLogFilter,
   NearBlock,
   NearTransaction,
   NearAction,
-  NearLog,
-  BlockHeader,
-  BlockBody,
 } from '@subql/types-near';
 import { last, merge, range } from 'lodash';
 import { JsonRpcProvider } from 'near-api-js/lib/providers';
-import {
-  BlockResult,
-  Chunk,
-  Transaction,
-} from 'near-api-js/lib/providers/provider';
-import { Action } from 'near-api-js/lib/transaction';
+import { BlockResult, Transaction } from 'near-api-js/lib/providers/provider';
 import { SubqlProjectBlockFilter } from '../configure/SubqueryProject';
 import { BlockContent } from '../indexer/types';
 const logger = getLogger('fetch');
@@ -139,7 +130,7 @@ export function filterTransaction(
   transaction: NearTransaction,
   filter?: NearTransactionFilter,
 ): boolean {
-  if (!filter) return true;
+  return true;
 }
 
 export function filterTransactions(

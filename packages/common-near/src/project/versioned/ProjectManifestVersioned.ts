@@ -1,7 +1,7 @@
 // Copyright 2020-2022 OnFinality Limited authors & contributors
 // SPDX-License-Identifier: Apache-2.0
 
-import {NearDatasource} from '@subql/types';
+import {NearDatasource} from '@subql/types-near';
 import {plainToClass} from 'class-transformer';
 import {INearProjectManifest} from '../types';
 import {ProjectManifestV0_0_1Impl, RuntimeDataSourceV0_0_1} from './v0_0_1';

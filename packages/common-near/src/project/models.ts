@@ -1,26 +1,24 @@
 // Copyright 2020-2022 OnFinality Limited authors & contributors
 // SPDX-License-Identifier: Apache-2.0
 
-import {RegisteredTypes, RegistryTypes, OverrideModuleType, OverrideBundleType} from '@polkadot/types/types';
-
 import {BaseMapping, FileReference} from '@subql/common';
 import {
   CustomDataSourceAsset as NearCustomDataSourceAsset,
   NearBlockFilter,
   NearBlockHandler,
-  NearCallFilter,
-  NearCallHandler,
+  NearTransactionHandler,
+  NearActionFilter,
   NearCustomHandler,
   NearDatasourceKind,
-  NearEventFilter,
-  NearEventHandler,
+  NearTransactionFilter,
+  NearActionHandler,
   NearHandlerKind,
   NearNetworkFilter,
   NearRuntimeDatasource,
   NearRuntimeHandler,
   NearRuntimeHandlerFilter,
   NearCustomDatasource,
-} from '@subql/types';
+} from '@subql/types-near';
 import {plainToClass, Transform, Type} from 'class-transformer';
 import {
   ArrayMaxSize,
@@ -47,37 +45,14 @@ export class BlockFilter implements NearBlockFilter {
   timestamp?: string;
 }
 
-export class EventFilter extends BlockFilter implements NearEventFilter {
-  @IsOptional()
+export class TransactionFilter extends BlockFilter implements NearTransactionFilter {
   @IsString()
-  module?: string;
-  @IsOptional()
-  @IsString()
-  method?: string;
+  sender: string;
 }
 
-export class ChainTypes implements RegisteredTypes {
-  @IsObject()
-  @IsOptional()
-  types?: RegistryTypes;
-  @IsObject()
-  @IsOptional()
-  typesAlias?: Record<string, OverrideModuleType>;
-  @IsObject()
-  @IsOptional()
-  typesBundle?: OverrideBundleType;
-  @IsObject()
-  @IsOptional()
-  typesChain?: Record<string, RegistryTypes>;
-  @IsObject()
-  @IsOptional()
-  typesSpec?: Record<string, RegistryTypes>;
-}
-
-export class CallFilter extends EventFilter implements NearCallFilter {
-  @IsOptional()
+export class ActionFilter implements NearActionFilter {
   @IsBoolean()
-  success?: boolean;
+  type: string;
 }
 
 export class BlockHandler implements NearBlockHandler {
@@ -91,24 +66,24 @@ export class BlockHandler implements NearBlockHandler {
   handler: string;
 }
 
-export class CallHandler implements NearCallHandler {
+export class TransactionHandler implements NearTransactionHandler {
   @IsOptional()
   @ValidateNested()
-  @Type(() => CallFilter)
-  filter?: NearCallFilter;
-  @IsEnum(NearHandlerKind, {groups: [NearHandlerKind.Call]})
-  kind: NearHandlerKind.Call;
+  @Type(() => TransactionFilter)
+  filter?: NearTransactionFilter;
+  @IsEnum(NearHandlerKind, {groups: [NearHandlerKind.Transaction]})
+  kind: NearHandlerKind.Transaction;
   @IsString()
   handler: string;
 }
 
-export class EventHandler implements NearEventHandler {
+export class ActionHandler implements NearActionHandler {
   @IsOptional()
   @ValidateNested()
-  @Type(() => EventFilter)
-  filter?: NearEventFilter;
-  @IsEnum(NearHandlerKind, {groups: [NearHandlerKind.Event]})
-  kind: NearHandlerKind.Event;
+  @Type(() => ActionFilter)
+  filter?: NearActionFilter;
+  @IsEnum(NearHandlerKind, {groups: [NearHandlerKind.Action]})
+  kind: NearHandlerKind.Action;
   @IsString()
   handler: string;
 }
@@ -128,10 +103,10 @@ export class RuntimeMapping implements BaseMapping<NearRuntimeHandlerFilter, Nea
     const handlers: NearRuntimeHandler[] = params.value;
     return handlers.map((handler) => {
       switch (handler.kind) {
-        case NearHandlerKind.Event:
-          return plainToClass(EventHandler, handler);
-        case NearHandlerKind.Call:
-          return plainToClass(CallHandler, handler);
+        case NearHandlerKind.Action:
+          return plainToClass(ActionHandler, handler);
+        case NearHandlerKind.Transaction:
+          return plainToClass(TransactionHandler, handler);
         case NearHandlerKind.Block:
           return plainToClass(BlockHandler, handler);
         default:
