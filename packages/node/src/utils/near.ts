@@ -10,12 +10,22 @@ import {
   NearBlock,
   NearTransaction,
   NearAction,
+  CreateAccount,
+  DeployContract,
+  FunctionCall,
+  Transfer,
+  Stake,
+  AddKey,
+  DeleteKey,
+  DeleteAccount,
+  Action,
 } from '@subql/types-near';
 import { last, merge, range } from 'lodash';
 import { JsonRpcProvider } from 'near-api-js/lib/providers';
 import { BlockResult, Transaction } from 'near-api-js/lib/providers/provider';
 import { SubqlProjectBlockFilter } from '../configure/SubqueryProject';
 import { BlockContent } from '../indexer/types';
+
 const logger = getLogger('fetch');
 const INTERVAL_THRESHOLD = BN_THOUSAND.div(BN_TWO);
 const DEFAULT_TIME = new BN(6_000);
@@ -72,10 +82,33 @@ export async function wrapTransaction(
   };
 }
 
+function parseNearAction(type: string, action: any): Action {
+  switch (type) {
+    case 'CreateAccount':
+      return action as CreateAccount;
+    case 'DeployContract':
+      return action as DeployContract;
+    case 'FunctionCall':
+      return action as FunctionCall;
+    case 'Transfer':
+      return action as Transfer;
+    case 'Stake':
+      return action as Stake;
+    case 'AddKey':
+      return action as AddKey;
+    case 'DeleteKey':
+      return action as DeleteKey;
+    case 'DeleteAccount':
+      return action as DeleteAccount;
+    default:
+      throw new Error('Invalid type string for NearAction');
+  }
+}
+
 export function wrapAction(action: Record<string, any>): NearAction {
   const type = Object.keys(action)[0];
-  const actionValue = action[type];
-  return { type, action: actionValue };
+  const actionValue = parseNearAction(type, action[type]);
+  return { type, action: actionValue } as NearAction<typeof actionValue>;
 }
 
 export function filterBlock(
@@ -187,7 +220,7 @@ export async function getBlockByHeight(
   api: JsonRpcProvider,
   height: number,
 ): Promise<BlockResult> {
-  return api.block(height).catch((e) => {
+  return api.block({ blockId: height }).catch((e) => {
     logger.error(`failed to fetch Block ${height}`);
     throw e;
   });
@@ -237,5 +270,5 @@ export async function fetchBlocksBatches(
 }
 
 export function calcInterval(api: JsonRpcProvider): BN {
-  return;
+  return DEFAULT_TIME;
 }

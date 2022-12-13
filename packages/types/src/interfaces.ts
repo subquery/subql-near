@@ -3,7 +3,6 @@
 
 import BN from 'bn.js';
 import {Chunk} from 'near-api-js/lib/providers/provider';
-import {Action} from 'near-api-js/lib/transaction';
 
 export interface Entity {
   id: string;
@@ -93,9 +92,55 @@ export interface TransactionResult {
   logs: string[];
 }
 
-export interface NearAction {
+//eslint-disable-next-line @typescript-eslint/no-empty-interface
+export interface CreateAccount {}
+
+export interface DeployContract {
+  code: Uint8Array;
+}
+
+export interface FunctionCall {
+  methodName: string;
+  args: Uint8Array;
+  gas: BN;
+  deposit: BN;
+}
+
+export interface Transfer {
+  deposit: BN;
+}
+
+export interface Stake {
+  stake: BN;
+  publicKey: string;
+}
+
+export interface AddKey {
+  publicKey: string;
+  accessKey: {nonce: BN; permission: string};
+}
+
+export interface DeleteKey {
+  publicKey: string;
+}
+
+export interface DeleteAccount {
+  beneficiaryId: string;
+}
+
+export type Action =
+  | CreateAccount
+  | DeployContract
+  | FunctionCall
+  | Transfer
+  | Stake
+  | AddKey
+  | DeleteKey
+  | DeleteAccount;
+
+export interface NearAction<T = Action | any> {
   type: string;
-  action: any; //TODO: set action type
+  action: T;
 }
 
 export interface NearLog {

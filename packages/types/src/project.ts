@@ -5,13 +5,13 @@ import {JsonRpcProvider} from 'near-api-js/lib/providers';
 import {NearBlock, NearTransaction, NearAction} from './interfaces';
 
 export enum NearDatasourceKind {
-  Runtime = 'Near/Runtime',
+  Runtime = 'near/Runtime',
 }
 
 export enum NearHandlerKind {
-  Block = 'Near/BlockHandler',
-  Transaction = 'Near/TransactionHandler',
-  Action = 'Near/ActionHandler',
+  Block = 'near/BlockHandler',
+  Transaction = 'near/TransactionHandler',
+  Action = 'near/ActionHandler',
 }
 
 export type RuntimeHandlerInputMap = {

@@ -37,7 +37,7 @@ import {
 } from '../v0_2_1';
 import {NearProjectManifestV1_0_0} from './types';
 
-const Near_NODE_NAME = `@subql/node`;
+const Near_NODE_NAME = `@subql/node-near`;
 
 export class NearRunnerNodeImpl implements NodeSpec {
   @Equals(Near_NODE_NAME, {message: `Runner Near node name incorrect, suppose be '${Near_NODE_NAME}'`})
@@ -104,7 +104,7 @@ export class DeploymentV1_0_0 {
   @Type(() => NearCustomDataSourceV0_2_0Impl, {
     discriminator: {
       property: 'kind',
-      subTypes: [{value: NearRuntimeDataSourceV0_2_0Impl, name: 'Near/Runtime'}],
+      subTypes: [{value: NearRuntimeDataSourceV0_2_0Impl, name: 'near/Runtime'}],
     },
     keepDiscriminatorProperty: true,
   })
@@ -115,7 +115,7 @@ export class DeploymentV1_0_0 {
   @Type(() => CustomDatasourceTemplateImpl, {
     discriminator: {
       property: 'kind',
-      subTypes: [{value: RuntimeDatasourceTemplateImpl, name: 'Near/Runtime'}],
+      subTypes: [{value: RuntimeDatasourceTemplateImpl, name: 'near/Runtime'}],
     },
     keepDiscriminatorProperty: true,
   })
@@ -131,7 +131,7 @@ export class ProjectManifestV1_0_0Impl<D extends object = DeploymentV1_0_0>
   @Type(() => NearCustomDataSourceV0_2_0Impl, {
     discriminator: {
       property: 'kind',
-      subTypes: [{value: NearRuntimeDataSourceV0_2_0Impl, name: 'Near/Runtime'}],
+      subTypes: [{value: NearRuntimeDataSourceV0_2_0Impl, name: 'near/Runtime'}],
     },
     keepDiscriminatorProperty: true,
   })
@@ -151,7 +151,7 @@ export class ProjectManifestV1_0_0Impl<D extends object = DeploymentV1_0_0>
   @Type(() => CustomDatasourceTemplateImpl, {
     discriminator: {
       property: 'kind',
-      subTypes: [{value: RuntimeDatasourceTemplateImpl, name: 'Near/Runtime'}],
+      subTypes: [{value: RuntimeDatasourceTemplateImpl, name: 'near/Runtime'}],
     },
     keepDiscriminatorProperty: true,
   })

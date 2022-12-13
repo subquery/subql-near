@@ -58,17 +58,19 @@ export class ApiService {
 
     this.eventEmitter.emit(IndexerEvent.ApiConnected, { value: 1 });
 
+    logger.info((await this.api.block({ blockId: 9820210 })).header.hash);
+
     this.networkMeta = {
       chain: (await this.api.status()).chain_id,
       specName: (await this.api.status()).chain_id,
-      genesisHash: (await this.api.block(0)).header.hash,
+      genesisHash: (await this.api.block({ blockId: 9820210 })).header.hash,
     };
 
-    if (network.chainId && network.chainId !== this.networkMeta.genesisHash) {
+    if (network.chainId && network.chainId !== this.networkMeta.chain) {
       const err = new Error(
         `Network chainId doesn't match expected genesisHash. expected="${
           network.chainId ?? network.genesisHash
-        }" actual="${this.networkMeta.genesisHash}`,
+        }" actual="${this.networkMeta.chain}`,
       );
       logger.error(err, err.message);
       throw err;

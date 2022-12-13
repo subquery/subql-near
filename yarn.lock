@@ -3005,9 +3005,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@subql/node@workspace:packages/node":
+"@subql/node-near@workspace:packages/node":
   version: 0.0.0-use.local
-  resolution: "@subql/node@workspace:packages/node"
+  resolution: "@subql/node-near@workspace:packages/node"
   dependencies:
     "@apollo/client": 3.5.8
     "@nestjs/common": ^8.2.6

@@ -275,7 +275,8 @@ export class FetchService implements OnApplicationShutdown {
       return;
     }
     try {
-      const finalizedHeader = (await this.api.block('final')).header;
+      const finalizedHeader = (await this.api.block({ finality: 'final' }))
+        .header;
       this.unfinalizedBlocksService.registerFinalizedBlock(finalizedHeader);
       const currentFinalizedHeight = finalizedHeader.height;
       if (this.latestFinalizedHeight !== currentFinalizedHeight) {
@@ -297,7 +298,8 @@ export class FetchService implements OnApplicationShutdown {
       return;
     }
     try {
-      const bestHeader = (await this.api.block('optimistic')).header;
+      const bestHeader = (await this.api.block({ finality: 'optimistic' }))
+        .header;
       const currentBestHeight = bestHeader.height;
       if (this.latestBestHeight !== currentBestHeight) {
         this.latestBestHeight = currentBestHeight;

@@ -27,7 +27,7 @@ export class DeploymentV0_3_0 {
   @Type(() => NearCustomDataSourceV0_2_0Impl, {
     discriminator: {
       property: 'kind',
-      subTypes: [{value: NearRuntimeDataSourceV0_2_0Impl, name: 'Near/Runtime'}],
+      subTypes: [{value: NearRuntimeDataSourceV0_2_0Impl, name: 'near/Runtime'}],
     },
     keepDiscriminatorProperty: true,
   })
@@ -59,7 +59,7 @@ export class ProjectManifestV0_3_0Impl
   @Type(() => NearCustomDataSourceV0_2_0Impl, {
     discriminator: {
       property: 'kind',
-      subTypes: [{value: NearRuntimeDataSourceV0_2_0Impl, name: 'Near/Runtime'}],
+      subTypes: [{value: NearRuntimeDataSourceV0_2_0Impl, name: 'near/Runtime'}],
     },
     keepDiscriminatorProperty: true,
   })

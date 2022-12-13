@@ -249,7 +249,7 @@ export class ProjectService {
       // Check if the configured genesisHash matches the currently stored genesisHash
       assert(
         // Configured project yaml genesisHash only exists in specVersion v0.2.0, fallback to api fetched genesisHash on v0.0.1
-        (this.project.network.chainId ?? genesisHash) === keyValue.genesisHash,
+        genesisHash === keyValue.genesisHash,
         'Specified project manifest chain id / genesis hash does not match database stored genesis hash, consider cleaning project schema using --force-clean',
       );
     }

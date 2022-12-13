@@ -48,7 +48,7 @@ export class UnfinalizedBlocksService {
     // unfinalized blocks
     this.unfinalizedBlocks = await this.getMetadataUnfinalizedBlocks();
     this.lastCheckedBlockHeight = await this.getLastFinalizedVerifiedHeight();
-    this.finalizedHeader = (await this.api.block('final')).header;
+    this.finalizedHeader = (await this.api.block({ finality: 'final' })).header;
 
     if (!this.nodeConfig.unfinalizedBlocks && this.unfinalizedBlocks.length) {
       logger.info('Processing unfinalized blocks');
@@ -196,10 +196,12 @@ export class UnfinalizedBlocksService {
         header.height - lastVerifiableBlock.blockHeight >
         UNFINALIZED_THRESHOLD
       ) {
-        header = (await this.api.block(lastVerifiableBlock.blockHeight)).header;
+        header = (
+          await this.api.block({ blockId: lastVerifiableBlock.blockHeight })
+        ).header;
       } else {
         while (lastVerifiableBlock.blockHeight !== header.height) {
-          header = (await this.api.block(header.prev_hash)).header;
+          header = (await this.api.block({ blockId: header.prev_hash })).header;
         }
       }
 
