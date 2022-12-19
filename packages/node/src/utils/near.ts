@@ -47,12 +47,12 @@ export async function wrapBlock(
   for (const chunk of blockResult.chunks) {
     const chunkResult = await api.chunk(chunk.chunk_hash);
     for (const transaction of chunkResult.transactions) {
-      nearBlock.transactions.push(
-        await wrapTransaction(api, blockResult, transaction),
-      );
+      const wrappedTx = await wrapTransaction(api, blockResult, transaction);
 
-      const nearActions: NearAction[] = transaction.actions.map((action) =>
-        wrapAction(action),
+      nearBlock.transactions.push(wrappedTx);
+
+      const nearActions: NearAction[] = transaction.actions.map((action, id) =>
+        wrapAction(action, id, wrappedTx),
       );
 
       nearBlock.actions = nearBlock.actions.concat(nearActions);
@@ -105,10 +105,26 @@ function parseNearAction(type: string, action: any): Action {
   }
 }
 
-export function wrapAction(action: Record<string, any>): NearAction {
-  const type = Object.keys(action)[0];
-  const actionValue = parseNearAction(type, action[type]);
-  return { type, action: actionValue } as NearAction<typeof actionValue>;
+export function wrapAction(
+  action: Record<string, any> | string,
+  id: number,
+  transaction: NearTransaction,
+): NearAction {
+  let type, actionValue;
+  if (action === 'CreateAccount') {
+    type = 'CreateAccount';
+    actionValue = parseNearAction(type, {});
+  } else {
+    type = Object.keys(action)[0];
+    actionValue = parseNearAction(type, action[type]);
+  }
+
+  return {
+    id,
+    type: type,
+    action: actionValue,
+    transaction: transaction,
+  } as NearAction<typeof actionValue>;
 }
 
 export function filterBlock(
@@ -259,9 +275,7 @@ export async function fetchBlocksBatches(
     return {
       block,
       transactions: block.transactions,
-      actions: block.transactions
-        .map((tx) => tx.actions)
-        .reduce((acc, val) => acc.concat(val), []),
+      actions: block.actions,
       logs: null,
     };
   });

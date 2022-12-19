@@ -139,8 +139,10 @@ export type Action =
   | DeleteAccount;
 
 export interface NearAction<T = Action | any> {
+  id: number;
   type: string;
   action: T;
+  transaction: NearTransaction;
 }
 
 export interface NearLog {

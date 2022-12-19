@@ -51,7 +51,7 @@ export class TransactionFilter extends BlockFilter implements NearTransactionFil
 }
 
 export class ActionFilter implements NearActionFilter {
-  @IsBoolean()
+  @IsString()
   type: string;
 }
 
