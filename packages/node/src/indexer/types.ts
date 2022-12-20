@@ -2,12 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { HexString } from '@polkadot/util/types';
-import {
-  NearBlock,
-  NearTransaction,
-  NearAction,
-  NearLog,
-} from '@subql/types-near';
+import { NearBlock, NearTransaction, NearAction } from '@subql/types-near';
 
 export interface BlockContent {
   block: NearBlock;

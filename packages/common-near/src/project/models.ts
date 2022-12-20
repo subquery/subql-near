@@ -46,13 +46,19 @@ export class BlockFilter implements NearBlockFilter {
 }
 
 export class TransactionFilter extends BlockFilter implements NearTransactionFilter {
+  @IsOptional()
   @IsString()
-  sender: string;
+  sender?: string;
+  @IsOptional()
+  @IsString()
+  receiver?: string;
 }
 
 export class ActionFilter implements NearActionFilter {
   @IsString()
   type: string;
+  @IsOptional()
+  action?: any;
 }
 
 export class BlockHandler implements NearBlockHandler {

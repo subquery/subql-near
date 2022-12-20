@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import {JsonRpcProvider} from 'near-api-js/lib/providers';
-import {NearBlock, NearTransaction, NearAction} from './interfaces';
+import {NearBlock, NearTransaction, NearAction, Action} from './interfaces';
 
 export enum NearDatasourceKind {
   Runtime = 'near/Runtime',
@@ -49,11 +49,13 @@ export interface NearBlockFilter {
 }
 
 export interface NearTransactionFilter {
-  sender: string;
+  sender?: string;
+  receiver?: string;
 }
 
-export interface NearActionFilter {
+export interface NearActionFilter<T = Action | any> {
   type: string;
+  action?: T;
 }
 
 export type NearBlockHandler = NearCustomHandler<NearHandlerKind.Block, NearBlockFilter>;

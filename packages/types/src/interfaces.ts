@@ -83,7 +83,6 @@ export interface NearTransaction {
   gas_price: string;
   gas_used: string;
   timestamp: number;
-  //transfer_amount: number;
   result: TransactionResult;
 }
 
@@ -143,11 +142,6 @@ export interface NearAction<T = Action | any> {
   type: string;
   action: T;
   transaction: NearTransaction;
-}
-
-export interface NearLog {
-  name: string;
-  data: any[];
 }
 
 export type DynamicDatasourceCreator = (name: string, args: Record<string, unknown>) => Promise<void>;

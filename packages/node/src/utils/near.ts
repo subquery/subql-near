@@ -179,6 +179,10 @@ export function filterTransaction(
   transaction: NearTransaction,
   filter?: NearTransactionFilter,
 ): boolean {
+  if (!filter) return true;
+  if (filter.sender && filter.sender !== transaction.signer_id) return false;
+  if (filter.receiver && filter.receiver !== transaction.receiver_id)
+    return false;
   return true;
 }
 
@@ -204,7 +208,15 @@ export function filterAction(
   filter?: NearActionFilter,
 ): boolean {
   if (!filter) return true;
-  return filter.type ? action.type === filter.type : true;
+  if (filter.type && action.type !== filter.type) return false;
+  if (filter.action) {
+    for (const key in filter.action) {
+      if (filter.action[key].toString() !== action.action[key].toString()) {
+        return false;
+      }
+    }
+  }
+  return true;
 }
 
 export function filterActions(
@@ -276,7 +288,6 @@ export async function fetchBlocksBatches(
       block,
       transactions: block.transactions,
       actions: block.actions,
-      logs: null,
     };
   });
 
