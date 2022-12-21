@@ -4,7 +4,6 @@
 import { Inject, Injectable, OnApplicationShutdown } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { Interval, SchedulerRegistry } from '@nestjs/schedule';
-import { ApiPromise } from '@polkadot/api';
 
 import {
   isCustomDs,
@@ -27,9 +26,13 @@ import {
   IndexerEvent,
   NodeConfig,
 } from '@subql/node-core';
-import { DictionaryQueryEntry, NearCustomHandler } from '@subql/types-near';
+import {
+  DictionaryQueryCondition,
+  DictionaryQueryEntry,
+  NearCustomHandler,
+} from '@subql/types-near';
 import { MetaData } from '@subql/utils';
-import { range, sortBy, uniqBy } from 'lodash';
+import { range, setWith, sortBy, uniqBy } from 'lodash';
 import { JsonRpcProvider } from 'near-api-js/lib/providers';
 import { SubqlProjectDs, SubqueryProject } from '../configure/SubqueryProject';
 import { calcInterval } from '../utils/near';
@@ -53,16 +56,41 @@ function txFilterToQueryEntry(
 ): DictionaryQueryEntry {
   return {
     entity: 'transactions',
-    conditions: [{ field: 'sender', value: filter.sender }],
+    conditions: [
+      { field: 'sender', value: filter.sender, matcher: 'equalTo' },
+      { field: 'receiver', value: filter.receiver, matcher: 'equalTo' },
+    ],
   };
 }
 
 function actionFilterToQueryEntry(
   filter: NearActionFilter,
 ): DictionaryQueryEntry {
+  const conditions: DictionaryQueryCondition[] = [
+    {
+      field: 'type',
+      value: filter.type,
+      matcher: 'equalTo',
+    },
+  ];
+
+  if (filter.action !== undefined) {
+    const nested = {};
+
+    Object.keys(filter.action).map((key) => {
+      const value = filter.action[key];
+      setWith(nested, key, value);
+    });
+
+    conditions.push({
+      field: 'data',
+      value: nested as any, // Cast to any for compat with node core
+      matcher: 'contains',
+    });
+  }
   return {
     entity: 'actions',
-    conditions: [{ field: 'type', value: filter.type }],
+    conditions: conditions,
   };
 }
 
@@ -162,7 +190,10 @@ export class FetchService implements OnApplicationShutdown {
             break;
           case NearHandlerKind.Transaction: {
             for (const filter of filterList as NearTransactionFilter[]) {
-              if (filter.sender !== undefined) {
+              if (
+                filter.sender !== undefined &&
+                filter.receiver !== undefined
+              ) {
                 queryEntries.push(txFilterToQueryEntry(filter));
               } else {
                 return [];
