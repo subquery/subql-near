@@ -74,20 +74,6 @@ function actionFilterToQueryEntry(
     },
   ];
 
-  if (filter.action !== undefined) {
-    const nested = {};
-
-    Object.keys(filter.action).map((key) => {
-      const value = filter.action[key];
-      setWith(nested, key, value);
-    });
-
-    conditions.push({
-      field: 'data',
-      value: nested as any, // Cast to any for compat with node core
-      matcher: 'contains',
-    });
-  }
   return {
     entity: 'actions',
     conditions: conditions,
@@ -446,7 +432,7 @@ export class FetchService implements OnApplicationShutdown {
 
           if (
             dictionary &&
-            (await this.dictionaryValidation(dictionary, startBlockHeight))
+            this.dictionaryValidation(dictionary, startBlockHeight)
           ) {
             let { batchBlocks } = dictionary;
 
@@ -523,17 +509,14 @@ export class FetchService implements OnApplicationShutdown {
     this.blockDispatcher.flushQueue(blockHeight);
   }
 
-  private async dictionaryValidation(
+  private dictionaryValidation(
     dictionary: { _metadata: MetaData },
     startBlockHeight?: number,
-  ): Promise<boolean> {
+  ): boolean {
     if (dictionary !== undefined) {
       const { _metadata: metaData } = dictionary;
 
-      if (
-        metaData.genesisHash !==
-        (await this.api.block('genesis')).header.hash.toString()
-      ) {
+      if (metaData.genesisHash !== this.apiService.genesisHash()) {
         logger.error(
           'The dictionary that you have specified does not match the chain you are indexing, it will be ignored. Please update your project manifest to reference the correct dictionary',
         );

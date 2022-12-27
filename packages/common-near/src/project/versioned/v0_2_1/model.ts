@@ -35,7 +35,7 @@ export class DeploymentV0_2_1 extends DeploymentV0_2_0 {
   @Type(() => CustomDatasourceTemplateImpl, {
     discriminator: {
       property: 'kind',
-      subTypes: [{value: RuntimeDatasourceTemplateImpl, name: 'Near/Runtime'}],
+      subTypes: [{value: RuntimeDatasourceTemplateImpl, name: 'near/Runtime'}],
     },
     keepDiscriminatorProperty: true,
   })
@@ -52,7 +52,7 @@ export class ProjectManifestV0_2_1Impl
   @Type(() => CustomDatasourceTemplateImpl, {
     discriminator: {
       property: 'kind',
-      subTypes: [{value: RuntimeDatasourceTemplateImpl, name: 'Near/Runtime'}],
+      subTypes: [{value: RuntimeDatasourceTemplateImpl, name: 'near/Runtime'}],
     },
     keepDiscriminatorProperty: true,
   })

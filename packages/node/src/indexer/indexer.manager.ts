@@ -220,12 +220,11 @@ export class IndexerManager {
   ): Promise<void> {
     await this.indexBlockContent(block, dataSources, getVM);
 
-    for (const action of actions) {
-      await this.indexAction(action, dataSources, getVM);
-    }
-
     for (const transaction of transactions) {
       await this.indexTransaction(transaction, dataSources, getVM);
+      for (const action of transaction.actions) {
+        await this.indexAction(action, dataSources, getVM);
+      }
     }
   }
 

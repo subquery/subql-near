@@ -27,6 +27,8 @@ const logger = getLogger('api');
 @Injectable()
 export class ApiService {
   private api: JsonRpcProvider;
+  private _chainId: string;
+  private _genesisHash: string;
   private currentBlockHash: string;
   private currentBlockNumber: number;
   networkMeta: NetworkMetadataPayload;
@@ -60,10 +62,16 @@ export class ApiService {
 
     logger.info((await this.api.block({ blockId: 9820210 })).header.hash);
 
+    this._chainId = (await this.api.status()).chain_id;
+    this._genesisHash = (
+      await this.api.block({ blockId: 9820210 })
+    ).header.hash;
+
     this.networkMeta = {
-      chain: (await this.api.status()).chain_id,
-      specName: (await this.api.status()).chain_id,
-      genesisHash: (await this.api.block({ blockId: 9820210 })).header.hash,
+      chain: this._chainId,
+      specName: this._chainId,
+      //mainnet genesis at block 9820210
+      genesisHash: this._genesisHash,
     };
 
     if (network.chainId && network.chainId !== this.networkMeta.chain) {
@@ -81,5 +89,9 @@ export class ApiService {
 
   getApi(): JsonRpcProvider {
     return this.api;
+  }
+
+  genesisHash(): string {
+    return this._genesisHash;
   }
 }

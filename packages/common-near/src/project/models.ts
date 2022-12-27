@@ -18,7 +18,9 @@ import {
   NearRuntimeHandler,
   NearRuntimeHandlerFilter,
   NearCustomDatasource,
+  ActionType,
 } from '@subql/types-near';
+import BN from 'bn.js';
 import {plainToClass, Transform, Type} from 'class-transformer';
 import {
   ArrayMaxSize,
@@ -30,6 +32,9 @@ import {
   IsString,
   IsObject,
   ValidateNested,
+  registerDecorator,
+  ValidationArguments,
+  ValidationOptions,
 } from 'class-validator';
 
 export class BlockFilter implements NearBlockFilter {
@@ -54,10 +59,89 @@ export class TransactionFilter extends BlockFilter implements NearTransactionFil
   receiver?: string;
 }
 
+export function IsActionType(validationOptions?: ValidationOptions) {
+  return function (object: object, propertyName: string) {
+    registerDecorator({
+      name: 'isActionType',
+      target: object.constructor,
+      propertyName: propertyName,
+      constraints: [],
+      options: validationOptions,
+      validator: {
+        validate(value: any, args: ValidationArguments) {
+          return Object.values(ActionType).includes(value);
+        },
+      },
+    });
+  };
+}
+
+function isValidAction(action: object, value: any): boolean {
+  const actionKeys = Object.keys(action);
+  const valueKeys = Object.keys(value);
+  return valueKeys.every((key) => actionKeys.includes(key));
+}
+
+export function IsAction(validationOptions?: ValidationOptions) {
+  return function (object: object, propertyName: string) {
+    registerDecorator({
+      name: 'isAction',
+      target: object.constructor,
+      propertyName: propertyName,
+      constraints: [],
+      options: validationOptions,
+      validator: {
+        validate(value: any, args: ValidationArguments) {
+          if (!value) {
+            return true;
+          }
+          const obj = args.object as ActionFilter;
+          switch (obj.type) {
+            case ActionType.CreateAccount:
+              return isValidAction({}, value);
+            case ActionType.DeployContract:
+              return isValidAction({code: new Uint8Array()}, value);
+            case ActionType.FunctionCall:
+              return isValidAction(
+                {
+                  methodName: '',
+                  args: new Uint8Array(),
+                  gas: new BN(0),
+                  deposit: new BN(0),
+                },
+                value
+              );
+            case ActionType.Transfer:
+              return isValidAction({deposit: new BN(0)}, value);
+            case ActionType.Stake:
+              return isValidAction({stake: new BN(0), publicKey: ''}, value);
+            case ActionType.AddKey:
+              return isValidAction(
+                {
+                  publicKey: '',
+                  accessKey: {nonce: new BN(0), permission: ''},
+                },
+                value
+              );
+            case ActionType.DeleteKey:
+              return isValidAction({publicKey: ''}, value);
+            case ActionType.DeleteAccount:
+              return isValidAction({beneficiaryId: ''}, value);
+            default:
+              return false;
+          }
+        },
+      },
+    });
+  };
+}
+
 export class ActionFilter implements NearActionFilter {
   @IsString()
+  @IsActionType()
   type: string;
   @IsOptional()
+  @IsAction()
   action?: any;
 }
 

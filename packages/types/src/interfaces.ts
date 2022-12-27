@@ -137,6 +137,19 @@ export type Action =
   | DeleteKey
   | DeleteAccount;
 
+export const ActionType = {
+  CreateAccount: 'CreateAccount' as const,
+  DeployContract: 'DeployContract' as const,
+  FunctionCall: 'FunctionCall' as const,
+  Transfer: 'Transfer' as const,
+  Stake: 'Stake' as const,
+  AddKey: 'AddKey' as const,
+  DeleteKey: 'DeleteKey' as const,
+  DeleteAccount: 'DeleteAccount' as const,
+} as const;
+
+export type ActionType = typeof ActionType[keyof typeof ActionType];
+
 export interface NearAction<T = Action | any> {
   id: number;
   type: string;
