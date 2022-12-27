@@ -9,6 +9,16 @@ import {
   getLogger,
 } from '@subql/node-core';
 import { JsonRpcProvider } from 'near-api-js/lib/providers';
+import {
+  AccessKeyWithPublicKey,
+  BlockChangeResult,
+  BlockId,
+  BlockReference,
+  BlockResult,
+  ChangeResult,
+  EpochValidatorInfo,
+  GasPrice,
+} from 'near-api-js/lib/providers/provider';
 import { ConnectionInfo } from 'near-api-js/lib/utils/web';
 import { SubqueryProject } from '../configure/SubqueryProject';
 
@@ -93,5 +103,59 @@ export class ApiService {
 
   genesisHash(): string {
     return this._genesisHash;
+  }
+}
+
+export class SafeJsonRpcProvider extends JsonRpcProvider {
+  constructor(private height: number, private connectionInfo: ConnectionInfo) {
+    super(connectionInfo);
+  }
+
+  async block(): Promise<BlockResult> {
+    return super.block({ blockId: this.height });
+  }
+
+  async blockChanges(): Promise<BlockChangeResult> {
+    return super.blockChanges({ blockId: this.height });
+  }
+
+  async validators(): Promise<EpochValidatorInfo> {
+    return super.validators(this.height);
+  }
+
+  async accessKeyChanges(accountIdArray: string[]): Promise<ChangeResult> {
+    return super.accessKeyChanges(accountIdArray, { blockId: this.height });
+  }
+
+  async singleAccessKeyChanges(
+    accessKeyArray: AccessKeyWithPublicKey[],
+  ): Promise<ChangeResult> {
+    return super.singleAccessKeyChanges(accessKeyArray, {
+      blockId: this.height,
+    });
+  }
+
+  async accountChanges(accountIdArray: string[]): Promise<ChangeResult> {
+    return super.accountChanges(accountIdArray, { blockId: this.height });
+  }
+
+  async contractStateChanges(
+    accountIdArray: string[],
+    blockQuery: BlockReference = { blockId: this.height },
+    keyPrefix?: string,
+  ): Promise<ChangeResult> {
+    return super.contractStateChanges(
+      accountIdArray,
+      { blockId: this.height },
+      keyPrefix,
+    );
+  }
+
+  async contractCodeChanges(accountIdArray: string[]): Promise<ChangeResult> {
+    return super.contractCodeChanges(accountIdArray, { blockId: this.height });
+  }
+
+  async gasPrice(): Promise<GasPrice> {
+    return super.gasPrice(this.height);
   }
 }

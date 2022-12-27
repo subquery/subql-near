@@ -31,7 +31,7 @@ import { Sequelize, Transaction } from 'sequelize';
 import { SubqlProjectDs, SubqueryProject } from '../configure/SubqueryProject';
 import * as NearUtil from '../utils/near';
 import { yargsOptions } from '../yargs';
-import { ApiService } from './api.service';
+import { ApiService, SafeJsonRpcProvider } from './api.service';
 import {
   asSecondLayerHandlerProcessor_1_0_0,
   DsProcessorService,
@@ -100,7 +100,11 @@ export class IndexerManager {
         //eslint-disable-next-line @typescript-eslint/require-await
         async (ds: SubqlProjectDs) => {
           // Injected runtimeVersion from fetch service might be outdated
-          const vm = this.sandboxService.getDsProcessor(ds, this.api);
+          const safeApi = new SafeJsonRpcProvider(
+            blockContent.block.header.height,
+            this.api.connection,
+          );
+          const vm = this.sandboxService.getDsProcessor(ds, safeApi);
 
           // Inject function to create ds into vm
           vm.freeze(

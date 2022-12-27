@@ -4,10 +4,9 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { isDatasourceV0_2_0, NearDataSource } from '@subql/common-near';
 import { NodeConfig, StoreService, IndexerSandbox } from '@subql/node-core';
-import { JsonRpcProvider } from 'near-api-js/lib/providers';
 import { SubqlProjectDs, SubqueryProject } from '../configure/SubqueryProject';
 import { getProjectEntry } from '../utils/project';
-import { ApiService } from './api.service';
+import { ApiService, SafeJsonRpcProvider } from './api.service';
 
 @Injectable()
 export class SandboxService {
@@ -20,13 +19,12 @@ export class SandboxService {
     @Inject('ISubqueryProject') private readonly project: SubqueryProject,
   ) {}
 
-  getDsProcessor(ds: SubqlProjectDs, api: JsonRpcProvider): IndexerSandbox {
+  getDsProcessor(ds: SubqlProjectDs, api: SafeJsonRpcProvider): IndexerSandbox {
     const entry = this.getDataSourceEntry(ds);
     let processor = this.processorCache[entry];
     if (!processor) {
       processor = new IndexerSandbox(
         {
-          // api: await this.apiService.getPatchedApi(),
           store: this.storeService.getStore(),
           root: this.project.root,
           script: ds.mapping.entryScript,
@@ -36,6 +34,7 @@ export class SandboxService {
       );
       this.processorCache[entry] = processor;
     }
+
     processor.freeze(api, 'api');
     if (this.nodeConfig.unsafe) {
       processor.freeze(this.apiService.getApi(), 'unsafeApi');
