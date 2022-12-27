@@ -44,21 +44,24 @@ export async function wrapBlock(
     receipts: [],
   };
 
-  for (const chunk of blockResult.chunks) {
+  const chunkPromises = blockResult.chunks.map(async (chunk) => {
     const chunkResult = await api.chunk(chunk.chunk_hash);
-    for (const transaction of chunkResult.transactions) {
-      const wrappedTx = await wrapTransaction(api, blockResult, transaction);
-
-      nearBlock.transactions.push(wrappedTx);
-
-      const nearActions: NearAction[] = transaction.actions.map((action, id) =>
-        wrapAction(action, id, wrappedTx),
-      );
-
-      nearBlock.actions = nearBlock.actions.concat(nearActions);
-    }
+    const transactionPromises = chunkResult.transactions.map(
+      async (transaction) => {
+        const wrappedTx = await wrapTransaction(api, blockResult, transaction);
+        nearBlock.transactions.push(wrappedTx);
+        const nearActions: NearAction[] = transaction.actions.map(
+          (action, id) => wrapAction(action, id, wrappedTx),
+        );
+        nearBlock.actions = nearBlock.actions.concat(nearActions);
+      },
+    );
+    await Promise.all(transactionPromises);
     nearBlock.receipts = nearBlock.receipts.concat(chunkResult.receipts);
-  }
+  });
+
+  await Promise.all(chunkPromises);
+
   return nearBlock;
 }
 
@@ -181,8 +184,9 @@ export function filterTransaction(
 ): boolean {
   if (!filter) return true;
   if (filter.sender && filter.sender !== transaction.signer_id) return false;
-  if (filter.receiver && filter.receiver !== transaction.receiver_id)
+  if (filter.receiver && filter.receiver !== transaction.receiver_id) {
     return false;
+  }
   return true;
 }
 
