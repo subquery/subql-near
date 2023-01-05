@@ -35,6 +35,7 @@ import {
   registerDecorator,
   ValidationArguments,
   ValidationOptions,
+  Min,
 } from 'class-validator';
 
 export class BlockFilter implements NearBlockFilter {
@@ -232,6 +233,8 @@ export class RuntimeDataSourceBase implements NearRuntimeDatasource {
   @Type(() => RuntimeMapping)
   @ValidateNested()
   mapping: RuntimeMapping;
+  //must be greater than genesis block
+  @Min(9820210)
   @IsOptional()
   @IsInt()
   startBlock?: number;

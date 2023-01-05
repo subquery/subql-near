@@ -251,7 +251,7 @@ export async function generateTimestampReferenceForBlockFilters(
         let timestampReference;
 
         ds.mapping.handlers = await Promise.all(
-          (ds.mapping.handlers as NearRuntimeHandler[]).map(async (handler) => {
+          ds.mapping.handlers.map(async (handler) => {
             if (handler.kind === NearHandlerKind.Block) {
               if (handler.filter?.timestamp) {
                 if (!block) {

@@ -37,10 +37,10 @@ import {
 } from '../v0_2_1';
 import {NearProjectManifestV1_0_0} from './types';
 
-const Near_NODE_NAME = `@subql/node-near`;
+const NEAR_NODE_NAME = `@subql/node-near`;
 
 export class NearRunnerNodeImpl implements NodeSpec {
-  @Equals(Near_NODE_NAME, {message: `Runner Near node name incorrect, suppose be '${Near_NODE_NAME}'`})
+  @Equals(NEAR_NODE_NAME, {message: `Runner Near node name incorrect, suppose be '${NEAR_NODE_NAME}'`})
   name: string;
   @IsString()
   @Validate(SemverVersionValidator)

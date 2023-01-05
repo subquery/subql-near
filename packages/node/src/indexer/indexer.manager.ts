@@ -48,7 +48,6 @@ const logger = getLogger('indexer');
 
 @Injectable()
 export class IndexerManager {
-  private api: JsonRpcProvider;
   private filteredDataSources: SubqlProjectDs[];
 
   constructor(
@@ -65,8 +64,6 @@ export class IndexerManager {
     private projectService: ProjectService,
   ) {
     logger.info('indexer manager start');
-
-    this.api = this.apiService.getApi();
   }
 
   @profiler(yargsOptions.argv.profiler)
@@ -102,7 +99,7 @@ export class IndexerManager {
           // Injected runtimeVersion from fetch service might be outdated
           const safeApi = new SafeJsonRpcProvider(
             blockContent.block.header.height,
-            this.api.connection,
+            this.apiService.getApi().connection,
           );
           const vm = this.sandboxService.getDsProcessor(ds, safeApi);
 
@@ -204,7 +201,7 @@ export class IndexerManager {
       if (isCustomDs(ds)) {
         return this.dsProcessorService
           .getDsProcessor(ds)
-          .dsFilterProcessor(ds, this.api);
+          .dsFilterProcessor(ds, this.apiService.getApi());
       } else {
         return true;
       }
@@ -371,7 +368,7 @@ export class IndexerManager {
         input: data,
         ds,
         filter: handler.filter,
-        api: this.api,
+        api: this.apiService.getApi(),
         assets,
       })
       .catch((e) => {

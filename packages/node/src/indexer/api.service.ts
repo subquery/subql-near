@@ -31,16 +31,12 @@ const NOT_SUPPORT = (name: string) => () => {
 
 // https://github.com/polkadot-js/api/blob/12750bc83d8d7f01957896a80a7ba948ba3690b7/packages/rpc-provider/src/ws/index.ts#L43
 const RETRY_DELAY = 2_500;
-
+const GENESIS_BLOCK = 9_820_210;
 const logger = getLogger('api');
 
 @Injectable()
 export class ApiService {
   private api: JsonRpcProvider;
-  private _chainId: string;
-  private _genesisHash: string;
-  private currentBlockHash: string;
-  private currentBlockNumber: number;
   networkMeta: NetworkMetadataPayload;
 
   constructor(
@@ -72,16 +68,14 @@ export class ApiService {
 
     logger.info((await this.api.block({ blockId: 9820210 })).header.hash);
 
-    this._chainId = (await this.api.status()).chain_id;
-    this._genesisHash = (
-      await this.api.block({ blockId: 9820210 })
-    ).header.hash;
+    const chainId = (await this.api.status()).chain_id;
 
     this.networkMeta = {
-      chain: this._chainId,
-      specName: this._chainId,
+      chain: chainId,
+      specName: chainId,
       //mainnet genesis at block 9820210
-      genesisHash: this._genesisHash,
+      genesisHash: (await this.api.block({ blockId: GENESIS_BLOCK })).header
+        .hash,
     };
 
     if (network.chainId && network.chainId !== this.networkMeta.chain) {
@@ -102,7 +96,7 @@ export class ApiService {
   }
 
   genesisHash(): string {
-    return this._genesisHash;
+    return this.networkMeta.genesisHash;
   }
 }
 

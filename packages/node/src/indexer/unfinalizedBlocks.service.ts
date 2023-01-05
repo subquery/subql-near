@@ -10,9 +10,10 @@ import {
   MetadataRepo,
   NodeConfig,
 } from '@subql/node-core';
-import { BlockHeader, NearBlock } from '@subql/types-near';
+import { NearBlock } from '@subql/types-near';
 import { last } from 'lodash';
 import { JsonRpcProvider } from 'near-api-js/lib/providers';
+import { BlockHeader } from 'near-api-js/lib/providers/provider';
 import { Sequelize, Transaction } from 'sequelize';
 import { ApiService } from './api.service';
 
