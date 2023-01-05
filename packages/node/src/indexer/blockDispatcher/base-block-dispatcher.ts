@@ -6,7 +6,6 @@ import { EventEmitter2 } from '@nestjs/event-emitter';
 import { hexToU8a, u8aEq } from '@polkadot/util';
 import { getLogger, IndexerEvent, IQueue, NodeConfig } from '@subql/node-core';
 import { ProjectService } from '../project.service';
-import { RuntimeService } from '../runtimeService';
 
 const logger = getLogger('BaseBlockDispatcherService');
 
@@ -17,10 +16,7 @@ export type ProcessBlockResponse = {
 };
 
 export interface IBlockDispatcher {
-  init(
-    onDynamicDsCreated: (height: number) => Promise<void>,
-    runtimeService?: RuntimeService,
-  ): Promise<void>;
+  init(onDynamicDsCreated: (height: number) => Promise<void>): Promise<void>;
 
   enqueueBlocks(heights: number[]): void;
 
@@ -53,7 +49,6 @@ export abstract class BaseBlockDispatcher<Q extends IQueue>
     protected eventEmitter: EventEmitter2,
     protected projectService: ProjectService,
     protected queue: Q,
-    protected runtimeService?: RuntimeService,
   ) {}
 
   abstract enqueueBlocks(heights: number[]): void;

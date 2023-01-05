@@ -2,7 +2,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { Injectable } from '@nestjs/common';
-import { ApiPromise } from '@polkadot/api';
 import { RegisteredTypes } from '@polkadot/types/types';
 import {
   ReaderFactory,
@@ -12,33 +11,31 @@ import {
   validateSemver,
 } from '@subql/common';
 import {
-  SubstrateProjectNetworkConfig,
-  parseSubstrateProjectManifest,
+  NearProjectNetworkConfig,
+  parseNearProjectManifest,
   ProjectManifestV0_2_0Impl,
   ProjectManifestV0_2_1Impl,
   ProjectManifestV0_3_0Impl,
-  SubstrateDataSource,
+  NearDataSource,
   FileType,
   ProjectManifestV1_0_0Impl,
-  SubstrateBlockFilter,
+  NearBlockFilter,
   isRuntimeDs,
-  SubstrateHandlerKind,
-} from '@subql/common-substrate';
+  NearHandlerKind,
+  NearRuntimeHandler,
+} from '@subql/common-near';
 import { buildSchemaFromString } from '@subql/utils';
 import Cron from 'cron-converter';
 import { GraphQLSchema } from 'graphql';
-import {
-  getChainTypes,
-  getProjectRoot,
-  updateDataSourcesV0_2_0,
-} from '../utils/project';
-import { getBlockByHeight, getTimestamp } from '../utils/substrate';
+import { JsonRpcProvider } from 'near-api-js/lib/providers';
+import { getBlockByHeight } from '../utils/near';
+import { getProjectRoot, updateDataSourcesV0_2_0 } from '../utils/project';
 
-export type SubqlProjectDs = SubstrateDataSource & {
-  mapping: SubstrateDataSource['mapping'] & { entryScript: string };
+export type SubqlProjectDs = NearDataSource & {
+  mapping: NearDataSource['mapping'] & { entryScript: string };
 };
 
-export type SubqlProjectBlockFilter = SubstrateBlockFilter & {
+export type SubqlProjectBlockFilter = NearBlockFilter & {
   cronSchedule?: {
     schedule: Cron.Seeker;
     next: number;
@@ -57,7 +54,7 @@ const NOT_SUPPORT = (name: string) => {
 export class SubqueryProject {
   id: string;
   root: string;
-  network: Partial<SubstrateProjectNetworkConfig>;
+  network: Partial<NearProjectNetworkConfig>;
   dataSources: SubqlProjectDs[];
   schema: GraphQLSchema;
   templates: SubqlProjectDsTemplate[];
@@ -66,7 +63,7 @@ export class SubqueryProject {
 
   static async create(
     path: string,
-    networkOverrides?: Partial<SubstrateProjectNetworkConfig>,
+    networkOverrides?: Partial<NearProjectNetworkConfig>,
     readerOptions?: ReaderOptions,
   ): Promise<SubqueryProject> {
     // We have to use reader here, because path can be remote or local
@@ -77,7 +74,7 @@ export class SubqueryProject {
       throw new Error(`Get manifest from project path ${path} failed`);
     }
 
-    const manifest = parseSubstrateProjectManifest(projectSchema);
+    const manifest = parseNearProjectManifest(projectSchema);
 
     if (manifest.isV0_0_1) {
       NOT_SUPPORT('0.0.1');
@@ -133,7 +130,7 @@ async function loadProjectFromManifestBase(
   projectManifest: SUPPORT_MANIFEST,
   reader: Reader,
   path: string,
-  networkOverrides?: Partial<SubstrateProjectNetworkConfig>,
+  networkOverrides?: Partial<NearProjectNetworkConfig>,
 ): Promise<SubqueryProject> {
   const root = await getProjectRoot(reader);
 
@@ -158,10 +155,6 @@ async function loadProjectFromManifestBase(
   }
   const schema = buildSchemaFromString(schemaString);
 
-  const chainTypes = projectManifest.network.chaintypes
-    ? await getChainTypes(reader, root, projectManifest.network.chaintypes.file)
-    : undefined;
-
   const dataSources = await updateDataSourcesV0_2_0(
     projectManifest.dataSources,
     reader,
@@ -173,7 +166,6 @@ async function loadProjectFromManifestBase(
     network,
     dataSources,
     schema,
-    chainTypes,
     templates: [],
   };
 }
@@ -182,7 +174,7 @@ async function loadProjectFromManifest0_2_1(
   projectManifest: ProjectManifestV0_2_1Impl,
   reader: Reader,
   path: string,
-  networkOverrides?: Partial<SubstrateProjectNetworkConfig>,
+  networkOverrides?: Partial<NearProjectNetworkConfig>,
 ): Promise<SubqueryProject> {
   const project = await loadProjectFromManifestBase(
     projectManifest,
@@ -204,7 +196,7 @@ async function loadProjectFromManifest1_0_0(
   projectManifest: ProjectManifestV1_0_0Impl,
   reader: Reader,
   path: string,
-  networkOverrides?: Partial<SubstrateProjectNetworkConfig>,
+  networkOverrides?: Partial<NearProjectNetworkConfig>,
 ): Promise<SubqueryProject> {
   const project = await loadProjectFromManifestBase(
     projectManifest,
@@ -247,7 +239,7 @@ async function loadProjectTemplates(
 // eslint-disable-next-line @typescript-eslint/require-await
 export async function generateTimestampReferenceForBlockFilters(
   dataSources: SubqlProjectDs[],
-  api: ApiPromise,
+  api: JsonRpcProvider,
 ): Promise<SubqlProjectDs[]> {
   const cron = new Cron();
 
@@ -260,11 +252,11 @@ export async function generateTimestampReferenceForBlockFilters(
 
         ds.mapping.handlers = await Promise.all(
           ds.mapping.handlers.map(async (handler) => {
-            if (handler.kind === SubstrateHandlerKind.Block) {
+            if (handler.kind === NearHandlerKind.Block) {
               if (handler.filter?.timestamp) {
                 if (!block) {
                   block = await getBlockByHeight(api, startBlock);
-                  timestampReference = getTimestamp(block);
+                  timestampReference = block.header.timestamp;
                 }
                 try {
                   cron.fromString(handler.filter.timestamp);

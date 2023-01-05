@@ -2,14 +2,14 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import {
-  // ISubqlProjectManifest as ISubstrateProjectManifest,
-  SubstrateDatasource,
-  SubstrateDatasourceKind,
-} from '@subql/types';
-import {ISubstrateProjectManifest} from '../../types';
+  // ISubqlProjectManifest as INearProjectManifest,
+  NearDatasource,
+  NearDatasourceKind,
+} from '@subql/types-near';
+import {INearProjectManifest} from '../../types';
 import {RuntimeDataSourceV0_2_0, CustomDatasourceV0_2_0} from '../v0_2_0/types';
 
-export interface SubstrateProjectManifestV0_3_0 extends ISubstrateProjectManifest {
+export interface NearProjectManifestV0_3_0 extends INearProjectManifest {
   name: string;
   version: string;
   schema: {
@@ -28,6 +28,6 @@ export interface SubstrateProjectManifestV0_3_0 extends ISubstrateProjectManifes
   dataSources: (RuntimeDataSourceV0_2_0 | CustomDatasourceV0_2_0)[];
 }
 
-export function isRuntimeDataSourceV0_3_0(dataSource: SubstrateDatasource): dataSource is RuntimeDataSourceV0_2_0 {
-  return dataSource.kind === SubstrateDatasourceKind.Runtime && !!dataSource.mapping.file;
+export function isRuntimeDataSourceV0_3_0(dataSource: NearDatasource): dataSource is RuntimeDataSourceV0_2_0 {
+  return dataSource.kind === NearDatasourceKind.Runtime && !!dataSource.mapping.file;
 }

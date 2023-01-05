@@ -2,15 +2,11 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { Inject, Injectable } from '@nestjs/common';
-import {
-  isDatasourceV0_2_0,
-  SubstrateDataSource,
-} from '@subql/common-substrate';
+import { isDatasourceV0_2_0, NearDataSource } from '@subql/common-near';
 import { NodeConfig, StoreService, IndexerSandbox } from '@subql/node-core';
 import { SubqlProjectDs, SubqueryProject } from '../configure/SubqueryProject';
 import { getProjectEntry } from '../utils/project';
-import { ApiService } from './api.service';
-import { ApiAt } from './types';
+import { ApiService, SafeJsonRpcProvider } from './api.service';
 
 @Injectable()
 export class SandboxService {
@@ -23,13 +19,12 @@ export class SandboxService {
     @Inject('ISubqueryProject') private readonly project: SubqueryProject,
   ) {}
 
-  getDsProcessor(ds: SubqlProjectDs, api: ApiAt): IndexerSandbox {
+  getDsProcessor(ds: SubqlProjectDs, api: SafeJsonRpcProvider): IndexerSandbox {
     const entry = this.getDataSourceEntry(ds);
     let processor = this.processorCache[entry];
     if (!processor) {
       processor = new IndexerSandbox(
         {
-          // api: await this.apiService.getPatchedApi(),
           store: this.storeService.getStore(),
           root: this.project.root,
           script: ds.mapping.entryScript,
@@ -39,6 +34,7 @@ export class SandboxService {
       );
       this.processorCache[entry] = processor;
     }
+
     processor.freeze(api, 'api');
     if (this.nodeConfig.unsafe) {
       processor.freeze(this.apiService.getApi(), 'unsafeApi');
@@ -46,7 +42,7 @@ export class SandboxService {
     return processor;
   }
 
-  private getDataSourceEntry(ds: SubstrateDataSource): string {
+  private getDataSourceEntry(ds: NearDataSource): string {
     if (isDatasourceV0_2_0(ds)) {
       return ds.mapping.file;
     } else {

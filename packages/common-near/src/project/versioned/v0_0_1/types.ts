@@ -4,27 +4,27 @@
 import {RegisteredTypes} from '@polkadot/types/types';
 import {BaseMapping, IProjectManifest} from '@subql/common';
 import {
-  SubstrateRuntimeDatasource,
-  SubstrateNetworkFilter,
-  SubstrateRuntimeHandlerFilter,
-  SubstrateRuntimeHandler,
-  SubstrateDatasourceKind,
-} from '@subql/types';
-import {SubstrateProjectNetworkConfig} from '../../types';
+  NearRuntimeDatasource,
+  NearNetworkFilter,
+  NearRuntimeHandlerFilter,
+  NearRuntimeHandler,
+  NearDatasourceKind,
+} from '@subql/types-near';
+import {NearProjectNetworkConfig} from '../../types';
 
-export type ProjectNetworkConfigV0_0_1 = SubstrateProjectNetworkConfig & RegisteredTypes;
+export type ProjectNetworkConfigV0_0_1 = NearProjectNetworkConfig & RegisteredTypes;
 
-// export interface RuntimeDataSourceV0_0_1 extends SubstrateRuntimeDataSource {
+// export interface RuntimeDataSourceV0_0_1 extends NearRuntimeDataSource {
 //   name: string;
-//   filter?: SubstrateNetworkFilter;
+//   filter?: NearNetworkFilter;
 // }
 
-export type ManifestV0_0_1Mapping = Omit<BaseMapping<SubstrateRuntimeHandlerFilter, SubstrateRuntimeHandler>, 'file'>;
+export type ManifestV0_0_1Mapping = Omit<BaseMapping<NearRuntimeHandlerFilter, NearRuntimeHandler>, 'file'>;
 
-export interface RuntimeDataSourceV0_0_1 extends Omit<SubstrateRuntimeDatasource, 'mapping'> {
+export interface RuntimeDataSourceV0_0_1 extends Omit<NearRuntimeDatasource, 'mapping'> {
   name: string;
-  filter?: SubstrateNetworkFilter;
-  kind: SubstrateDatasourceKind.Runtime;
+  filter?: NearNetworkFilter;
+  kind: NearDatasourceKind.Runtime;
   mapping: ManifestV0_0_1Mapping;
 }
 

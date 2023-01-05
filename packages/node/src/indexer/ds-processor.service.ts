@@ -7,18 +7,18 @@ import { Inject, Injectable } from '@nestjs/common';
 import { AnyTuple } from '@polkadot/types-codec/types';
 import {
   isCustomDs,
-  SubstrateCustomDataSource,
-  SubstrateDataSource,
-  SubstrateDatasourceProcessor,
-  SubstrateNetworkFilter,
-} from '@subql/common-substrate';
+  NearCustomDataSource,
+  NearDataSource,
+  NearDatasourceProcessor,
+  NearNetworkFilter,
+} from '@subql/common-near';
 import { getLogger, NodeConfig, Sandbox } from '@subql/node-core';
 import {
   SecondLayerHandlerProcessor_0_0_0,
   SecondLayerHandlerProcessor_1_0_0,
-  SubstrateCustomDatasource,
-  SubstrateHandlerKind,
-} from '@subql/types';
+  NearCustomDatasource,
+  NearHandlerKind,
+} from '@subql/types-near';
 
 import { VMScript } from 'vm2';
 import { SubqueryProject } from '../configure/SubqueryProject';
@@ -32,45 +32,42 @@ export interface DsPluginSandboxOption {
 const logger = getLogger('ds-sandbox');
 
 export function isSecondLayerHandlerProcessor_0_0_0<
-  K extends SubstrateHandlerKind,
+  K extends NearHandlerKind,
   F,
   E,
-  IT extends AnyTuple = AnyTuple,
-  DS extends SubstrateCustomDatasource = SubstrateCustomDatasource,
+  DS extends NearCustomDatasource = NearCustomDatasource,
 >(
   processor:
-    | SecondLayerHandlerProcessor_0_0_0<K, F, E, IT, DS>
-    | SecondLayerHandlerProcessor_1_0_0<K, F, E, IT, DS>,
-): processor is SecondLayerHandlerProcessor_0_0_0<K, F, E, IT, DS> {
+    | SecondLayerHandlerProcessor_0_0_0<K, F, E, DS>
+    | SecondLayerHandlerProcessor_1_0_0<K, F, E, DS>,
+): processor is SecondLayerHandlerProcessor_0_0_0<K, F, E, DS> {
   // Exisiting datasource processors had no concept of specVersion, therefore undefined is equivalent to 0.0.0
   return processor.specVersion === undefined;
 }
 
 export function isSecondLayerHandlerProcessor_1_0_0<
-  K extends SubstrateHandlerKind,
+  K extends NearHandlerKind,
   F,
   E,
-  IT extends AnyTuple = AnyTuple,
-  DS extends SubstrateCustomDatasource = SubstrateCustomDatasource,
+  DS extends NearCustomDatasource = NearCustomDatasource,
 >(
   processor:
-    | SecondLayerHandlerProcessor_0_0_0<K, F, E, IT, DS>
-    | SecondLayerHandlerProcessor_1_0_0<K, F, E, IT, DS>,
-): processor is SecondLayerHandlerProcessor_1_0_0<K, F, E, IT, DS> {
+    | SecondLayerHandlerProcessor_0_0_0<K, F, E, DS>
+    | SecondLayerHandlerProcessor_1_0_0<K, F, E, DS>,
+): processor is SecondLayerHandlerProcessor_1_0_0<K, F, E, DS> {
   return processor.specVersion === '1.0.0';
 }
 
 export function asSecondLayerHandlerProcessor_1_0_0<
-  K extends SubstrateHandlerKind,
+  K extends NearHandlerKind,
   F,
   E,
-  IT extends AnyTuple = AnyTuple,
-  DS extends SubstrateCustomDatasource = SubstrateCustomDatasource,
+  DS extends NearCustomDatasource = NearCustomDatasource,
 >(
   processor:
-    | SecondLayerHandlerProcessor_0_0_0<K, F, E, IT, DS>
-    | SecondLayerHandlerProcessor_1_0_0<K, F, E, IT, DS>,
-): SecondLayerHandlerProcessor_1_0_0<K, F, E, IT, DS> {
+    | SecondLayerHandlerProcessor_0_0_0<K, F, E, DS>
+    | SecondLayerHandlerProcessor_1_0_0<K, F, E, DS>,
+): SecondLayerHandlerProcessor_1_0_0<K, F, E, DS> {
   if (isSecondLayerHandlerProcessor_1_0_0(processor)) {
     return processor;
   }
@@ -106,8 +103,8 @@ export class DsPluginSandbox extends Sandbox {
 
   getDsPlugin<
     D extends string,
-    T extends SubstrateNetworkFilter,
-  >(): SubstrateDatasourceProcessor<D, T> {
+    T extends NearNetworkFilter,
+  >(): NearDatasourceProcessor<D, T> {
     return this.run(this.script);
   }
 }
@@ -115,19 +112,14 @@ export class DsPluginSandbox extends Sandbox {
 @Injectable()
 export class DsProcessorService {
   private processorCache: {
-    [entry: string]: SubstrateDatasourceProcessor<
-      string,
-      SubstrateNetworkFilter
-    >;
+    [entry: string]: NearDatasourceProcessor<string, NearNetworkFilter>;
   } = {};
   constructor(
     @Inject('ISubqueryProject') private project: SubqueryProject,
     private readonly nodeConfig: NodeConfig,
   ) {}
 
-  async validateCustomDs(
-    datasources: SubstrateCustomDataSource[],
-  ): Promise<void> {
+  async validateCustomDs(datasources: NearCustomDataSource[]): Promise<void> {
     for (const ds of datasources) {
       const processor = this.getDsProcessor(ds);
       /* Standard validation applicable to all custom ds and processors */
@@ -160,13 +152,13 @@ export class DsProcessorService {
 
   async validateProjectCustomDatasources(): Promise<void> {
     await this.validateCustomDs(
-      (this.project.dataSources as SubstrateDataSource[]).filter(isCustomDs),
+      (this.project.dataSources as NearDataSource[]).filter(isCustomDs),
     );
   }
 
-  getDsProcessor<D extends string, T extends SubstrateNetworkFilter>(
-    ds: SubstrateCustomDataSource<string, T>,
-  ): SubstrateDatasourceProcessor<D, T> {
+  getDsProcessor<D extends string, T extends NearNetworkFilter>(
+    ds: NearCustomDataSource<string, T>,
+  ): NearDatasourceProcessor<D, T> {
     if (!isCustomDs(ds)) {
       throw new Error(`data source is not a custom data source`);
     }
@@ -189,13 +181,11 @@ export class DsProcessorService {
     }
     return this.processorCache[
       ds.processor.file
-    ] as unknown as SubstrateDatasourceProcessor<D, T>;
+    ] as unknown as NearDatasourceProcessor<D, T>;
   }
 
   // eslint-disable-next-line @typescript-eslint/require-await
-  async getAssets(
-    ds: SubstrateCustomDataSource,
-  ): Promise<Record<string, string>> {
+  async getAssets(ds: NearCustomDataSource): Promise<Record<string, string>> {
     if (!isCustomDs(ds)) {
       throw new Error(`data source is not a custom data source`);
     }

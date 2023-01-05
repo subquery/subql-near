@@ -10,10 +10,10 @@ import {
   CustomDatasourceV0_2_0,
   RuntimeDataSourceV0_2_0,
   ProjectManifestV0_2_0Impl,
-  SubstrateCustomDataSourceV0_2_0Impl,
-  SubstrateRuntimeDataSourceV0_2_0Impl,
+  NearCustomDataSourceV0_2_0Impl,
+  NearRuntimeDataSourceV0_2_0Impl,
 } from '../v0_2_0';
-import {SubstrateProjectManifestV0_3_0} from './types';
+import {NearProjectManifestV0_3_0} from './types';
 
 export class DeploymentV0_3_0 {
   @Equals('0.3.0')
@@ -24,10 +24,10 @@ export class DeploymentV0_3_0 {
   schema: FileType;
   @IsArray()
   @ValidateNested()
-  @Type(() => SubstrateCustomDataSourceV0_2_0Impl, {
+  @Type(() => NearCustomDataSourceV0_2_0Impl, {
     discriminator: {
       property: 'kind',
-      subTypes: [{value: SubstrateRuntimeDataSourceV0_2_0Impl, name: 'substrate/Runtime'}],
+      subTypes: [{value: NearRuntimeDataSourceV0_2_0Impl, name: 'near/Runtime'}],
     },
     keepDiscriminatorProperty: true,
   })
@@ -39,7 +39,7 @@ export class DeploymentV0_3_0 {
 
 export class ProjectManifestV0_3_0Impl
   extends ProjectManifestV0_2_0Impl<DeploymentV0_3_0>
-  implements SubstrateProjectManifestV0_3_0
+  implements NearProjectManifestV0_3_0
 {
   @Equals('0.3.0')
   specVersion: string;
@@ -56,10 +56,10 @@ export class ProjectManifestV0_3_0Impl
   schema: FileType;
   @IsArray()
   @ValidateNested()
-  @Type(() => SubstrateCustomDataSourceV0_2_0Impl, {
+  @Type(() => NearCustomDataSourceV0_2_0Impl, {
     discriminator: {
       property: 'kind',
-      subTypes: [{value: SubstrateRuntimeDataSourceV0_2_0Impl, name: 'substrate/Runtime'}],
+      subTypes: [{value: NearRuntimeDataSourceV0_2_0Impl, name: 'near/Runtime'}],
     },
     keepDiscriminatorProperty: true,
   })

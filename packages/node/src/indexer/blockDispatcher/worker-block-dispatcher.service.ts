@@ -6,7 +6,6 @@ import path from 'path';
 import { Injectable, OnApplicationShutdown } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { Interval } from '@nestjs/schedule';
-import { RuntimeVersion } from '@polkadot/types/interfaces';
 import {
   getLogger,
   NodeConfig,
@@ -14,18 +13,16 @@ import {
   Worker,
   AutoQueue,
 } from '@subql/node-core';
-import { SubstrateBlock } from '@subql/types';
+import { NearBlock } from '@subql/types-near';
 import chalk from 'chalk';
 import { last } from 'lodash';
 import { ProjectService } from '../project.service';
-import { RuntimeService } from '../runtimeService';
 import {
   FetchBlock,
   ProcessBlock,
   InitWorker,
   NumFetchedBlocks,
   NumFetchingBlocks,
-  SetCurrentRuntimeVersion,
   GetWorkerStatus,
 } from '../worker/worker';
 import { BaseBlockDispatcher } from './base-block-dispatcher';
@@ -37,7 +34,6 @@ type IIndexerWorker = {
   fetchBlock: FetchBlock;
   numFetchedBlocks: NumFetchedBlocks;
   numFetchingBlocks: NumFetchingBlocks;
-  setCurrentRuntimeVersion: SetCurrentRuntimeVersion;
   getStatus: GetWorkerStatus;
 };
 
@@ -58,7 +54,6 @@ async function createIndexerWorker(): Promise<IndexerWorker> {
       'fetchBlock',
       'numFetchedBlocks',
       'numFetchingBlocks',
-      'setCurrentRuntimeVersion',
       'getStatus',
     ],
   );
@@ -96,7 +91,6 @@ export class WorkerBlockDispatcherService
 
   async init(
     onDynamicDsCreated: (height: number) => Promise<void>,
-    runtimeService?: RuntimeService,
   ): Promise<void> {
     if (this.nodeConfig.unfinalizedBlocks) {
       throw new Error(
@@ -112,7 +106,6 @@ export class WorkerBlockDispatcherService
 
     const blockAmount = await this.projectService.getProcessedBlockCount();
     this.setProcessedBlockCount(blockAmount ?? 0);
-    this.runtimeService = runtimeService;
   }
 
   async onApplicationShutdown(): Promise<void> {
@@ -189,19 +182,6 @@ export class WorkerBlockDispatcherService
               `${waitTime}ms`,
             )}`,
           );
-        }
-
-        if (result) {
-          const runtimeVersion = await this.runtimeService.getRuntimeVersion({
-            specVersion: result.specVersion,
-            block: {
-              header: {
-                parentHash: result.parentHash,
-              },
-            },
-          } as any);
-
-          await worker.setCurrentRuntimeVersion(runtimeVersion.toHex());
         }
 
         // logger.info(

@@ -1,49 +1,38 @@
 // Copyright 2020-2022 OnFinality Limited authors & contributors
 // SPDX-License-Identifier: Apache-2.0
 
-import {CustomDatasourceTemplate, RuntimeDatasourceTemplate} from '@subql/common-substrate/project/versioned';
 import {
   SecondLayerHandlerProcessor,
-  SubstrateCustomDatasource,
-  SubstrateDatasource,
-  SubstrateDatasourceKind,
-  SubstrateHandlerKind,
-  SubstrateNetworkFilter,
-  SubstrateRuntimeDatasource,
-} from '@subql/types';
-import {gte} from 'semver';
+  NearCustomDatasource,
+  NearDatasource,
+  NearDatasourceKind,
+  NearHandlerKind,
+  NearNetworkFilter,
+  NearRuntimeDatasource,
+} from '@subql/types-near';
 
-export function isBlockHandlerProcessor<T extends SubstrateNetworkFilter, E>(
-  hp: SecondLayerHandlerProcessor<SubstrateHandlerKind, T, unknown>
-): hp is SecondLayerHandlerProcessor<SubstrateHandlerKind.Block, T, E> {
-  return hp.baseHandlerKind === SubstrateHandlerKind.Block;
+export function isBlockHandlerProcessor<T extends NearNetworkFilter, E>(
+  hp: SecondLayerHandlerProcessor<NearHandlerKind, T, unknown>
+): hp is SecondLayerHandlerProcessor<NearHandlerKind.Block, T, E> {
+  return hp.baseHandlerKind === NearHandlerKind.Block;
 }
 
-export function isEventHandlerProcessor<T extends SubstrateNetworkFilter, E>(
-  hp: SecondLayerHandlerProcessor<SubstrateHandlerKind, T, unknown>
-): hp is SecondLayerHandlerProcessor<SubstrateHandlerKind.Event, T, E> {
-  return hp.baseHandlerKind === SubstrateHandlerKind.Event;
+export function isTransactionHandlerProcessor<T extends NearNetworkFilter, E>(
+  hp: SecondLayerHandlerProcessor<NearHandlerKind, T, unknown>
+): hp is SecondLayerHandlerProcessor<NearHandlerKind.Transaction, T, E> {
+  return hp.baseHandlerKind === NearHandlerKind.Transaction;
 }
 
-export function isCallHandlerProcessor<T extends SubstrateNetworkFilter, E>(
-  hp: SecondLayerHandlerProcessor<SubstrateHandlerKind, T, unknown>
-): hp is SecondLayerHandlerProcessor<SubstrateHandlerKind.Call, T, E> {
-  return hp.baseHandlerKind === SubstrateHandlerKind.Call;
+export function isActionHandlerProcessor<T extends NearNetworkFilter, E>(
+  hp: SecondLayerHandlerProcessor<NearHandlerKind, T, unknown>
+): hp is SecondLayerHandlerProcessor<NearHandlerKind.Action, T, E> {
+  return hp.baseHandlerKind === NearHandlerKind.Action;
 }
 
-export function isCustomDs<F extends SubstrateNetworkFilter>(
-  ds: SubstrateDatasource
-): ds is SubstrateCustomDatasource<string, F> {
-  return ds.kind !== SubstrateDatasourceKind.Runtime && !!(ds as SubstrateCustomDatasource<string, F>).processor;
+export function isCustomDs<F extends NearNetworkFilter>(ds: NearDatasource): ds is NearCustomDatasource<string, F> {
+  return ds.kind !== NearDatasourceKind.Runtime && !!(ds as NearCustomDatasource<string, F>).processor;
 }
 
-export function isRuntimeDs(ds: SubstrateDatasource): ds is SubstrateRuntimeDatasource {
-  return ds.kind === SubstrateDatasourceKind.Runtime;
-}
-
-export function isSubstrateTemplates(
-  templatesData: any,
-  specVersion: string
-): templatesData is (RuntimeDatasourceTemplate | CustomDatasourceTemplate)[] {
-  return (isRuntimeDs(templatesData[0]) || isCustomDs(templatesData[0])) && gte(specVersion, '0.2.1');
+export function isRuntimeDs(ds: NearDatasource): ds is NearRuntimeDatasource {
+  return ds.kind === NearDatasourceKind.Runtime;
 }
