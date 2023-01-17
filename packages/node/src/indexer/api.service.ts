@@ -66,8 +66,6 @@ export class ApiService {
 
     this.eventEmitter.emit(IndexerEvent.ApiConnected, { value: 1 });
 
-    logger.info((await this.api.block({ blockId: 9820210 })).header.hash);
-
     const chainId = (await this.api.status()).chain_id;
 
     this.networkMeta = {
