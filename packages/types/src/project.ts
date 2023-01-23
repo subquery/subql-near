@@ -56,6 +56,7 @@ export interface NearTransactionFilter {
 export interface NearActionFilter<T = Action | any> {
   type: string;
   action?: T;
+  txFilter?: NearTransactionFilter;
 }
 
 export type NearBlockHandler = NearCustomHandler<NearHandlerKind.Block, NearBlockFilter>;

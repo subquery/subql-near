@@ -19,6 +19,7 @@ import {
   DeleteKey,
   DeleteAccount,
   Action,
+  ActionType,
 } from '@subql/types-near';
 import { last, merge, range } from 'lodash';
 import { JsonRpcProvider } from 'near-api-js/lib/providers';
@@ -27,9 +28,7 @@ import { SubqlProjectBlockFilter } from '../configure/SubqueryProject';
 import { BlockContent } from '../indexer/types';
 
 const logger = getLogger('fetch');
-const INTERVAL_THRESHOLD = BN_THOUSAND.div(BN_TWO);
 const DEFAULT_TIME = new BN(6_000);
-const A_DAY = new BN(24 * 60 * 60 * 1000);
 
 export async function wrapBlock(
   api: JsonRpcProvider,
@@ -85,23 +84,23 @@ export async function wrapTransaction(
   };
 }
 
-function parseNearAction(type: string, action: any): Action {
+function parseNearAction(type: ActionType, action: any): Action {
   switch (type) {
-    case 'CreateAccount':
+    case ActionType.CreateAccount:
       return action as CreateAccount;
-    case 'DeployContract':
+    case ActionType.DeployContract:
       return action as DeployContract;
-    case 'FunctionCall':
+    case ActionType.FunctionCall:
       return action as FunctionCall;
-    case 'Transfer':
+    case ActionType.Transfer:
       return action as Transfer;
-    case 'Stake':
+    case ActionType.Stake:
       return action as Stake;
-    case 'AddKey':
+    case ActionType.AddKey:
       return action as AddKey;
-    case 'DeleteKey':
+    case ActionType.DeleteKey:
       return action as DeleteKey;
-    case 'DeleteAccount':
+    case ActionType.DeleteAccount:
       return action as DeleteAccount;
     default:
       throw new Error('Invalid type string for NearAction');
@@ -212,6 +211,12 @@ export function filterAction(
   filter?: NearActionFilter,
 ): boolean {
   if (!filter) return true;
+  if (
+    filter.txFilter &&
+    !filterTransaction(action.transaction, filter.txFilter)
+  ) {
+    return false;
+  }
   if (filter.type && action.type !== filter.type) return false;
   if (filter.action) {
     for (const key in filter.action) {

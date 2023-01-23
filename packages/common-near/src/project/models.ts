@@ -144,6 +144,10 @@ export class ActionFilter implements NearActionFilter {
   @IsOptional()
   @IsAction()
   action?: any;
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => TransactionFilter)
+  txFilter?: NearTransactionFilter;
 }
 
 export class BlockHandler implements NearBlockHandler {

@@ -13,9 +13,6 @@ import {
 import {
   NearProjectNetworkConfig,
   parseNearProjectManifest,
-  ProjectManifestV0_2_0Impl,
-  ProjectManifestV0_2_1Impl,
-  ProjectManifestV0_3_0Impl,
   NearDataSource,
   FileType,
   ProjectManifestV1_0_0Impl,
@@ -79,19 +76,9 @@ export class SubqueryProject {
     if (manifest.isV0_0_1) {
       NOT_SUPPORT('0.0.1');
     } else if (manifest.isV0_2_0 || manifest.isV0_3_0) {
-      return loadProjectFromManifestBase(
-        manifest.asV0_2_0,
-        reader,
-        path,
-        networkOverrides,
-      );
+      NOT_SUPPORT('0.2.0');
     } else if (manifest.isV0_2_1) {
-      return loadProjectFromManifest0_2_1(
-        manifest.asV0_2_1,
-        reader,
-        path,
-        networkOverrides,
-      );
+      NOT_SUPPORT('0.2.1');
     } else if (manifest.isV1_0_0) {
       return loadProjectFromManifest1_0_0(
         manifest.asV1_0_0,
@@ -120,11 +107,7 @@ function processChainId(network: any): SubqueryProjectNetwork {
   return network;
 }
 
-type SUPPORT_MANIFEST =
-  | ProjectManifestV0_2_0Impl
-  | ProjectManifestV0_2_1Impl
-  | ProjectManifestV0_3_0Impl
-  | ProjectManifestV1_0_0Impl;
+type SUPPORT_MANIFEST = ProjectManifestV1_0_0Impl;
 
 async function loadProjectFromManifestBase(
   projectManifest: SUPPORT_MANIFEST,
@@ -170,26 +153,6 @@ async function loadProjectFromManifestBase(
   };
 }
 
-async function loadProjectFromManifest0_2_1(
-  projectManifest: ProjectManifestV0_2_1Impl,
-  reader: Reader,
-  path: string,
-  networkOverrides?: Partial<NearProjectNetworkConfig>,
-): Promise<SubqueryProject> {
-  const project = await loadProjectFromManifestBase(
-    projectManifest,
-    reader,
-    path,
-    networkOverrides,
-  );
-  project.templates = await loadProjectTemplates(
-    projectManifest,
-    project.root,
-    reader,
-  );
-  return project;
-}
-
 const { version: packageVersion } = require('../../package.json');
 
 async function loadProjectFromManifest1_0_0(
@@ -219,7 +182,7 @@ async function loadProjectFromManifest1_0_0(
 }
 
 async function loadProjectTemplates(
-  projectManifest: ProjectManifestV0_2_1Impl | ProjectManifestV1_0_0Impl,
+  projectManifest: ProjectManifestV1_0_0Impl,
   root: string,
   reader: Reader,
 ): Promise<SubqlProjectDsTemplate[]> {

@@ -54,6 +54,22 @@ export class NearProjectManifestVersioned implements INearProjectManifest {
     return this._impl;
   }
 
+  get isV0_0_1(): boolean {
+    return this.specVersion === '0.0.1';
+  }
+
+  get isV0_2_0(): boolean {
+    return this.specVersion === '0.2.0';
+  }
+
+  get isV0_2_1(): boolean {
+    return this.specVersion === '0.2.1';
+  }
+
+  get isV0_3_0(): boolean {
+    return this.specVersion === '0.3.0';
+  }
+
   get isV1_0_0(): boolean {
     return this.specVersion === '1.0.0';
   }
