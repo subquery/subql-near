@@ -2,21 +2,19 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { Inject, Injectable } from '@nestjs/common';
-import { ApiPromise } from '@polkadot/api';
-import { RuntimeVersion } from '@polkadot/types/interfaces';
 import { hexToU8a, u8aEq } from '@polkadot/util';
 import {
   isBlockHandlerProcessor,
-  isCallHandlerProcessor,
-  isEventHandlerProcessor,
+  isActionHandlerProcessor,
+  isTransactionHandlerProcessor,
   isCustomDs,
   isRuntimeDs,
-  SubstrateCustomDataSource,
-  SubstrateCustomHandler,
-  SubstrateHandlerKind,
-  SubstrateNetworkFilter,
-  SubstrateRuntimeHandlerInputMap,
-} from '@subql/common-substrate';
+  NearCustomDataSource,
+  NearCustomHandler,
+  NearHandlerKind,
+  NearNetworkFilter,
+  NearRuntimeHandlerInputMap,
+} from '@subql/common-near';
 import {
   PoiBlock,
   StoreService,
@@ -27,16 +25,13 @@ import {
   profilerWrap,
   IndexerSandbox,
 } from '@subql/node-core';
-import {
-  SubstrateBlock,
-  SubstrateEvent,
-  SubstrateExtrinsic,
-} from '@subql/types';
+import { NearBlock, NearAction, NearTransaction } from '@subql/types-near';
+import { JsonRpcProvider } from 'near-api-js/lib/providers';
 import { Sequelize, Transaction } from 'sequelize';
 import { SubqlProjectDs, SubqueryProject } from '../configure/SubqueryProject';
-import * as SubstrateUtil from '../utils/substrate';
+import * as NearUtil from '../utils/near';
 import { yargsOptions } from '../yargs';
-import { ApiService } from './api.service';
+import { ApiService, SafeJsonRpcProvider } from './api.service';
 import {
   asSecondLayerHandlerProcessor_1_0_0,
   DsProcessorService,
@@ -44,7 +39,7 @@ import {
 import { DynamicDsService } from './dynamic-ds.service';
 import { ProjectService } from './project.service';
 import { SandboxService } from './sandbox.service';
-import { ApiAt, BlockContent } from './types';
+import { BlockContent } from './types';
 import { UnfinalizedBlocksService } from './unfinalizedBlocks.service';
 
 const NULL_MERKEL_ROOT = hexToU8a('0x00');
@@ -53,7 +48,6 @@ const logger = getLogger('indexer');
 
 @Injectable()
 export class IndexerManager {
-  private api: ApiPromise;
   private filteredDataSources: SubqlProjectDs[];
 
   constructor(
@@ -70,15 +64,10 @@ export class IndexerManager {
     private projectService: ProjectService,
   ) {
     logger.info('indexer manager start');
-
-    this.api = this.apiService.getApi();
   }
 
   @profiler(yargsOptions.argv.profiler)
-  async indexBlock(
-    blockContent: BlockContent,
-    runtimeVersion: RuntimeVersion,
-  ): Promise<{
+  async indexBlock(blockContent: BlockContent): Promise<{
     dynamicDsCreated: boolean;
     operationHash: Uint8Array;
     reindexBlockHeight: number;
@@ -86,7 +75,7 @@ export class IndexerManager {
     const { block } = blockContent;
     let dynamicDsCreated = false;
     let reindexBlockHeight = null;
-    const blockHeight = block.block.header.number.toNumber();
+    const blockHeight = block.header.height;
     const tx = await this.sequelize.transaction();
     this.storeService.setTransaction(tx);
     this.storeService.setBlockHeight(blockHeight);
@@ -94,27 +83,25 @@ export class IndexerManager {
     let operationHash = NULL_MERKEL_ROOT;
     let poiBlockHash: Uint8Array;
     try {
-      this.filteredDataSources = this.filterDataSources(
-        block.block.header.number.toNumber(),
-      );
+      this.filteredDataSources = this.filterDataSources(block.header.height);
 
       const datasources = this.filteredDataSources.concat(
         ...(await this.dynamicDsService.getDynamicDatasources()),
       );
 
-      let apiAt: ApiAt;
       reindexBlockHeight = await this.processUnfinalizedBlocks(block, tx);
 
       await this.indexBlockData(
         blockContent,
         datasources,
+        //eslint-disable-next-line @typescript-eslint/require-await
         async (ds: SubqlProjectDs) => {
           // Injected runtimeVersion from fetch service might be outdated
-          apiAt =
-            apiAt ??
-            (await this.apiService.getPatchedApi(block, runtimeVersion));
-
-          const vm = this.sandboxService.getDsProcessor(ds, apiAt);
+          const safeApi = new SafeJsonRpcProvider(
+            blockContent.block.header.height,
+            this.apiService.getApi().connection,
+          );
+          const vm = this.sandboxService.getDsProcessor(ds, safeApi);
 
           // Inject function to create ds into vm
           vm.freeze(
@@ -155,7 +142,7 @@ export class IndexerManager {
         if (!u8aEq(operationHash, NULL_MERKEL_ROOT)) {
           const poiBlock = PoiBlock.create(
             blockHeight,
-            block.block.header.hash.toHex(),
+            block.header.hash,
             operationHash,
             await this.poiService.getLatestPoiBlockHash(),
             this.project.id,
@@ -189,7 +176,7 @@ export class IndexerManager {
   }
 
   private async processUnfinalizedBlocks(
-    block: SubstrateBlock,
+    block: NearBlock,
     tx: Transaction,
   ): Promise<number | null> {
     if (this.nodeConfig.unfinalizedBlocks) {
@@ -214,7 +201,7 @@ export class IndexerManager {
       if (isCustomDs(ds)) {
         return this.dsProcessorService
           .getDsProcessor(ds)
-          .dsFilterProcessor(ds, this.api);
+          .dsFilterProcessor(ds, this.apiService.getApi());
       } else {
         return true;
       }
@@ -228,78 +215,61 @@ export class IndexerManager {
   }
 
   private async indexBlockData(
-    { block, events, extrinsics }: BlockContent,
+    { actions, block, transactions }: BlockContent,
     dataSources: SubqlProjectDs[],
     getVM: (d: SubqlProjectDs) => Promise<IndexerSandbox>,
   ): Promise<void> {
     await this.indexBlockContent(block, dataSources, getVM);
 
-    // Run initialization events
-    const initEvents = events.filter((evt) => evt.phase.isInitialization);
-    for (const event of initEvents) {
-      await this.indexEvent(event, dataSources, getVM);
-    }
-
-    for (const extrinsic of extrinsics) {
-      await this.indexExtrinsic(extrinsic, dataSources, getVM);
-
-      // Process extrinsic events
-      const extrinsicEvents = events
-        .filter((e) => e.extrinsic?.idx === extrinsic.idx)
-        .sort((a, b) => a.idx - b.idx);
-
-      for (const event of extrinsicEvents) {
-        await this.indexEvent(event, dataSources, getVM);
+    for (const transaction of transactions) {
+      await this.indexTransaction(transaction, dataSources, getVM);
+      for (const action of transaction.actions) {
+        await this.indexAction(action, dataSources, getVM);
       }
-    }
-
-    // Run finalization events
-    const finalizeEvents = events.filter((evt) => evt.phase.isFinalization);
-    for (const event of finalizeEvents) {
-      await this.indexEvent(event, dataSources, getVM);
     }
   }
 
   private async indexBlockContent(
-    block: SubstrateBlock,
+    block: NearBlock,
     dataSources: SubqlProjectDs[],
     getVM: (d: SubqlProjectDs) => Promise<IndexerSandbox>,
   ): Promise<void> {
     for (const ds of dataSources) {
-      await this.indexData(SubstrateHandlerKind.Block, block, ds, getVM);
+      await this.indexData(NearHandlerKind.Block, block, ds, getVM);
     }
   }
 
-  private async indexExtrinsic(
-    extrinsic: SubstrateExtrinsic,
+  private async indexTransaction(
+    transaction: NearTransaction,
     dataSources: SubqlProjectDs[],
     getVM: (d: SubqlProjectDs) => Promise<IndexerSandbox>,
   ): Promise<void> {
     for (const ds of dataSources) {
-      await this.indexData(SubstrateHandlerKind.Call, extrinsic, ds, getVM);
+      await this.indexData(NearHandlerKind.Transaction, transaction, ds, getVM);
     }
   }
 
-  private async indexEvent(
-    event: SubstrateEvent,
+  private async indexAction(
+    action: NearAction,
     dataSources: SubqlProjectDs[],
     getVM: (d: SubqlProjectDs) => Promise<IndexerSandbox>,
   ): Promise<void> {
     for (const ds of dataSources) {
-      await this.indexData(SubstrateHandlerKind.Event, event, ds, getVM);
+      await this.indexData(NearHandlerKind.Action, action, ds, getVM);
     }
   }
 
-  private async indexData<K extends SubstrateHandlerKind>(
+  private async indexData<K extends NearHandlerKind>(
     kind: K,
-    data: SubstrateRuntimeHandlerInputMap[K],
+    data: NearRuntimeHandlerInputMap[K],
     ds: SubqlProjectDs,
     getVM: (ds: SubqlProjectDs) => Promise<IndexerSandbox>,
   ): Promise<void> {
     let vm: IndexerSandbox;
     if (isRuntimeDs(ds)) {
       const handlers = ds.mapping.handlers.filter(
-        (h) => h.kind === kind && FilterTypeMap[kind](data as any, h.filter),
+        (h) =>
+          h.kind === kind && FilterTypeMap[kind](data as any, h.filter as any),
       );
 
       for (const handler of handlers) {
@@ -319,19 +289,14 @@ export class IndexerManager {
         ProcessorTypeMap[kind],
         (data, baseFilter) => {
           switch (kind) {
-            case SubstrateHandlerKind.Block:
-              return !!SubstrateUtil.filterBlock(
-                data as SubstrateBlock,
-                baseFilter,
-              );
-            case SubstrateHandlerKind.Call:
-              return !!SubstrateUtil.filterExtrinsics(
-                [data as SubstrateExtrinsic],
-                baseFilter,
-              ).length;
-            case SubstrateHandlerKind.Event:
-              return !!SubstrateUtil.filterEvents(
-                [data as SubstrateEvent],
+            case NearHandlerKind.Block:
+              return !!NearUtil.filterBlock(data as NearBlock, baseFilter);
+            case NearHandlerKind.Action:
+              return !!NearUtil.filterActions([data as NearAction], baseFilter)
+                .length;
+            case NearHandlerKind.Transaction:
+              return !!NearUtil.filterTransactions(
+                [data as NearTransaction],
                 baseFilter,
               ).length;
             default:
@@ -347,15 +312,15 @@ export class IndexerManager {
     }
   }
 
-  private filterCustomDsHandlers<K extends SubstrateHandlerKind>(
-    ds: SubstrateCustomDataSource<string, SubstrateNetworkFilter>,
-    data: SubstrateRuntimeHandlerInputMap[K],
+  private filterCustomDsHandlers<K extends NearHandlerKind>(
+    ds: NearCustomDataSource<string, NearNetworkFilter>,
+    data: NearRuntimeHandlerInputMap[K],
     baseHandlerCheck: ProcessorTypeMap[K],
     baseFilter: (
-      data: SubstrateRuntimeHandlerInputMap[K],
+      data: NearRuntimeHandlerInputMap[K],
       baseFilter: any,
     ) => boolean,
-  ): SubstrateCustomHandler[] {
+  ): NearCustomHandler[] {
     const plugin = this.dsProcessorService.getDsProcessor(ds);
 
     return ds.mapping.handlers
@@ -385,11 +350,11 @@ export class IndexerManager {
       });
   }
 
-  private async transformAndExecuteCustomDs<K extends SubstrateHandlerKind>(
-    ds: SubstrateCustomDataSource<string, SubstrateNetworkFilter>,
+  private async transformAndExecuteCustomDs<K extends NearHandlerKind>(
+    ds: NearCustomDataSource<string, NearNetworkFilter>,
     vm: IndexerSandbox,
-    handler: SubstrateCustomHandler,
-    data: SubstrateRuntimeHandlerInputMap[K],
+    handler: NearCustomHandler,
+    data: NearRuntimeHandlerInputMap[K],
   ): Promise<void> {
     const plugin = this.dsProcessorService.getDsProcessor(ds);
     const assets = await this.dsProcessorService.getAssets(ds);
@@ -403,7 +368,7 @@ export class IndexerManager {
         input: data,
         ds,
         filter: handler.filter,
-        api: this.api,
+        api: this.apiService.getApi(),
         assets,
       })
       .catch((e) => {
@@ -412,7 +377,7 @@ export class IndexerManager {
       });
 
     // We can not run this in parallel. the transformed data items may be dependent on one another.
-    // An example of this is with Acala EVM packing multiple EVM logs into a single Substrate event
+    // An example of this is with Acala EVM packing multiple EVM logs into a single Near event
     for (const _data of transformedData) {
       await vm.securedExec(handler.handler, [_data]);
     }
@@ -420,19 +385,19 @@ export class IndexerManager {
 }
 
 type ProcessorTypeMap = {
-  [SubstrateHandlerKind.Block]: typeof isBlockHandlerProcessor;
-  [SubstrateHandlerKind.Event]: typeof isEventHandlerProcessor;
-  [SubstrateHandlerKind.Call]: typeof isCallHandlerProcessor;
+  [NearHandlerKind.Block]: typeof isBlockHandlerProcessor;
+  [NearHandlerKind.Transaction]: typeof isTransactionHandlerProcessor;
+  [NearHandlerKind.Action]: typeof isActionHandlerProcessor;
 };
 
 const ProcessorTypeMap = {
-  [SubstrateHandlerKind.Block]: isBlockHandlerProcessor,
-  [SubstrateHandlerKind.Event]: isEventHandlerProcessor,
-  [SubstrateHandlerKind.Call]: isCallHandlerProcessor,
+  [NearHandlerKind.Block]: isBlockHandlerProcessor,
+  [NearHandlerKind.Transaction]: isTransactionHandlerProcessor,
+  [NearHandlerKind.Action]: isActionHandlerProcessor,
 };
 
 const FilterTypeMap = {
-  [SubstrateHandlerKind.Block]: SubstrateUtil.filterBlock,
-  [SubstrateHandlerKind.Event]: SubstrateUtil.filterEvent,
-  [SubstrateHandlerKind.Call]: SubstrateUtil.filterExtrinsic,
+  [NearHandlerKind.Block]: NearUtil.filterBlock,
+  [NearHandlerKind.Transaction]: NearUtil.filterTransaction,
+  [NearHandlerKind.Action]: NearUtil.filterAction,
 };

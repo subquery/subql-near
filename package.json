@@ -33,9 +33,7 @@
     "typescript": "^4.4.4"
   },
   "resolutions": {
-    "@polkadot/api": "9.9.1",
     "@polkadot/util": "10.1.13",
-    "@terra-money/terra.js": "^3.0.11",
     "node-fetch": "2.6.7"
   },
   "scripts": {
@@ -55,5 +53,8 @@
       "prettier --write"
     ]
   },
-  "packageManager": "yarn@3.1.1"
+  "packageManager": "yarn@3.1.1",
+  "dependencies": {
+    "near-api-js": "^1.1.0"
+  }
 }

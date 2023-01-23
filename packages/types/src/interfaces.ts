@@ -1,10 +1,8 @@
 // Copyright 2020-2022 OnFinality Limited authors & contributors
 // SPDX-License-Identifier: Apache-2.0
 
-import {AnyTuple, Codec} from '@polkadot/types-codec/types';
-import {GenericExtrinsic} from '@polkadot/types/extrinsic';
-import {EventRecord, SignedBlock} from '@polkadot/types/interfaces';
-import {IEvent} from '@polkadot/types/types';
+import BN from 'bn.js';
+import {Chunk, BlockHeader} from 'near-api-js/lib/providers/provider';
 
 export interface Entity {
   id: string;
@@ -25,31 +23,98 @@ export interface Store {
   remove(entity: string, id: string): Promise<void>;
 }
 
-export interface SubstrateBlock extends SignedBlock {
-  // parent block's spec version, can be used to decide the correct metadata that should be used for this block.
-  specVersion: number;
-  timestamp: Date;
-  events: EventRecord[];
+export interface NearBlock {
+  author: string;
+  header: BlockHeader;
+  chunks: Chunk[];
+  transactions: NearTransaction[];
+  actions: NearAction[];
+  receipts: any[];
 }
 
-export interface SubstrateExtrinsic<A extends AnyTuple = AnyTuple> {
-  // index in the block
-  idx: number;
-  extrinsic: GenericExtrinsic<A>;
-  block: SubstrateBlock;
-  events: TypedEventRecord<Codec[]>[];
-  success: boolean;
+export interface NearTransaction {
+  nonce: BN;
+  signer_id: string;
+  public_key: string;
+  receiver_id: string;
+  actions: NearAction[];
+  block_hash: string;
+  block_height: number;
+  gas_price: string;
+  gas_used: string;
+  timestamp: number;
+  result: TransactionResult;
 }
 
-export interface SubstrateEvent<T extends AnyTuple = AnyTuple> extends TypedEventRecord<T> {
-  // index in the block
-  idx: number;
-  extrinsic?: SubstrateExtrinsic;
-  block: SubstrateBlock;
+export interface TransactionResult {
+  id: string;
+  logs: string[];
+}
+
+//eslint-disable-next-line @typescript-eslint/no-empty-interface
+export interface CreateAccount {}
+
+export interface DeployContract {
+  code: Uint8Array;
+}
+
+export interface FunctionCall {
+  methodName: string;
+  args: Uint8Array;
+  gas: BN;
+  deposit: BN;
+}
+
+export interface Transfer {
+  deposit: BN;
+}
+
+export interface Stake {
+  stake: BN;
+  publicKey: string;
+}
+
+export interface AddKey {
+  publicKey: string;
+  accessKey: {nonce: BN; permission: string};
+}
+
+export interface DeleteKey {
+  publicKey: string;
+}
+
+export interface DeleteAccount {
+  beneficiaryId: string;
+}
+
+export type Action =
+  | CreateAccount
+  | DeployContract
+  | FunctionCall
+  | Transfer
+  | Stake
+  | AddKey
+  | DeleteKey
+  | DeleteAccount;
+
+export const ActionType = {
+  CreateAccount: 'CreateAccount' as const,
+  DeployContract: 'DeployContract' as const,
+  FunctionCall: 'FunctionCall' as const,
+  Transfer: 'Transfer' as const,
+  Stake: 'Stake' as const,
+  AddKey: 'AddKey' as const,
+  DeleteKey: 'DeleteKey' as const,
+  DeleteAccount: 'DeleteAccount' as const,
+} as const;
+
+export type ActionType = typeof ActionType[keyof typeof ActionType];
+
+export interface NearAction<T = Action | any> {
+  id: number;
+  type: string;
+  action: T;
+  transaction: NearTransaction;
 }
 
 export type DynamicDatasourceCreator = (name: string, args: Record<string, unknown>) => Promise<void>;
-
-export type TypedEventRecord<T extends AnyTuple> = Omit<EventRecord, 'event'> & {
-  event: IEvent<T>;
-};

@@ -3,19 +3,24 @@
 
 import { Inject, Injectable, OnApplicationShutdown } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
-import { ApiPromise, WsProvider } from '@polkadot/api';
-import { ApiOptions, RpcMethodResult } from '@polkadot/api/types';
-import { RuntimeVersion } from '@polkadot/types/interfaces';
-import { AnyFunction, DefinitionRpcExt } from '@polkadot/types/types';
 import {
   IndexerEvent,
   NetworkMetadataPayload,
   getLogger,
 } from '@subql/node-core';
-import { SubstrateBlock } from '@subql/types';
+import { JsonRpcProvider } from 'near-api-js/lib/providers';
+import {
+  AccessKeyWithPublicKey,
+  BlockChangeResult,
+  BlockId,
+  BlockReference,
+  BlockResult,
+  ChangeResult,
+  EpochValidatorInfo,
+  GasPrice,
+} from 'near-api-js/lib/providers/provider';
+import { ConnectionInfo } from 'near-api-js/lib/utils/web';
 import { SubqueryProject } from '../configure/SubqueryProject';
-import { ApiAt } from './types';
-import { HttpProvider } from './x-provider/http';
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const { version: packageVersion } = require('../../package.json');
@@ -26,15 +31,12 @@ const NOT_SUPPORT = (name: string) => () => {
 
 // https://github.com/polkadot-js/api/blob/12750bc83d8d7f01957896a80a7ba948ba3690b7/packages/rpc-provider/src/ws/index.ts#L43
 const RETRY_DELAY = 2_500;
-
+const GENESIS_BLOCK = 9_820_210;
 const logger = getLogger('api');
 
 @Injectable()
-export class ApiService implements OnApplicationShutdown {
-  private api: ApiPromise;
-  private currentBlockHash: string;
-  private currentBlockNumber: number;
-  private apiOption: ApiOptions;
+export class ApiService {
+  private api: JsonRpcProvider;
   networkMeta: NetworkMetadataPayload;
 
   constructor(
@@ -42,60 +44,43 @@ export class ApiService implements OnApplicationShutdown {
     private eventEmitter: EventEmitter2,
   ) {}
 
-  async onApplicationShutdown(): Promise<void> {
-    await Promise.all([this.api?.disconnect()]);
-  }
-
   async init(): Promise<ApiService> {
-    let chainTypes, network;
+    let network;
     try {
-      chainTypes = this.project.chainTypes;
       network = this.project.network;
     } catch (e) {
       logger.error(e);
       process.exit(1);
     }
 
-    let provider: WsProvider | HttpProvider;
-    let throwOnConnect = false;
-
     const headers = {
       'User-Agent': `SubQuery-Node ${packageVersion}`,
     };
-    if (network.endpoint.startsWith('ws')) {
-      provider = new WsProvider(network.endpoint, RETRY_DELAY, headers);
-    } else if (network.endpoint.startsWith('http')) {
-      provider = new HttpProvider(network.endpoint, headers);
-      throwOnConnect = true;
-    }
 
-    this.apiOption = {
-      provider,
-      throwOnConnect,
-      noInitWarn: true,
-      ...chainTypes,
+    const connectionInfo: ConnectionInfo = {
+      url: network.endpoint,
+      headers: headers,
     };
-    this.api = await ApiPromise.create(this.apiOption);
+
+    this.api = new JsonRpcProvider(connectionInfo);
 
     this.eventEmitter.emit(IndexerEvent.ApiConnected, { value: 1 });
-    this.api.on('connected', () => {
-      this.eventEmitter.emit(IndexerEvent.ApiConnected, { value: 1 });
-    });
-    this.api.on('disconnected', () => {
-      this.eventEmitter.emit(IndexerEvent.ApiConnected, { value: 0 });
-    });
+
+    const chainId = (await this.api.status()).chain_id;
 
     this.networkMeta = {
-      chain: this.api.runtimeChain.toString(),
-      specName: this.api.runtimeVersion.specName.toString(),
-      genesisHash: this.api.genesisHash.toString(),
+      chain: chainId,
+      specName: chainId,
+      //mainnet genesis at block 9820210
+      genesisHash: (await this.api.block({ blockId: GENESIS_BLOCK })).header
+        .hash,
     };
 
-    if (network.chainId && network.chainId !== this.networkMeta.genesisHash) {
+    if (network.chainId && network.chainId !== this.networkMeta.chain) {
       const err = new Error(
         `Network chainId doesn't match expected genesisHash. expected="${
           network.chainId ?? network.genesisHash
-        }" actual="${this.networkMeta.genesisHash}`,
+        }" actual="${this.networkMeta.chain}`,
       );
       logger.error(err, err.message);
       throw err;
@@ -104,103 +89,65 @@ export class ApiService implements OnApplicationShutdown {
     return this;
   }
 
-  getApi(): ApiPromise {
+  getApi(): JsonRpcProvider {
     return this.api;
   }
 
-  async getPatchedApi(
-    block: SubstrateBlock,
-    runtimeVersion: RuntimeVersion,
-  ): Promise<ApiAt> {
-    this.currentBlockHash = block.block.hash.toString();
-    this.currentBlockNumber = block.block.header.number.toNumber();
+  genesisHash(): string {
+    return this.networkMeta.genesisHash;
+  }
+}
 
-    const apiAt = (await this.api.at(
-      this.currentBlockHash,
-      runtimeVersion,
-    )) as ApiAt;
-    this.patchApiRpc(this.api, apiAt);
-    return apiAt;
+export class SafeJsonRpcProvider extends JsonRpcProvider {
+  constructor(private height: number, private connectionInfo: ConnectionInfo) {
+    super(connectionInfo);
   }
 
-  private redecorateRpcFunction<T extends 'promise' | 'rxjs'>(
-    original: RpcMethodResult<T, AnyFunction>,
-  ): RpcMethodResult<T, AnyFunction> {
-    const methodName = this.getRPCFunctionName(original);
-    if (original.meta.params) {
-      const hashIndex = original.meta.params.findIndex(
-        ({ isHistoric }) => isHistoric,
-      );
-      if (hashIndex > -1) {
-        const isBlockNumber =
-          original.meta.params[hashIndex].type === 'BlockNumber';
-
-        const ret = (async (...args: any[]) => {
-          const argsClone = [...args];
-
-          if (isBlockNumber) {
-            if (argsClone[hashIndex] === undefined) {
-              argsClone[hashIndex] = this.currentBlockNumber;
-            } else if (argsClone[hashIndex] > this.currentBlockNumber) {
-              throw new Error(
-                `input block ${argsClone[hashIndex]} ahead of current block ${this.currentBlockNumber} is not supported`,
-              );
-            }
-          }
-          // is block hash
-          else {
-            if (argsClone[hashIndex] === undefined) {
-              argsClone[hashIndex] = this.currentBlockHash;
-            } else {
-              const atBlock = await this.api.rpc.chain.getBlock(
-                argsClone[hashIndex],
-              );
-              const atBlockNumber = atBlock.block.header.number.toNumber();
-              if (atBlockNumber > this.currentBlockNumber) {
-                throw new Error(
-                  `input block hash ${argsClone[hashIndex]} ahead of current block ${this.currentBlockNumber} is not supported`,
-                );
-              }
-            }
-          }
-
-          return original(...argsClone);
-        }) as RpcMethodResult<T, AnyFunction>;
-        ret.raw = NOT_SUPPORT(`${methodName}.raw`);
-        ret.meta = original.meta;
-        return ret;
-      }
-    }
-
-    const ret = NOT_SUPPORT(methodName) as unknown as RpcMethodResult<
-      T,
-      AnyFunction
-    >;
-    ret.raw = NOT_SUPPORT(`${methodName}.raw`);
-    ret.meta = original.meta;
-    return ret;
+  async block(): Promise<BlockResult> {
+    return super.block({ blockId: this.height });
   }
 
-  private patchApiRpc(api: ApiPromise, apiAt: ApiAt): void {
-    apiAt.rpc = Object.entries(api.rpc).reduce((acc, [module, rpcMethods]) => {
-      acc[module] = Object.entries(rpcMethods).reduce(
-        (accInner, [name, rpcPromiseResult]) => {
-          accInner[name] = this.redecorateRpcFunction(
-            rpcPromiseResult as RpcMethodResult<any, AnyFunction>,
-          );
-          return accInner;
-        },
-        {},
-      );
-      return acc;
-    }, {} as ApiPromise['rpc']);
+  async blockChanges(): Promise<BlockChangeResult> {
+    return super.blockChanges({ blockId: this.height });
   }
 
-  private getRPCFunctionName<T extends 'promise' | 'rxjs'>(
-    original: RpcMethodResult<T, AnyFunction>,
-  ): string {
-    const ext = original.meta as unknown as DefinitionRpcExt;
+  async validators(): Promise<EpochValidatorInfo> {
+    return super.validators(this.height);
+  }
 
-    return `api.rpc.${ext?.section ?? '*'}.${ext?.method ?? '*'}`;
+  async accessKeyChanges(accountIdArray: string[]): Promise<ChangeResult> {
+    return super.accessKeyChanges(accountIdArray, { blockId: this.height });
+  }
+
+  async singleAccessKeyChanges(
+    accessKeyArray: AccessKeyWithPublicKey[],
+  ): Promise<ChangeResult> {
+    return super.singleAccessKeyChanges(accessKeyArray, {
+      blockId: this.height,
+    });
+  }
+
+  async accountChanges(accountIdArray: string[]): Promise<ChangeResult> {
+    return super.accountChanges(accountIdArray, { blockId: this.height });
+  }
+
+  async contractStateChanges(
+    accountIdArray: string[],
+    blockQuery: BlockReference = { blockId: this.height },
+    keyPrefix?: string,
+  ): Promise<ChangeResult> {
+    return super.contractStateChanges(
+      accountIdArray,
+      { blockId: this.height },
+      keyPrefix,
+    );
+  }
+
+  async contractCodeChanges(accountIdArray: string[]): Promise<ChangeResult> {
+    return super.contractCodeChanges(accountIdArray, { blockId: this.height });
+  }
+
+  async gasPrice(): Promise<GasPrice> {
+    return super.gasPrice(this.height);
   }
 }

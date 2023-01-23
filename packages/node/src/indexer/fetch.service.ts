@@ -4,8 +4,6 @@
 import { Inject, Injectable, OnApplicationShutdown } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { Interval, SchedulerRegistry } from '@nestjs/schedule';
-import { ApiPromise } from '@polkadot/api';
-import { RuntimeVersion } from '@polkadot/types/interfaces';
 
 import {
   isCustomDs,
@@ -13,14 +11,14 @@ import {
   isRuntimeDataSourceV0_3_0,
   isRuntimeDs,
   RuntimeDataSourceV0_0_1,
-  SubstrateBlockFilter,
-  SubstrateCallFilter,
-  SubstrateDataSource,
-  SubstrateEventFilter,
-  SubstrateHandler,
-  SubstrateHandlerKind,
-  SubstrateRuntimeHandlerFilter,
-} from '@subql/common-substrate';
+  NearBlockFilter,
+  NearTransactionFilter,
+  NearDataSource,
+  NearActionFilter,
+  NearHandler,
+  NearHandlerKind,
+  NearRuntimeHandlerFilter,
+} from '@subql/common-near';
 import {
   checkMemoryUsage,
   delay,
@@ -28,18 +26,22 @@ import {
   IndexerEvent,
   NodeConfig,
 } from '@subql/node-core';
-import { DictionaryQueryEntry, SubstrateCustomHandler } from '@subql/types';
+import {
+  DictionaryQueryCondition,
+  DictionaryQueryEntry,
+  NearCustomHandler,
+} from '@subql/types-near';
 import { MetaData } from '@subql/utils';
-import { range, sortBy, uniqBy } from 'lodash';
+import { range, setWith, sortBy, uniqBy } from 'lodash';
+import { JsonRpcProvider } from 'near-api-js/lib/providers';
 import { SubqlProjectDs, SubqueryProject } from '../configure/SubqueryProject';
+import { calcInterval } from '../utils/near';
 import { isBaseHandler, isCustomHandler } from '../utils/project';
-import { calcInterval } from '../utils/substrate';
 import { ApiService } from './api.service';
 import { IBlockDispatcher } from './blockDispatcher';
 import { DictionaryService, SpecVersion } from './dictionary.service';
 import { DsProcessorService } from './ds-processor.service';
 import { DynamicDsService } from './dynamic-ds.service';
-import { RuntimeService } from './runtimeService';
 import { UnfinalizedBlocksService } from './unfinalizedBlocks.service';
 
 const logger = getLogger('fetch');
@@ -49,33 +51,32 @@ const CHECK_MEMORY_INTERVAL = 60000;
 const MINIMUM_BATCH_SIZE = 5;
 const INTERVAL_PERCENT = 0.9;
 
-function eventFilterToQueryEntry(
-  filter: SubstrateEventFilter,
+function txFilterToQueryEntry(
+  filter: NearTransactionFilter,
 ): DictionaryQueryEntry {
   return {
-    entity: 'events',
+    entity: 'transactions',
     conditions: [
-      { field: 'module', value: filter.module },
-      {
-        field: 'event',
-        value: filter.method,
-      },
+      { field: 'sender', value: filter.sender, matcher: 'equalTo' },
+      { field: 'receiver', value: filter.receiver, matcher: 'equalTo' },
     ],
   };
 }
 
-function callFilterToQueryEntry(
-  filter: SubstrateCallFilter,
+function actionFilterToQueryEntry(
+  filter: NearActionFilter,
 ): DictionaryQueryEntry {
+  const conditions: DictionaryQueryCondition[] = [
+    {
+      field: 'type',
+      value: filter.type,
+      matcher: 'equalTo',
+    },
+  ];
+
   return {
-    entity: 'extrinsics',
-    conditions: [
-      { field: 'module', value: filter.module },
-      {
-        field: 'call',
-        value: filter.method,
-      },
-    ],
+    entity: 'actions',
+    conditions: conditions,
   };
 }
 
@@ -99,7 +100,6 @@ export class FetchService implements OnApplicationShutdown {
     private unfinalizedBlocksService: UnfinalizedBlocksService,
     private eventEmitter: EventEmitter2,
     private schedulerRegistry: SchedulerRegistry,
-    private runtimeService: RuntimeService,
   ) {
     this.batchSizeScale = 1;
   }
@@ -114,7 +114,7 @@ export class FetchService implements OnApplicationShutdown {
     this.isShutdown = true;
   }
 
-  get api(): ApiPromise {
+  get api(): JsonRpcProvider {
     return this.apiService.getApi();
   }
 
@@ -127,12 +127,7 @@ export class FetchService implements OnApplicationShutdown {
     const queryEntries: DictionaryQueryEntry[] = [];
 
     const dataSources = this.project.dataSources.filter(
-      (ds) =>
-        isRuntimeDataSourceV0_3_0(ds) ||
-        isRuntimeDataSourceV0_2_0(ds) ||
-        !(ds as RuntimeDataSourceV0_0_1).filter?.specName ||
-        (ds as RuntimeDataSourceV0_0_1).filter.specName ===
-          this.api.runtimeVersion.specName.toString(),
+      (ds) => isRuntimeDataSourceV0_3_0(ds) || isRuntimeDataSourceV0_2_0(ds),
     );
 
     // Only run the ds that is equal or less than startBlock
@@ -148,12 +143,12 @@ export class FetchService implements OnApplicationShutdown {
         : undefined;
       for (const handler of ds.mapping.handlers) {
         const baseHandlerKind = this.getBaseHandlerKind(ds, handler);
-        let filterList: SubstrateRuntimeHandlerFilter[];
+        let filterList: NearRuntimeHandlerFilter[];
         if (isCustomDs(ds)) {
           const processor = plugin.handlerProcessors[handler.kind];
           if (processor.dictionaryQuery) {
             const queryEntry = processor.dictionaryQuery(
-              (handler as SubstrateCustomHandler).filter,
+              (handler as NearCustomHandler).filter,
               ds,
             );
             if (queryEntry) {
@@ -161,11 +156,10 @@ export class FetchService implements OnApplicationShutdown {
               continue;
             }
           }
-          filterList =
-            this.getBaseHandlerFilters<SubstrateRuntimeHandlerFilter>(
-              ds,
-              handler.kind,
-            );
+          filterList = this.getBaseHandlerFilters<NearRuntimeHandlerFilter>(
+            ds,
+            handler.kind,
+          );
         } else {
           filterList = [handler.filter];
         }
@@ -173,27 +167,30 @@ export class FetchService implements OnApplicationShutdown {
         filterList = filterList.filter(Boolean);
         if (!filterList.length) return [];
         switch (baseHandlerKind) {
-          case SubstrateHandlerKind.Block:
-            for (const filter of filterList as SubstrateBlockFilter[]) {
+          case NearHandlerKind.Block:
+            for (const filter of filterList as NearBlockFilter[]) {
               if (filter.modulo === undefined) {
                 return [];
               }
             }
             break;
-          case SubstrateHandlerKind.Call: {
-            for (const filter of filterList as SubstrateCallFilter[]) {
-              if (filter.module !== undefined && filter.method !== undefined) {
-                queryEntries.push(callFilterToQueryEntry(filter));
+          case NearHandlerKind.Transaction: {
+            for (const filter of filterList as NearTransactionFilter[]) {
+              if (
+                filter.sender !== undefined &&
+                filter.receiver !== undefined
+              ) {
+                queryEntries.push(txFilterToQueryEntry(filter));
               } else {
                 return [];
               }
             }
             break;
           }
-          case SubstrateHandlerKind.Event: {
-            for (const filter of filterList as SubstrateEventFilter[]) {
-              if (filter.module !== undefined && filter.method !== undefined) {
-                queryEntries.push(eventFilterToQueryEntry(filter));
+          case NearHandlerKind.Action: {
+            for (const filter of filterList as NearActionFilter[]) {
+              if (filter.type !== undefined) {
+                queryEntries.push(actionFilterToQueryEntry(filter));
               } else {
                 return [];
               }
@@ -265,21 +262,7 @@ export class FetchService implements OnApplicationShutdown {
 
     const validChecker = this.dictionaryValidation(rawSpecVersions);
 
-    this.runtimeService.init(
-      this.getUseDictionary.bind(this),
-      this.getLatestFinalizedHeight.bind(this),
-    );
-
-    if (validChecker) {
-      this.runtimeService.setSpecVersionMap(rawSpecVersions);
-    } else {
-      this.runtimeService.setSpecVersionMap(undefined);
-    }
-
-    await this.blockDispatcher.init(
-      this.resetForNewDs.bind(this),
-      this.runtimeService,
-    );
+    await this.blockDispatcher.init(this.resetForNewDs.bind(this));
 
     void this.startLoop(startHeight);
   }
@@ -309,10 +292,10 @@ export class FetchService implements OnApplicationShutdown {
       return;
     }
     try {
-      const finalizedHash = await this.api.rpc.chain.getFinalizedHead();
-      const finalizedHeader = await this.api.rpc.chain.getHeader(finalizedHash);
+      const finalizedHeader = (await this.api.block({ finality: 'final' }))
+        .header;
       this.unfinalizedBlocksService.registerFinalizedBlock(finalizedHeader);
-      const currentFinalizedHeight = finalizedHeader.number.toNumber();
+      const currentFinalizedHeight = finalizedHeader.height;
       if (this.latestFinalizedHeight !== currentFinalizedHeight) {
         this.latestFinalizedHeight = currentFinalizedHeight;
         if (!this.nodeConfig.unfinalizedBlocks) {
@@ -332,8 +315,9 @@ export class FetchService implements OnApplicationShutdown {
       return;
     }
     try {
-      const bestHeader = await this.api.rpc.chain.getHeader();
-      const currentBestHeight = bestHeader.number.toNumber();
+      const bestHeader = (await this.api.block({ finality: 'optimistic' }))
+        .header;
+      const currentBestHeight = bestHeader.height;
       if (this.latestBestHeight !== currentBestHeight) {
         this.latestBestHeight = currentBestHeight;
         this.eventEmitter.emit(IndexerEvent.BlockBest, {
@@ -362,7 +346,7 @@ export class FetchService implements OnApplicationShutdown {
       }
       for (const handler of ds.mapping.handlers) {
         if (
-          handler.kind === SubstrateHandlerKind.Block &&
+          handler.kind === NearHandlerKind.Block &&
           handler.filter &&
           handler.filter.modulo
         ) {
@@ -393,10 +377,6 @@ export class FetchService implements OnApplicationShutdown {
   }
 
   async fillNextBlockBuffer(initBlockHeight: number): Promise<void> {
-    // setup parentSpecVersion
-    await this.runtimeService.specChanged(initBlockHeight);
-    await this.runtimeService.prefetchMeta(initBlockHeight);
-
     let startBlockHeight: number;
     let scaledBatchSize: number;
     const handlers = [].concat(
@@ -536,7 +516,7 @@ export class FetchService implements OnApplicationShutdown {
     if (dictionary !== undefined) {
       const { _metadata: metaData } = dictionary;
 
-      if (metaData.genesisHash !== this.api.genesisHash.toString()) {
+      if (metaData.genesisHash !== this.apiService.genesisHash()) {
         logger.error(
           'The dictionary that you have specified does not match the chain you are indexing, it will be ignored. Please update your project manifest to reference the correct dictionary',
         );
@@ -563,9 +543,9 @@ export class FetchService implements OnApplicationShutdown {
   }
 
   private getBaseHandlerKind(
-    ds: SubstrateDataSource,
-    handler: SubstrateHandler,
-  ): SubstrateHandlerKind {
+    ds: NearDataSource,
+    handler: NearHandler,
+  ): NearHandlerKind {
     if (isRuntimeDs(ds) && isBaseHandler(handler)) {
       return handler.kind;
     } else if (isCustomDs(ds) && isCustomHandler(handler)) {
@@ -581,8 +561,8 @@ export class FetchService implements OnApplicationShutdown {
     }
   }
 
-  private getBaseHandlerFilters<T extends SubstrateRuntimeHandlerFilter>(
-    ds: SubstrateDataSource,
+  private getBaseHandlerFilters<T extends NearRuntimeHandlerFilter>(
+    ds: NearDataSource,
     handlerKind: string,
   ): T[] {
     if (isCustomDs(ds)) {
