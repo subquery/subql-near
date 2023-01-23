@@ -38,7 +38,7 @@
     "fetch-h2": "3.0.2",
     "lodash": "^4.17.21",
     "merkle-tools": "^1.4.1",
-    "near-api-js": "latest",
+    "near-api-js": "^1.1.0",
     "parse-json": "^6.0.2",
     "pg": "^8.7.1",
     "prom-client": "^14.0.1",
