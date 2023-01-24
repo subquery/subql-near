@@ -222,7 +222,10 @@ export class IndexerManager {
 
     for (const transaction of transactions) {
       await this.indexTransaction(transaction, dataSources, getVM);
-      for (const action of transaction.actions) {
+      const actions = block.actions.filter(
+        (action) => action.transaction.result.id === transaction.result.id,
+      );
+      for (const action of actions) {
         await this.indexAction(action, dataSources, getVM);
       }
     }

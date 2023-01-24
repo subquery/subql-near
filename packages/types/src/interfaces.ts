@@ -112,7 +112,7 @@ export type ActionType = typeof ActionType[keyof typeof ActionType];
 
 export interface NearAction<T = Action | any> {
   id: number;
-  type: string;
+  type: ActionType;
   action: T;
   transaction: NearTransaction;
 }
