@@ -19,12 +19,12 @@ import {
   NearBlockFilter,
   isRuntimeDs,
   NearHandlerKind,
-  NearRuntimeHandler,
 } from '@subql/common-near';
 import { buildSchemaFromString } from '@subql/utils';
 import Cron from 'cron-converter';
 import { GraphQLSchema } from 'graphql';
-import { JsonRpcProvider } from 'near-api-js/lib/providers';
+import { providers } from 'near-api-js';
+import { BlockResult } from 'near-api-js/lib/providers/provider';
 import { getBlockByHeight } from '../utils/near';
 import { getProjectRoot, updateDataSourcesV0_2_0 } from '../utils/project';
 
@@ -202,7 +202,7 @@ async function loadProjectTemplates(
 // eslint-disable-next-line @typescript-eslint/require-await
 export async function generateTimestampReferenceForBlockFilters(
   dataSources: SubqlProjectDs[],
-  api: JsonRpcProvider,
+  api: providers.JsonRpcProvider,
 ): Promise<SubqlProjectDs[]> {
   const cron = new Cron();
 
@@ -210,7 +210,7 @@ export async function generateTimestampReferenceForBlockFilters(
     dataSources.map(async (ds) => {
       if (isRuntimeDs(ds)) {
         const startBlock = ds.startBlock ?? 1;
-        let block;
+        let block: BlockResult;
         let timestampReference;
 
         ds.mapping.handlers = await Promise.all(

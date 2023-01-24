@@ -10,7 +10,6 @@ import {
   isRuntimeDataSourceV0_2_0,
   isRuntimeDataSourceV0_3_0,
   isRuntimeDs,
-  RuntimeDataSourceV0_0_1,
   NearBlockFilter,
   NearTransactionFilter,
   NearDataSource,
@@ -32,8 +31,8 @@ import {
   NearCustomHandler,
 } from '@subql/types-near';
 import { MetaData } from '@subql/utils';
-import { range, setWith, sortBy, uniqBy } from 'lodash';
-import { JsonRpcProvider } from 'near-api-js/lib/providers';
+import { range, sortBy, uniqBy } from 'lodash';
+import { providers } from 'near-api-js';
 import { SubqlProjectDs, SubqueryProject } from '../configure/SubqueryProject';
 import { calcInterval } from '../utils/near';
 import { isBaseHandler, isCustomHandler } from '../utils/project';
@@ -114,7 +113,7 @@ export class FetchService implements OnApplicationShutdown {
     this.isShutdown = true;
   }
 
-  get api(): JsonRpcProvider {
+  get api(): providers.JsonRpcProvider {
     return this.apiService.getApi();
   }
 

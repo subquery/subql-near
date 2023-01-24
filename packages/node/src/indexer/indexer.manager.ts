@@ -26,7 +26,6 @@ import {
   IndexerSandbox,
 } from '@subql/node-core';
 import { NearBlock, NearAction, NearTransaction } from '@subql/types-near';
-import { JsonRpcProvider } from 'near-api-js/lib/providers';
 import { Sequelize, Transaction } from 'sequelize';
 import { SubqlProjectDs, SubqueryProject } from '../configure/SubqueryProject';
 import * as NearUtil from '../utils/near';

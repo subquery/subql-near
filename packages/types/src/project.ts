@@ -1,7 +1,7 @@
 // Copyright 2020-2022 OnFinality Limited authors & contributors
 // SPDX-License-Identifier: Apache-2.0
 
-import {JsonRpcProvider} from 'near-api-js/lib/providers';
+import {providers} from 'near-api-js';
 import {NearBlock, NearTransaction, NearAction, Action} from './interfaces';
 
 export enum NearDatasourceKind {
@@ -122,7 +122,12 @@ export interface HandlerInputTransformer_0_0_0<
   E,
   DS extends NearCustomDatasource = NearCustomDatasource
 > {
-  (input: RuntimeHandlerInputMap[T], ds: DS, api: JsonRpcProvider, assets?: Record<string, string>): Promise<E>; //  | NearBuiltinDataSource
+  (
+    input: RuntimeHandlerInputMap[T],
+    ds: DS,
+    api: providers.JsonRpcProvider,
+    assets?: Record<string, string>
+  ): Promise<E>; //  | NearBuiltinDataSource
 }
 
 export interface HandlerInputTransformer_1_0_0<
@@ -135,7 +140,7 @@ export interface HandlerInputTransformer_1_0_0<
     input: RuntimeHandlerInputMap[T];
     ds: DS;
     filter?: F;
-    api: JsonRpcProvider;
+    api: providers.JsonRpcProvider;
     assets?: Record<string, string>;
   }): Promise<E[]>; //  | NearBuiltinDataSource
 }
@@ -161,7 +166,7 @@ export interface NearDatasourceProcessor<
 > {
   kind: K;
   validate(ds: DS, assets: Record<string, string>): void;
-  dsFilterProcessor(ds: DS, api: JsonRpcProvider): boolean;
+  dsFilterProcessor(ds: DS, api: providers.JsonRpcProvider): boolean;
   handlerProcessors: P;
 }
 

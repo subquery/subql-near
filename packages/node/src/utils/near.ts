@@ -1,7 +1,7 @@
 // Copyright 2020-2022 OnFinality Limited authors & contributors
 // SPDX-License-Identifier: Apache-2.0
 
-import { BN, BN_THOUSAND, BN_TWO, bnMin } from '@polkadot/util';
+import { BN } from '@polkadot/util';
 import { getLogger } from '@subql/node-core';
 import {
   NearBlockFilter,
@@ -21,8 +21,8 @@ import {
   Action,
   ActionType,
 } from '@subql/types-near';
-import { last, merge, range } from 'lodash';
-import { JsonRpcProvider } from 'near-api-js/lib/providers';
+import { range } from 'lodash';
+import { providers } from 'near-api-js';
 import { BlockResult, Transaction } from 'near-api-js/lib/providers/provider';
 import { SubqlProjectBlockFilter } from '../configure/SubqueryProject';
 import { BlockContent } from '../indexer/types';
@@ -31,7 +31,7 @@ const logger = getLogger('fetch');
 const DEFAULT_TIME = new BN(6_000);
 
 export async function wrapBlock(
-  api: JsonRpcProvider,
+  api: providers.JsonRpcProvider,
   blockResult: BlockResult,
 ): Promise<NearBlock> {
   const nearBlock: NearBlock = {
@@ -65,7 +65,7 @@ export async function wrapBlock(
 }
 
 export async function wrapTransaction(
-  api: JsonRpcProvider,
+  api: providers.JsonRpcProvider,
   block: BlockResult,
   txn: Transaction,
 ): Promise<NearTransaction> {
@@ -254,7 +254,7 @@ export function filterActions(
  */
 
 export async function getBlockByHeight(
-  api: JsonRpcProvider,
+  api: providers.JsonRpcProvider,
   height: number,
 ): Promise<BlockResult> {
   return api.block({ blockId: height }).catch((e) => {
@@ -264,7 +264,7 @@ export async function getBlockByHeight(
 }
 
 export async function fetchBlocksRange(
-  api: JsonRpcProvider,
+  api: providers.JsonRpcProvider,
   startHeight: number,
   endHeight: number,
 ): Promise<BlockResult[]> {
@@ -276,7 +276,7 @@ export async function fetchBlocksRange(
 }
 
 export async function fetchBlocksArray(
-  api: JsonRpcProvider,
+  api: providers.JsonRpcProvider,
   blockArray: number[],
 ): Promise<BlockResult[]> {
   return Promise.all(
@@ -285,9 +285,8 @@ export async function fetchBlocksArray(
 }
 
 export async function fetchBlocksBatches(
-  api: JsonRpcProvider,
+  api: providers.JsonRpcProvider,
   blockArray: number[],
-  overallSpecVer?: number,
 ): Promise<BlockContent[]> {
   const blocks = await fetchBlocksArray(api, blockArray);
 
@@ -303,6 +302,6 @@ export async function fetchBlocksBatches(
   return Promise.all(blockContentPromises);
 }
 
-export function calcInterval(api: JsonRpcProvider): BN {
+export function calcInterval(api: providers.JsonRpcProvider): BN {
   return DEFAULT_TIME;
 }

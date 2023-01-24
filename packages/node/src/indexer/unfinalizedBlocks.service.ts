@@ -12,7 +12,7 @@ import {
 } from '@subql/node-core';
 import { NearBlock } from '@subql/types-near';
 import { last } from 'lodash';
-import { JsonRpcProvider } from 'near-api-js/lib/providers';
+import { providers } from 'near-api-js';
 import { BlockHeader } from 'near-api-js/lib/providers/provider';
 import { Sequelize, Transaction } from 'sequelize';
 import { ApiService } from './api.service';
@@ -73,7 +73,7 @@ export class UnfinalizedBlocksService {
     }
   }
 
-  private get api(): JsonRpcProvider {
+  private get api(): providers.JsonRpcProvider {
     return this.apiService.getApi();
   }
 

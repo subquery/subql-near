@@ -1,18 +1,17 @@
 // Copyright 2020-2022 OnFinality Limited authors & contributors
 // SPDX-License-Identifier: Apache-2.0
 
-import { Inject, Injectable, OnApplicationShutdown } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import {
   IndexerEvent,
   NetworkMetadataPayload,
   getLogger,
 } from '@subql/node-core';
-import { JsonRpcProvider } from 'near-api-js/lib/providers';
+import * as Near from 'near-api-js';
 import {
   AccessKeyWithPublicKey,
   BlockChangeResult,
-  BlockId,
   BlockReference,
   BlockResult,
   ChangeResult,
@@ -20,6 +19,7 @@ import {
   GasPrice,
 } from 'near-api-js/lib/providers/provider';
 import { ConnectionInfo } from 'near-api-js/lib/utils/web';
+
 import { SubqueryProject } from '../configure/SubqueryProject';
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
@@ -36,7 +36,7 @@ const logger = getLogger('api');
 
 @Injectable()
 export class ApiService {
-  private api: JsonRpcProvider;
+  private api: Near.providers.JsonRpcProvider;
   networkMeta: NetworkMetadataPayload;
 
   constructor(
@@ -62,7 +62,7 @@ export class ApiService {
       headers: headers,
     };
 
-    this.api = new JsonRpcProvider(connectionInfo);
+    this.api = new Near.providers.JsonRpcProvider(connectionInfo);
 
     this.eventEmitter.emit(IndexerEvent.ApiConnected, { value: 1 });
 
@@ -89,7 +89,7 @@ export class ApiService {
     return this;
   }
 
-  getApi(): JsonRpcProvider {
+  getApi(): Near.providers.JsonRpcProvider {
     return this.api;
   }
 
@@ -98,7 +98,7 @@ export class ApiService {
   }
 }
 
-export class SafeJsonRpcProvider extends JsonRpcProvider {
+export class SafeJsonRpcProvider extends Near.providers.JsonRpcProvider {
   constructor(private height: number, private connectionInfo: ConnectionInfo) {
     super(connectionInfo);
   }
