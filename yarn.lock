@@ -3055,7 +3055,7 @@ __metadata:
     vm2: ^3.9.9
     yargs: ^16.2.0
   bin:
-    subql-node: ./bin/run
+    subql-node-near: ./bin/run
   languageName: unknown
   linkType: soft
 
