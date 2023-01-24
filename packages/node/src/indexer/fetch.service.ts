@@ -257,12 +257,7 @@ export class FetchService implements OnApplicationShutdown {
     await this.getFinalizedBlockHead();
     await this.getBestBlockHead();
 
-    const rawSpecVersions = await this.dictionaryService.getSpecVersionsRaw();
-
-    const validChecker = this.dictionaryValidation(rawSpecVersions);
-
     await this.blockDispatcher.init(this.resetForNewDs.bind(this));
-
     void this.startLoop(startHeight);
   }
 
