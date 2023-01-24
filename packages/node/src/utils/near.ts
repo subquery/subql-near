@@ -73,13 +73,6 @@ export async function wrapBlock(
           (action, id) => wrapAction(action, id, wrappedTx),
         );
 
-        //wrappedTx.actions = nearActions;
-
-        //break circular structure
-        //wrappedTx.actions.forEach((action) => {
-        //  action.transaction = null;
-        //})
-
         nearBlock.transactions.push(wrappedTx);
         nearBlock.actions = nearBlock.actions.concat(nearActions);
       },
