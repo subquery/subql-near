@@ -38,6 +38,7 @@ export interface ProjectManifest {
   };
 
   dataSources: NearDatasource[];
+  bypassBlocks?: number[];
 }
 
 // [startSpecVersion?, endSpecVersion?] closed range

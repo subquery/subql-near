@@ -19,27 +19,28 @@ import {
   NearRuntimeHandlerFilter,
 } from '@subql/common-near';
 import {
+  cleanedBatchBlocks,
   checkMemoryUsage,
   delay,
   getLogger,
   IndexerEvent,
   NodeConfig,
+  transformBypassBlocks,
 } from '@subql/node-core';
 import {
-  ActionType,
   DictionaryQueryCondition,
   DictionaryQueryEntry,
   NearCustomHandler,
 } from '@subql/types-near';
 import { MetaData } from '@subql/utils';
-import { range, sortBy, uniqBy } from 'lodash';
+import { range, sortBy, uniqBy, without } from 'lodash';
 import { providers } from 'near-api-js';
 import { SubqlProjectDs, SubqueryProject } from '../configure/SubqueryProject';
 import { calcInterval } from '../utils/near';
 import { isBaseHandler, isCustomHandler } from '../utils/project';
 import { ApiService } from './api.service';
 import { IBlockDispatcher } from './blockDispatcher';
-import { DictionaryService, SpecVersion } from './dictionary.service';
+import { DictionaryService } from './dictionary.service';
 import { DsProcessorService } from './ds-processor.service';
 import { DynamicDsService } from './dynamic-ds.service';
 import { UnfinalizedBlocksService } from './unfinalizedBlocks.service';
@@ -93,6 +94,8 @@ export class FetchService implements OnApplicationShutdown {
   private batchSizeScale: number;
   private templateDynamicDatasouces: SubqlProjectDs[];
   private dictionaryGenesisMatches = true;
+  private bypassBlocks: number[] = [];
+  private bypassBufferHeight: number;
 
   constructor(
     private apiService: ApiService,
@@ -235,6 +238,11 @@ export class FetchService implements OnApplicationShutdown {
   }
 
   async init(startHeight: number): Promise<void> {
+    if (this.project.network?.bypassBlocks !== undefined) {
+      this.bypassBlocks = transformBypassBlocks(
+        this.project.network.bypassBlocks,
+      ).filter((blk) => blk >= startHeight);
+    }
     if (this.api) {
       const CHAIN_INTERVAL = calcInterval(this.api)
         .muln(INTERVAL_PERCENT)
@@ -389,6 +397,14 @@ export class FetchService implements OnApplicationShutdown {
         : initBlockHeight;
     };
 
+    if (this.dictionaryService.startHeight > getStartBlockHeight()) {
+      logger.warn(
+        `Dictionary start height ${
+          this.dictionaryService.startHeight
+        } is beyond indexing height ${getStartBlockHeight()}, skipping dictionary for now`,
+      );
+    }
+
     while (!this.isShutdown) {
       startBlockHeight = getStartBlockHeight();
 
@@ -408,7 +424,10 @@ export class FetchService implements OnApplicationShutdown {
         continue;
       }
 
-      if (this.useDictionary) {
+      if (
+        this.useDictionary &&
+        startBlockHeight >= this.dictionaryService.startHeight
+      ) {
         const queryEndBlock = startBlockHeight + DICTIONARY_MAX_QUERY_SIZE;
         const moduloBlocks = this.getModuloBlocks(
           startBlockHeight,
@@ -441,17 +460,26 @@ export class FetchService implements OnApplicationShutdown {
               .sort((a, b) => a - b);
             if (batchBlocks.length === 0) {
               // There we're no blocks in this query range, we can set a new height we're up to
-              this.blockDispatcher.latestBufferedHeight = Math.min(
-                queryEndBlock - 1,
-                dictionary._metadata.lastProcessedHeight,
+              this.blockDispatcher.enqueueBlocks(
+                [],
+                Math.min(
+                  queryEndBlock - 1,
+                  dictionary._metadata.lastProcessedHeight,
+                ),
               );
             } else {
               const maxBlockSize = Math.min(
                 batchBlocks.length,
                 this.blockDispatcher.freeSize,
               );
-              batchBlocks = batchBlocks.slice(0, maxBlockSize);
-              this.blockDispatcher.enqueueBlocks(batchBlocks);
+              const enqueuingBlocks = batchBlocks.slice(0, maxBlockSize);
+              const cleanedBatchBlocks =
+                this.filteredBlockBatch(enqueuingBlocks);
+
+              this.blockDispatcher.enqueueBlocks(
+                cleanedBatchBlocks,
+                this.getLatestBufferHeight(cleanedBatchBlocks, enqueuingBlocks),
+              );
             }
             continue; // skip nextBlockRange() way
           }
@@ -461,22 +489,52 @@ export class FetchService implements OnApplicationShutdown {
           this.eventEmitter.emit(IndexerEvent.SkipDictionary);
         }
       }
-
       const endHeight = this.nextEndBlockHeight(
         startBlockHeight,
         scaledBatchSize,
       );
 
       if (handlers.length && this.getModulos().length === handlers.length) {
+        const enqueuingBlocks = this.getEnqueuedModuloBlocks(startBlockHeight);
+        const cleanedBatchBlocks = this.filteredBlockBatch(enqueuingBlocks);
         this.blockDispatcher.enqueueBlocks(
-          this.getEnqueuedModuloBlocks(startBlockHeight),
+          cleanedBatchBlocks,
+          this.getLatestBufferHeight(cleanedBatchBlocks, enqueuingBlocks),
         );
       } else {
+        const enqueuingBlocks = range(startBlockHeight, endHeight + 1);
+        const cleanedBatchBlocks = this.filteredBlockBatch(enqueuingBlocks);
         this.blockDispatcher.enqueueBlocks(
-          range(startBlockHeight, endHeight + 1),
+          cleanedBatchBlocks,
+          this.getLatestBufferHeight(cleanedBatchBlocks, enqueuingBlocks),
         );
       }
     }
+  }
+  private getLatestBufferHeight(
+    cleanedBatchBlocks: number[],
+    rawBatchBlocks: number[],
+  ): number {
+    return Math.max(...cleanedBatchBlocks, ...rawBatchBlocks);
+  }
+  private filteredBlockBatch(currentBatchBlocks: number[]): number[] {
+    if (!this.bypassBlocks.length || !currentBatchBlocks) {
+      return currentBatchBlocks;
+    }
+
+    const cleanedBatch = cleanedBatchBlocks(
+      this.bypassBlocks,
+      currentBatchBlocks,
+    );
+
+    const pollutedBlocks = this.bypassBlocks.filter(
+      (b) => b < Math.max(...currentBatchBlocks),
+    );
+    if (pollutedBlocks.length) {
+      logger.info(`Bypassing blocks: ${pollutedBlocks}`);
+    }
+    this.bypassBlocks = without(this.bypassBlocks, ...pollutedBlocks);
+    return cleanedBatch;
   }
 
   private nextEndBlockHeight(
