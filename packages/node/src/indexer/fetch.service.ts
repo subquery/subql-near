@@ -265,6 +265,14 @@ export class FetchService implements OnApplicationShutdown {
 
     await this.syncDynamicDatascourcesFromMeta();
     this.updateDictionary();
+    const metadata = await this.dictionaryService.getMetadata();
+
+    if (this.dictionaryValidation(metadata)) {
+      this.dictionaryService.setDictionaryStartHeight(
+        metadata._metadata.startHeight,
+      );
+    }
+
     this.eventEmitter.emit(IndexerEvent.UsingDictionary, {
       value: Number(this.useDictionary),
     });
