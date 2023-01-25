@@ -78,9 +78,11 @@ export class ApiService {
 
     if (network.chainId && network.chainId !== this.networkMeta.chain) {
       const err = new Error(
-        `Network chainId doesn't match expected genesisHash. expected="${
+        `Network chainId doesn't match expected genesisHash. Your SubQuery project is expecting to index data from "${
           network.chainId ?? network.genesisHash
-        }" actual="${this.networkMeta.chain}`,
+        }", however the endpoint that you are connecting to is different("${
+          this.networkMeta.chain
+        }). Please check that the RPC endpoint is actually for your desired network or update the chainId.`,
       );
       logger.error(err, err.message);
       throw err;

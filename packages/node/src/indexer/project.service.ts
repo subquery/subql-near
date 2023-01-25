@@ -23,7 +23,7 @@ import {
   SubqlProjectDs,
   SubqueryProject,
 } from '../configure/SubqueryProject';
-import { initDbSchema } from '../utils/project';
+import { initDbSchema, initHotSchemaReload } from '../utils/project';
 import { reindex } from '../utils/reindex';
 import { ApiService } from './api.service';
 import { DsProcessorService } from './ds-processor.service';
@@ -106,6 +106,8 @@ export class ProjectService {
       this.metadataRepo = await this.ensureMetadata();
       this.dynamicDsService.init(this.metadataRepo);
 
+      await this.initHotSchemaReload();
+
       if (this.nodeConfig.proofOfIndex) {
         const blockOffset = await this.getMetadataBlockOffset();
         void this.setBlockOffset(Number(blockOffset));
@@ -179,6 +181,9 @@ export class ProjectService {
     return schema;
   }
 
+  private async initHotSchemaReload(): Promise<void> {
+    await initHotSchemaReload(this.schema, this.storeService);
+  }
   private async initDbSchema(): Promise<void> {
     await initDbSchema(this.project, this.schema, this.storeService);
   }
@@ -203,10 +208,12 @@ export class ProjectService {
       'chain',
       'specName',
       'genesisHash',
+      'startHeight',
       'chainId',
       'processedBlockCount',
       'lastFinalizedVerifiedHeight',
       'schemaMigrationCount',
+      'bypassBlocks',
     ] as const;
 
     const entries = await metadataRepo.findAll({
@@ -253,7 +260,6 @@ export class ProjectService {
         'Specified project manifest chain id / genesis hash does not match database stored genesis hash, consider cleaning project schema using --force-clean',
       );
     }
-
     if (keyValue.chain !== chain) {
       await metadataRepo.upsert({ key: 'chain', value: chain });
     }
@@ -275,6 +281,13 @@ export class ProjectService {
     }
     if (!keyValue.schemaMigrationCount) {
       await metadataRepo.upsert({ key: 'schemaMigrationCount', value: 0 });
+    }
+
+    if (!keyValue.startHeight) {
+      await metadataRepo.upsert({
+        key: 'startHeight',
+        value: this.getStartBlockFromDataSources(),
+      });
     }
 
     return metadataRepo;
