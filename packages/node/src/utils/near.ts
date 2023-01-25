@@ -304,9 +304,26 @@ export async function fetchBlocksArray(
   api: providers.JsonRpcProvider,
   blockArray: number[],
 ): Promise<BlockResult[]> {
-  return Promise.all(
-    blockArray.map(async (height) => getBlockByHeight(api, height)),
+  const results = await Promise.all(
+    blockArray.map(async (height) => {
+      try {
+        return await getBlockByHeight(api, height);
+      } catch (error) {
+        if (
+          error.message ===
+          `[-32000] Server error: DB Not Found Error: BLOCK HEIGHT: ${height} \n Cause: Unknown`
+        ) {
+          logger.warn(
+            `Block ${height} Unavailable in the chain, skipping thorugh it`,
+          );
+          return null;
+        } else {
+          throw error;
+        }
+      }
+    }),
   );
+  return results.filter((result) => result !== null);
 }
 
 export async function fetchBlocksBatches(
