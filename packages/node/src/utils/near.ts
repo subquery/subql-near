@@ -30,24 +30,30 @@ import { BlockContent } from '../indexer/types';
 const logger = getLogger('fetch');
 const DEFAULT_TIME = new BN(6_000);
 
-export const mappingFilterAction = {
+export const mappingFilterAction: Record<
+  ActionType,
+  Record<string, `action.${string}`>
+> = {
   [ActionType.FunctionCall]: {
-    methodName: 'action.methodName',
+    methodName: 'action.method_name',
     args: 'action.args',
   },
   [ActionType.Stake]: {
     publicKey: 'action.publicKey',
   },
   [ActionType.AddKey]: {
-    publicKey: 'action.publicKey',
-    accessKey: 'action.accessKey',
+    publicKey: 'action.public_key',
+    accessKey: 'action.access_key',
   },
   [ActionType.DeleteKey]: {
-    publicKey: 'action.publicKey',
+    publicKey: 'action.public_key',
   },
   [ActionType.DeleteAccount]: {
-    beneficiaryId: 'action.beneficiaryId',
+    beneficiaryId: 'action.beneficiary_id',
   },
+  [ActionType.CreateAccount]: {},
+  [ActionType.DeployContract]: {},
+  [ActionType.Transfer]: {},
 };
 
 export async function wrapBlock(
@@ -74,11 +80,11 @@ export async function wrapBlock(
         );
 
         nearBlock.transactions.push(wrappedTx);
-        nearBlock.actions = nearBlock.actions.concat(nearActions);
+        nearBlock.actions.push(...nearActions);
       },
     );
     await Promise.all(transactionPromises);
-    nearBlock.receipts = nearBlock.receipts.concat(chunkResult.receipts);
+    nearBlock.receipts.push(...chunkResult.receipts);
   });
 
   await Promise.all(chunkPromises);
@@ -239,7 +245,9 @@ export function filterAction(
 
   const { receiver, sender, type, ...filterByKey } = filter;
 
-  if (type && action.type !== type) return false;
+  if (type && action.type !== type) {
+    return false;
+  }
 
   for (const key in filterByKey) {
     if (

@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import BN from 'bn.js';
-import {Chunk, BlockHeader} from 'near-api-js/lib/providers/provider';
+import {Chunk, BlockHeader, CallFunctionRequest} from 'near-api-js/lib/providers/provider';
 
 export interface Entity {
   id: string;
@@ -60,7 +60,7 @@ export interface DeployContract {
 }
 
 export interface FunctionCall {
-  methodName: string;
+  method_name: string;
   args: Uint8Array;
   gas: BN;
   deposit: BN;
@@ -72,20 +72,20 @@ export interface Transfer {
 
 export interface Stake {
   stake: BN;
-  publicKey: string;
+  public_key: string;
 }
 
 export interface AddKey {
-  publicKey: string;
-  accessKey: {nonce: BN; permission: string};
+  public_key: string;
+  access_key: {nonce: BN; permission: string};
 }
 
 export interface DeleteKey {
-  publicKey: string;
+  public_key: string;
 }
 
 export interface DeleteAccount {
-  beneficiaryId: string;
+  beneficiary_id: string;
 }
 
 export type Action =
