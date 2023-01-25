@@ -21,7 +21,7 @@ import {
   Action,
   ActionType,
 } from '@subql/types-near';
-import { range } from 'lodash';
+import { get, range } from 'lodash';
 import { providers } from 'near-api-js';
 import { BlockResult, Transaction } from 'near-api-js/lib/providers/provider';
 import { SubqlProjectBlockFilter } from '../configure/SubqueryProject';
@@ -29,6 +29,26 @@ import { BlockContent } from '../indexer/types';
 
 const logger = getLogger('fetch');
 const DEFAULT_TIME = new BN(6_000);
+
+export const mappingFilterAction = {
+  [ActionType.FunctionCall]: {
+    methodName: 'action.methodName',
+    args: 'action.args',
+  },
+  [ActionType.Stake]: {
+    publicKey: 'action.publicKey',
+  },
+  [ActionType.AddKey]: {
+    publicKey: 'action.publicKey',
+    accessKey: 'action.accessKey',
+  },
+  [ActionType.DeleteKey]: {
+    publicKey: 'action.publicKey',
+  },
+  [ActionType.DeleteAccount]: {
+    beneficiaryId: 'action.beneficiaryId',
+  },
+};
 
 export async function wrapBlock(
   api: providers.JsonRpcProvider,
@@ -48,10 +68,12 @@ export async function wrapBlock(
     const transactionPromises = chunkResult.transactions.map(
       async (transaction) => {
         const wrappedTx = await wrapTransaction(api, blockResult, transaction);
-        nearBlock.transactions.push(wrappedTx);
+
         const nearActions: NearAction[] = transaction.actions.map(
           (action, id) => wrapAction(action, id, wrappedTx),
         );
+
+        nearBlock.transactions.push(wrappedTx);
         nearBlock.actions = nearBlock.actions.concat(nearActions);
       },
     );
@@ -211,20 +233,23 @@ export function filterAction(
   filter?: NearActionFilter,
 ): boolean {
   if (!filter) return true;
-  if (
-    filter.txFilter &&
-    !filterTransaction(action.transaction, filter.txFilter)
-  ) {
+  if (!filterTransaction(action.transaction, filter)) {
     return false;
   }
-  if (filter.type && action.type !== filter.type) return false;
-  if (filter.action) {
-    for (const key in filter.action) {
-      if (filter.action[key].toString() !== action.action[key].toString()) {
-        return false;
-      }
+
+  const { receiver, sender, type, ...filterByKey } = filter;
+
+  if (type && action.type !== type) return false;
+
+  for (const key in filterByKey) {
+    if (
+      mappingFilterAction[action.type] &&
+      filterByKey[key] !== get(action, mappingFilterAction[action.type][key])
+    ) {
+      return false;
     }
   }
+
   return true;
 }
 

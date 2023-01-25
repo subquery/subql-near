@@ -26,6 +26,7 @@ import {
   NodeConfig,
 } from '@subql/node-core';
 import {
+  ActionType,
   DictionaryQueryCondition,
   DictionaryQueryEntry,
   NearCustomHandler,
@@ -53,25 +54,30 @@ const INTERVAL_PERCENT = 0.9;
 function txFilterToQueryEntry(
   filter: NearTransactionFilter,
 ): DictionaryQueryEntry {
+  const conditions: DictionaryQueryCondition[] = Object.entries(filter).map(
+    ([field, value]) => ({
+      field,
+      value,
+      matcher: 'equalTo',
+    }),
+  );
+
   return {
     entity: 'transactions',
-    conditions: [
-      { field: 'sender', value: filter.sender, matcher: 'equalTo' },
-      { field: 'receiver', value: filter.receiver, matcher: 'equalTo' },
-    ],
+    conditions: conditions,
   };
 }
 
 function actionFilterToQueryEntry(
   filter: NearActionFilter,
 ): DictionaryQueryEntry {
-  const conditions: DictionaryQueryCondition[] = [
-    {
-      field: 'type',
-      value: filter.type,
+  const conditions: DictionaryQueryCondition[] = Object.entries(filter).map(
+    ([field, value]) => ({
+      field,
+      value,
       matcher: 'equalTo',
-    },
-  ];
+    }),
+  );
 
   return {
     entity: 'actions',
@@ -176,7 +182,7 @@ export class FetchService implements OnApplicationShutdown {
           case NearHandlerKind.Transaction: {
             for (const filter of filterList as NearTransactionFilter[]) {
               if (
-                filter.sender !== undefined &&
+                filter.sender !== undefined ||
                 filter.receiver !== undefined
               ) {
                 queryEntries.push(txFilterToQueryEntry(filter));

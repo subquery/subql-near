@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import {providers} from 'near-api-js';
-import {NearBlock, NearTransaction, NearAction, Action} from './interfaces';
+import {NearBlock, NearTransaction, NearAction} from './interfaces';
 
 export enum NearDatasourceKind {
   Runtime = 'near/Runtime',
@@ -53,10 +53,21 @@ export interface NearTransactionFilter {
   receiver?: string;
 }
 
-export interface NearActionFilter<T = Action | any> {
+export interface NearActionFilter extends NearTransactionFilter {
   type: string;
-  action?: T;
-  txFilter?: NearTransactionFilter;
+
+  //FunctionCall
+  methodName?: string;
+  args?: string;
+
+  // Stake, AddKey, DeleteKey
+  publicKey?: string;
+
+  // AddKey
+  accessKey?: string;
+
+  // DeleteAccount
+  beneficiaryId?: string;
 }
 
 export type NearBlockHandler = NearCustomHandler<NearHandlerKind.Block, NearBlockFilter>;

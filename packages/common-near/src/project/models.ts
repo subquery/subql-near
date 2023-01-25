@@ -36,6 +36,7 @@ import {
   ValidationArguments,
   ValidationOptions,
   Min,
+  ValidateIf,
 } from 'class-validator';
 
 export class BlockFilter implements NearBlockFilter {
@@ -77,77 +78,45 @@ export function IsActionType(validationOptions?: ValidationOptions) {
   };
 }
 
-function isValidAction(action: object, value: any): boolean {
-  const actionKeys = Object.keys(action);
-  const valueKeys = Object.keys(value);
-  return valueKeys.every((key) => actionKeys.includes(key));
-}
-
-export function IsAction(validationOptions?: ValidationOptions) {
-  return function (object: object, propertyName: string) {
-    registerDecorator({
-      name: 'isAction',
-      target: object.constructor,
-      propertyName: propertyName,
-      constraints: [],
-      options: validationOptions,
-      validator: {
-        validate(value: any, args: ValidationArguments) {
-          if (!value) {
-            return true;
-          }
-          const obj = args.object as ActionFilter;
-          switch (obj.type) {
-            case ActionType.CreateAccount:
-              return isValidAction({}, value);
-            case ActionType.DeployContract:
-              return isValidAction({code: new Uint8Array()}, value);
-            case ActionType.FunctionCall:
-              return isValidAction(
-                {
-                  methodName: '',
-                  args: new Uint8Array(),
-                  gas: new BN(0),
-                  deposit: new BN(0),
-                },
-                value
-              );
-            case ActionType.Transfer:
-              return isValidAction({deposit: new BN(0)}, value);
-            case ActionType.Stake:
-              return isValidAction({stake: new BN(0), publicKey: ''}, value);
-            case ActionType.AddKey:
-              return isValidAction(
-                {
-                  publicKey: '',
-                  accessKey: {nonce: new BN(0), permission: ''},
-                },
-                value
-              );
-            case ActionType.DeleteKey:
-              return isValidAction({publicKey: ''}, value);
-            case ActionType.DeleteAccount:
-              return isValidAction({beneficiaryId: ''}, value);
-            default:
-              return false;
-          }
-        },
-      },
-    });
-  };
-}
-
-export class ActionFilter implements NearActionFilter {
+export class ActionFilter extends TransactionFilter implements NearActionFilter {
   @IsString()
   @IsActionType()
-  type: string;
+  type: ActionType;
+
+  @IsString()
   @IsOptional()
-  @IsAction()
-  action?: any;
+  @ValidateIf((o: ActionFilter) => {
+    return o.type === ActionType.FunctionCall;
+  })
+  methodName?: string;
+
+  @IsString()
   @IsOptional()
-  @ValidateNested()
-  @Type(() => TransactionFilter)
-  txFilter?: NearTransactionFilter;
+  @ValidateIf((o: ActionFilter) => {
+    return o.type === ActionType.FunctionCall;
+  })
+  args?: string;
+
+  @IsString()
+  @IsOptional()
+  @ValidateIf((o: ActionFilter) => {
+    return o.type === ActionType.Stake || o.type === ActionType.AddKey || o.type === ActionType.DeleteKey;
+  })
+  publicKey?: string;
+
+  @IsString()
+  @IsOptional()
+  @ValidateIf((o: ActionFilter) => {
+    return o.type === ActionType.AddKey;
+  })
+  accessKey?: string;
+
+  @IsString()
+  @IsOptional()
+  @ValidateIf((o: ActionFilter) => {
+    return o.type === ActionType.DeleteAccount;
+  })
+  beneficiaryId?: string;
 }
 
 export class BlockHandler implements NearBlockHandler {
