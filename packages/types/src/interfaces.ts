@@ -61,7 +61,7 @@ export interface DeployContract {
 
 export interface FunctionCall {
   method_name: string;
-  args: Uint8Array;
+  args: any;
   gas: BN;
   deposit: BN;
 }
