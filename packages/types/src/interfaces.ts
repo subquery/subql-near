@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import BN from 'bn.js';
-import {Chunk, BlockHeader, CallFunctionRequest} from 'near-api-js/lib/providers/provider';
+import {Chunk, BlockHeader} from 'near-api-js/lib/providers/provider';
 
 export interface Entity {
   id: string;
@@ -59,9 +59,19 @@ export interface DeployContract {
   code: Uint8Array;
 }
 
+export class Args extends String {
+  toJson() {
+    try {
+      return JSON.parse(Buffer.from(this, 'base64').toString('utf8'));
+    } catch (e) {
+      return String(this);
+    }
+  }
+}
+
 export interface FunctionCall {
   method_name: string;
-  args: any;
+  args: Args;
   gas: BN;
   deposit: BN;
 }

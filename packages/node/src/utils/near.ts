@@ -20,6 +20,7 @@ import {
   DeleteAccount,
   Action,
   ActionType,
+  Args,
 } from '@subql/types-near';
 import { get, range } from 'lodash';
 import { providers } from 'near-api-js';
@@ -120,16 +121,7 @@ function parseNearAction(type: ActionType, action: any): Action {
       return action as DeployContract;
     case ActionType.FunctionCall: {
       const parsedAction = action as FunctionCall;
-      const decodedArgs = Buffer.from(parsedAction.args, 'base64').toString(
-        'utf8',
-      );
-
-      try {
-        parsedAction.args = JSON.parse(decodedArgs);
-      } catch (e) {
-        logger.debug('Could not decode FunctionCall args');
-      }
-
+      parsedAction.args = new Args(action.args);
       return parsedAction;
     }
     case ActionType.Transfer:
