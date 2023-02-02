@@ -59,19 +59,9 @@ export interface DeployContract {
   code: Uint8Array;
 }
 
-export class Args extends String {
-  toJson() {
-    try {
-      return JSON.parse(Buffer.from(this, 'base64').toString('utf8'));
-    } catch (e) {
-      return String(this);
-    }
-  }
-}
-
 export interface FunctionCall {
   method_name: string;
-  args: Args;
+  args: string;
   gas: BN;
   deposit: BN;
 }

@@ -20,7 +20,6 @@ import {
   DeleteAccount,
   Action,
   ActionType,
-  Args,
 } from '@subql/types-near';
 import { get, range } from 'lodash';
 import { providers } from 'near-api-js';
@@ -30,6 +29,12 @@ import { BlockContent } from '../indexer/types';
 
 const logger = getLogger('fetch');
 const DEFAULT_TIME = new BN(6_000);
+
+export class Args extends String {
+  toJson() {
+    return JSON.parse(Buffer.from(this, 'base64').toString('utf8'));
+  }
+}
 
 export const mappingFilterAction: Record<
   ActionType,
