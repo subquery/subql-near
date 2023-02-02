@@ -8,6 +8,10 @@ export interface Entity {
   id: string;
 }
 
+export interface IArgs extends String {
+  toJson<T = any>(): T;
+}
+
 export type FunctionPropertyNames<T> = {
   [K in keyof T]: T[K] extends Function ? K : never;
 }[keyof T];
@@ -61,7 +65,7 @@ export interface DeployContract {
 
 export interface FunctionCall {
   method_name: string;
-  args: string;
+  args: IArgs;
   gas: BN;
   deposit: BN;
 }
