@@ -9,6 +9,10 @@ All logs must start with the format: [x.y.z] - yyyy-mm-dd
 
 ## [Unreleased]
 
+## [1.0.1] - 2023-02-03
+### Fixed
+- Args type for funciton calls (#9)
+
 ## [1.0.0] - 2023-01-26
 
 Initial Release
