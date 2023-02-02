@@ -20,6 +20,7 @@ import {
   DeleteAccount,
   Action,
   ActionType,
+  IArgs,
 } from '@subql/types-near';
 import { get, range } from 'lodash';
 import { providers } from 'near-api-js';
@@ -29,6 +30,12 @@ import { BlockContent } from '../indexer/types';
 
 const logger = getLogger('fetch');
 const DEFAULT_TIME = new BN(6_000);
+
+export class Args extends String implements IArgs {
+  toJson<T = any>(): T {
+    return JSON.parse(Buffer.from(this, 'base64').toString('utf8'));
+  }
+}
 
 export const mappingFilterAction: Record<
   ActionType,
@@ -118,8 +125,11 @@ function parseNearAction(type: ActionType, action: any): Action {
       return action as CreateAccount;
     case ActionType.DeployContract:
       return action as DeployContract;
-    case ActionType.FunctionCall:
-      return action as FunctionCall;
+    case ActionType.FunctionCall: {
+      const parsedAction = action as FunctionCall;
+      parsedAction.args = new Args(action.args);
+      return parsedAction;
+    }
     case ActionType.Transfer:
       return action as Transfer;
     case ActionType.Stake:
