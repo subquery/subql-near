@@ -14,6 +14,7 @@ import {
   NearHandlerKind,
   NearNetworkFilter,
   NearRuntimeHandlerInputMap,
+  isReceiptHandlerProcessor,
 } from '@subql/common-near';
 import {
   PoiBlock,
@@ -25,7 +26,12 @@ import {
   profilerWrap,
   IndexerSandbox,
 } from '@subql/node-core';
-import { NearBlock, NearAction, NearTransaction } from '@subql/types-near';
+import {
+  NearBlock,
+  NearAction,
+  NearTransaction,
+  NearTransactionReceipt,
+} from '@subql/types-near';
 import { Sequelize, Transaction } from 'sequelize';
 import { SubqlProjectDs, SubqueryProject } from '../configure/SubqueryProject';
 import * as NearUtil from '../utils/near';
@@ -214,7 +220,7 @@ export class IndexerManager {
   }
 
   private async indexBlockData(
-    { actions, block, transactions }: BlockContent,
+    { block, transactions }: BlockContent,
     dataSources: SubqlProjectDs[],
     getVM: (d: SubqlProjectDs) => Promise<IndexerSandbox>,
   ): Promise<void> {
@@ -223,10 +229,25 @@ export class IndexerManager {
     for (const transaction of transactions) {
       await this.indexTransaction(transaction, dataSources, getVM);
       const actions = block.actions.filter(
-        (action) => action.transaction.result.id === transaction.result.id,
+        (action) =>
+          action.transaction.result.id === transaction.result.id &&
+          //check if action is not produced by receipts
+          action.receipt === undefined,
       );
       for (const action of actions) {
         await this.indexAction(action, dataSources, getVM);
+      }
+      const receipts = block.receipts.filter(
+        (receipt) => receipt.transaction.result.id === transaction.result.id,
+      );
+      for (const receipt of receipts) {
+        await this.indexReceipt(receipt, dataSources, getVM);
+        const actions = block.actions.filter(
+          (action) => action.receipt && action.receipt.receipt_id,
+        );
+        for (const action of actions) {
+          await this.indexAction(action, dataSources, getVM);
+        }
       }
     }
   }
@@ -258,6 +279,16 @@ export class IndexerManager {
   ): Promise<void> {
     for (const ds of dataSources) {
       await this.indexData(NearHandlerKind.Action, action, ds, getVM);
+    }
+  }
+
+  private async indexReceipt(
+    receipt: NearTransactionReceipt,
+    dataSources: SubqlProjectDs[],
+    getVM: (d: SubqlProjectDs) => Promise<IndexerSandbox>,
+  ): Promise<void> {
+    for (const ds of dataSources) {
+      await this.indexData(NearHandlerKind.Receipt, receipt, ds, getVM);
     }
   }
 
@@ -299,6 +330,11 @@ export class IndexerManager {
             case NearHandlerKind.Transaction:
               return !!NearUtil.filterTransactions(
                 [data as NearTransaction],
+                baseFilter,
+              ).length;
+            case NearHandlerKind.Receipt:
+              return !!NearUtil.filterReceipts(
+                [data as NearTransactionReceipt],
                 baseFilter,
               ).length;
             default:
@@ -390,16 +426,19 @@ type ProcessorTypeMap = {
   [NearHandlerKind.Block]: typeof isBlockHandlerProcessor;
   [NearHandlerKind.Transaction]: typeof isTransactionHandlerProcessor;
   [NearHandlerKind.Action]: typeof isActionHandlerProcessor;
+  [NearHandlerKind.Receipt]: typeof isReceiptHandlerProcessor;
 };
 
 const ProcessorTypeMap = {
   [NearHandlerKind.Block]: isBlockHandlerProcessor,
   [NearHandlerKind.Transaction]: isTransactionHandlerProcessor,
   [NearHandlerKind.Action]: isActionHandlerProcessor,
+  [NearHandlerKind.Receipt]: isReceiptHandlerProcessor,
 };
 
 const FilterTypeMap = {
   [NearHandlerKind.Block]: NearUtil.filterBlock,
   [NearHandlerKind.Transaction]: NearUtil.filterTransaction,
   [NearHandlerKind.Action]: NearUtil.filterAction,
+  [NearHandlerKind.Receipt]: NearUtil.filterReceipt,
 };
