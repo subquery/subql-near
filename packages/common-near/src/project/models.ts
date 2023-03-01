@@ -20,6 +20,7 @@ import {
   NearCustomDatasource,
   ActionType,
   NearReceiptHandler,
+  NearReceiptFilter,
 } from '@subql/types-near';
 import BN from 'bn.js';
 import {plainToClass, Transform, Type} from 'class-transformer';
@@ -79,7 +80,13 @@ export function IsActionType(validationOptions?: ValidationOptions) {
   };
 }
 
-export class ActionFilter extends TransactionFilter implements NearActionFilter {
+export class ReceiptFilter extends TransactionFilter implements NearReceiptFilter {
+  @IsOptional()
+  @IsString()
+  signer?: string;
+}
+
+export class ActionFilter extends ReceiptFilter implements NearActionFilter {
   @IsString()
   @IsActionType()
   type: ActionType;
@@ -156,8 +163,8 @@ export class ActionHandler implements NearActionHandler {
 export class ReceiptHandler implements NearReceiptHandler {
   @IsOptional()
   @ValidateNested()
-  @Type(() => TransactionFilter)
-  filter?: NearTransactionFilter;
+  @Type(() => ReceiptFilter)
+  filter?: NearReceiptFilter;
   @IsEnum(NearHandlerKind, {groups: [NearHandlerKind.Receipt]})
   kind: NearHandlerKind.Receipt;
   @IsString()

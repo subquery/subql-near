@@ -31,9 +31,10 @@ import {
   DictionaryQueryCondition,
   DictionaryQueryEntry,
   NearCustomHandler,
+  NearReceiptFilter,
 } from '@subql/types-near';
 import { MetaData } from '@subql/utils';
-import { range, sortBy, uniqBy, without } from 'lodash';
+import { filter, range, sortBy, uniqBy, without } from 'lodash';
 import { providers } from 'near-api-js';
 import { SubqlProjectDs, SubqueryProject } from '../configure/SubqueryProject';
 import { calcInterval } from '../utils/near';
@@ -65,6 +66,23 @@ function txFilterToQueryEntry(
 
   return {
     entity: 'transactions',
+    conditions: conditions,
+  };
+}
+
+function receiptFilterToQueryEntry(
+  filter: NearReceiptFilter,
+): DictionaryQueryEntry {
+  const conditions: DictionaryQueryCondition[] = Object.entries(filter).map(
+    ([field, value]) => ({
+      field,
+      value,
+      matcher: 'equalTo',
+    }),
+  );
+
+  return {
+    entity: 'receipts',
     conditions: conditions,
   };
 }
@@ -134,13 +152,10 @@ export class FetchService implements OnApplicationShutdown {
   buildDictionaryQueryEntries(startBlock: number): DictionaryQueryEntry[] {
     const queryEntries: DictionaryQueryEntry[] = [];
 
-    const dataSources = this.project.dataSources.filter(
-      (ds) => isRuntimeDataSourceV0_3_0(ds) || isRuntimeDataSourceV0_2_0(ds),
-    );
-
-    // Only run the ds that is equal or less than startBlock
-    // sort array from lowest ds.startBlock to highest
-    const filteredDs = dataSources
+    const filteredDs = this.project.dataSources
+      .filter(
+        (ds) => isRuntimeDataSourceV0_3_0(ds) || isRuntimeDataSourceV0_2_0(ds),
+      )
       .concat(this.templateDynamicDatasouces)
       .filter((ds) => ds.startBlock <= startBlock)
       .sort((a, b) => a.startBlock - b.startBlock);
@@ -176,33 +191,55 @@ export class FetchService implements OnApplicationShutdown {
         if (!filterList.length) return [];
         switch (baseHandlerKind) {
           case NearHandlerKind.Block:
-            for (const filter of filterList as NearBlockFilter[]) {
-              if (filter.modulo === undefined) {
-                return [];
-              }
+            if (
+              (filterList as NearBlockFilter[]).some((filter) => !filter.modulo)
+            ) {
+              return [];
             }
             break;
           case NearHandlerKind.Transaction: {
-            for (const filter of filterList as NearTransactionFilter[]) {
-              if (
-                filter.sender !== undefined ||
-                filter.receiver !== undefined
-              ) {
-                queryEntries.push(txFilterToQueryEntry(filter));
-              } else {
-                return [];
-              }
+            if (
+              (filterList as NearTransactionFilter[]).some(
+                (filter) => !(filter.sender || filter.receiver),
+              )
+            ) {
+              return [];
             }
+            queryEntries.push(
+              ...(filterList as NearTransactionFilter[]).map(
+                txFilterToQueryEntry,
+              ),
+            );
+            break;
+          }
+          case NearHandlerKind.Receipt: {
+            if (
+              (filterList as NearReceiptFilter[]).some(
+                (filter) =>
+                  !(filter.sender || filter.receiver || filter.signer),
+              )
+            ) {
+              return [];
+            }
+            queryEntries.push(
+              ...(filterList as NearReceiptFilter[]).map(
+                receiptFilterToQueryEntry,
+              ),
+            );
+            logger.info(JSON.stringify(queryEntries));
             break;
           }
           case NearHandlerKind.Action: {
-            for (const filter of filterList as NearActionFilter[]) {
-              if (filter.type !== undefined) {
-                queryEntries.push(actionFilterToQueryEntry(filter));
-              } else {
-                return [];
-              }
+            if (
+              (filterList as NearActionFilter[]).some((filter) => !filter.type)
+            ) {
+              return [];
             }
+            queryEntries.push(
+              ...(filterList as NearActionFilter[]).map(
+                actionFilterToQueryEntry,
+              ),
+            );
             break;
           }
           default:

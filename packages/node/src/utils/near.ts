@@ -22,6 +22,7 @@ import {
   ActionType,
   IArgs,
   NearTransactionReceipt,
+  NearReceiptFilter,
 } from '@subql/types-near';
 import { get, range } from 'lodash';
 import { providers } from 'near-api-js';
@@ -336,7 +337,7 @@ export function filterTransactions(
 
 export function filterReceipt(
   receipt: NearTransactionReceipt,
-  filter?: NearTransactionFilter,
+  filter?: NearReceiptFilter,
 ): boolean {
   if (!filter) return true;
   if (filter.sender && receipt.predecessor_id !== filter.sender) return false;
@@ -354,7 +355,7 @@ export function filterReceipt(
 
 export function filterReceipts(
   receipts: NearTransactionReceipt[],
-  filterOrFilters?: NearTransactionFilter | NearTransactionFilter[] | undefined,
+  filterOrFilters?: NearReceiptFilter | NearReceiptFilter[] | undefined,
 ): NearTransactionReceipt[] {
   if (
     !filterOrFilters ||

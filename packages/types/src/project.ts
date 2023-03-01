@@ -55,11 +55,14 @@ export interface NearBlockFilter {
 export interface NearTransactionFilter {
   sender?: string;
   receiver?: string;
+}
+
+export interface NearReceiptFilter extends NearTransactionFilter {
   //For Action Receipts:
   signer?: string;
 }
 
-export interface NearActionFilter extends NearTransactionFilter {
+export interface NearActionFilter extends NearReceiptFilter {
   type: string;
 
   //FunctionCall
