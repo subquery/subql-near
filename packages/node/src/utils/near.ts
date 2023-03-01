@@ -22,7 +22,6 @@ import {
   ActionType,
   IArgs,
   NearTransactionReceipt,
-  NearReceiptFilter,
 } from '@subql/types-near';
 import { get, range } from 'lodash';
 import { providers } from 'near-api-js';
@@ -32,6 +31,29 @@ import { BlockContent } from '../indexer/types';
 
 const logger = getLogger('fetch');
 const DEFAULT_TIME = new BN(6_000);
+
+interface Receipt {
+  predecessor_id: string;
+  receipt: {
+    Action: {
+      actions: (Record<string, any> | string)[];
+      gas_price: string;
+      input_data_ids: string[];
+      output_data_receivers: {
+        data_id: string;
+        receiver_id: string;
+      }[];
+      signer_id: string;
+      signer_public_key: string;
+    };
+    Data: {
+      data: string;
+      data_id: string;
+    };
+  };
+  receipt_id: string;
+  receiver_id: string;
+}
 
 export class Args extends String implements IArgs {
   toJson<T = any>(): T {
@@ -91,29 +113,33 @@ export async function wrapBlock(
           transaction,
           exectuionOutcome,
         );
-        const txReceipts = wrapTransactionReceipt(
-          (exectuionOutcome as any).receipts,
-          wrappedTx,
-        );
 
         const nearActions: NearAction[] = transaction.actions.map(
           (action, id) => wrapAction(action, id, wrappedTx),
         );
 
-        for (const receipt of txReceipts) {
-          for (const action of receipt.actions) {
-            action.receipt = receipt;
-            action.receipt.actions = null;
-            nearBlock.actions.push(action);
-          }
-        }
-
         nearBlock.transactions.push(wrappedTx);
         nearBlock.actions.push(...nearActions);
-        nearBlock.receipts.push(...txReceipts);
       },
     );
     await Promise.all(transactionPromises);
+
+    const txReceipts = wrapTransactionReceipt(
+      chunkResult.receipts,
+      chunk.height_included,
+    );
+
+    for (const receipt of txReceipts) {
+      if (receipt.Action) {
+        for (const action of receipt.Action.actions) {
+          action.receipt = receipt;
+          action.receipt.Action.actions = null;
+          nearBlock.actions.push(action);
+        }
+      }
+    }
+
+    nearBlock.receipts.push(...txReceipts);
   });
 
   await Promise.all(chunkPromises);
@@ -141,34 +167,43 @@ export function wrapTransaction(
 }
 
 function wrapTransactionReceipt(
-  data: any[],
-  tx: NearTransaction,
+  data: Receipt[],
+  block_height: number,
 ): NearTransactionReceipt[] {
   return data.map((item, id) => {
-    const actions: NearAction[] = item.receipt.Action.actions.map(
-      (action, id) => wrapAction(action, id, tx),
-    );
-    const gasPrice: BN = new BN(item.receipt.Action.gas_price);
-    const inputDataIds: string[] = item.receipt.Action.input_data_ids;
-    const outputDataReceivers: string[] =
-      item.receipt.Action.output_data_receivers;
-    const signerId: string = item.receipt.Action.signer_id;
-    const signerPublicKey: string = item.receipt.Action.signer_public_key;
-    const predecessorId: string = item.predecessor_id;
-
-    const receipt: NearTransactionReceipt = {
-      id,
-      receipt_id: item.receipt_id,
-      transaction: tx,
-      predecessor_id: predecessorId,
-      actions,
-      gas_price: gasPrice,
-      input_data_ids: inputDataIds,
-      output_data_receivers: outputDataReceivers,
-      signer_id: signerId,
-      signer_public_key: signerPublicKey,
-      receiver_id: item.receiver_id,
-    };
+    let receipt: NearTransactionReceipt;
+    if (item.receipt.Action) {
+      const actions: NearAction[] = item.receipt.Action.actions.map(
+        (action, id) => wrapAction(action, id),
+      );
+      receipt = {
+        id,
+        block_height: block_height,
+        receipt_id: item.receipt_id,
+        predecessor_id: item.predecessor_id,
+        Action: {
+          actions,
+          gas_price: new BN(item.receipt.Action.gas_price),
+          input_data_ids: item.receipt.Action.input_data_ids,
+          output_data_receivers: item.receipt.Action.output_data_receivers,
+          signer_id: item.receipt.Action.signer_id,
+          signer_public_key: item.receipt.Action.signer_public_key,
+        },
+        receiver_id: item.receiver_id,
+      };
+    } else {
+      receipt = {
+        id,
+        block_height: block_height,
+        receipt_id: item.receipt_id,
+        predecessor_id: item.predecessor_id,
+        Data: {
+          data: item.receipt.Data.data,
+          data_id: item.receipt.Data.data_id,
+        },
+        receiver_id: item.receiver_id,
+      };
+    }
 
     return receipt;
   });
@@ -203,7 +238,7 @@ function parseNearAction(type: ActionType, action: any): Action {
 export function wrapAction(
   action: Record<string, any> | string,
   id: number,
-  transaction: NearTransaction,
+  transaction?: NearTransaction,
 ): NearAction {
   let type, actionValue;
   if (action === 'CreateAccount') {
@@ -301,24 +336,25 @@ export function filterTransactions(
 
 export function filterReceipt(
   receipt: NearTransactionReceipt,
-  filter?: NearReceiptFilter,
+  filter?: NearTransactionFilter,
 ): boolean {
   if (!filter) return true;
-  if (!filterTransaction(receipt.transaction)) return false;
-  if (filter.predecessor_id && receipt.predecessor_id !== filter.predecessor_id)
+  if (filter.sender && receipt.predecessor_id !== filter.sender) return false;
+  if (filter.receiver && receipt.receiver_id !== filter.receiver) {
     return false;
-  if (filter.signer_id && receipt.signer_id !== filter.signer_id) return false;
+  }
   if (
-    filter.receipt_receiver &&
-    receipt.receiver_id !== filter.receipt_receiver
-  )
+    filter.signer &&
+    (!receipt.Action || receipt.Action.signer_id !== filter.signer)
+  ) {
     return false;
+  }
   return true;
 }
 
 export function filterReceipts(
   receipts: NearTransactionReceipt[],
-  filterOrFilters?: NearReceiptFilter | NearReceiptFilter[] | undefined,
+  filterOrFilters?: NearTransactionFilter | NearTransactionFilter[] | undefined,
 ): NearTransactionReceipt[] {
   if (
     !filterOrFilters ||
@@ -337,25 +373,19 @@ export function filterAction(
   action: NearAction,
   filter?: NearActionFilter,
 ): boolean {
-  //if(action.receipt && action.receipt.receiver_id === "dclv2.ref-labs.near") logger.info(JSON.stringify(action.action))
   if (!filter) return true;
 
   //check if action is related to a receipt
   if (action.receipt && !filterReceipt(action.receipt, filter)) {
     return false;
-  } else if (!filterTransaction(action.transaction, filter)) {
+  } else if (
+    action.transaction &&
+    !filterTransaction(action.transaction, filter)
+  ) {
     return false;
   }
 
-  const {
-    predecessor_id,
-    receipt_receiver,
-    receiver,
-    sender,
-    signer_id,
-    type,
-    ...filterByKey
-  } = filter;
+  const { receiver, sender, type, ...filterByKey } = filter;
 
   if (type && action.type !== type) {
     return false;

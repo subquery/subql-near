@@ -19,7 +19,6 @@ import {
   NearRuntimeHandlerFilter,
   NearCustomDatasource,
   ActionType,
-  NearReceiptFilter,
   NearReceiptHandler,
 } from '@subql/types-near';
 import BN from 'bn.js';
@@ -40,7 +39,6 @@ import {
   Min,
   ValidateIf,
 } from 'class-validator';
-import {Action} from 'near-api-js/lib/transaction';
 
 export class BlockFilter implements NearBlockFilter {
   @IsOptional()
@@ -81,21 +79,7 @@ export function IsActionType(validationOptions?: ValidationOptions) {
   };
 }
 
-export class ReceiptFilter extends TransactionFilter implements NearReceiptFilter {
-  @IsString()
-  @IsOptional()
-  predecessor_id?: string;
-
-  @IsString()
-  @IsOptional()
-  signer_id?: string;
-
-  @IsString()
-  @IsOptional()
-  receipt_receiver?: string;
-}
-
-export class ActionFilter extends ReceiptFilter implements NearActionFilter {
+export class ActionFilter extends TransactionFilter implements NearActionFilter {
   @IsString()
   @IsActionType()
   type: ActionType;
@@ -172,8 +156,8 @@ export class ActionHandler implements NearActionHandler {
 export class ReceiptHandler implements NearReceiptHandler {
   @IsOptional()
   @ValidateNested()
-  @Type(() => ReceiptFilter)
-  filter?: NearReceiptFilter;
+  @Type(() => TransactionFilter)
+  filter?: NearTransactionFilter;
   @IsEnum(NearHandlerKind, {groups: [NearHandlerKind.Receipt]})
   kind: NearHandlerKind.Receipt;
   @IsString()

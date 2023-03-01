@@ -2,7 +2,12 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import * as Near from 'near-api-js';
-import { filterActions, fetchBlocksBatches } from './near';
+import {
+  filterActions,
+  fetchBlocksBatches,
+  filterReceipt,
+  filterReceipts,
+} from './near';
 
 describe('Near api', () => {
   let nearApi: Near.providers.JsonRpcProvider;
@@ -10,6 +15,34 @@ describe('Near api', () => {
   beforeAll(() => {
     nearApi = new Near.providers.JsonRpcProvider({
       url: 'https://archival-rpc.mainnet.near.org',
+    });
+  });
+
+  describe('Receipt Filters', () => {
+    it('Can filter receipts with sender, receiver and signer', async () => {
+      const [block] = await fetchBlocksBatches(nearApi, [85686945]);
+
+      const actions = filterReceipts(block.receipts, {
+        sender: 'a0b86991c6218b36c1d19d4a2e9eb0ce3606eb48.factory.bridge.near',
+        receiver: 'dclv2.ref-labs.near',
+        signer:
+          '2b5cad386ecfbf082ff74fdc2563ed35a230f57f2749a00e18bad12cda48c892',
+      });
+
+      expect(actions.length).toBe(1);
+    });
+
+    it('Can filter receipts with sender, receiver and signer - filter does not match', async () => {
+      const [block] = await fetchBlocksBatches(nearApi, [85686945]);
+
+      const actions = filterReceipts(block.receipts, {
+        sender: 'a0b86991c6218b36c1d19d4a2e9eb0ce3606eb48.factory.bridge.near',
+        receiver: '1234',
+        signer:
+          '2b5cad386ecfbf082ff74fdc2563ed35a230f57f2749a00e18bad12cda48c892',
+      });
+
+      expect(actions.length).toBe(0);
     });
   });
 
@@ -55,6 +88,18 @@ describe('Near api', () => {
       const actions = filterActions(block.actions, {
         type: 'DeleteKey',
         publicKey: 'ed25519:9KNsmHHBPfoHZZHKjmBzRQsRDEe9EyNeptamK21hGK9a',
+      });
+
+      expect(actions.length).toBe(1);
+    });
+
+    it('Can filter actions with receipt filters', async () => {
+      const [block] = await fetchBlocksBatches(nearApi, [85686945]);
+
+      const actions = filterActions(block.actions, {
+        type: 'FunctionCall',
+        methodName: 'ft_on_transfer',
+        receiver: 'dclv2.ref-labs.near',
       });
 
       expect(actions.length).toBe(1);

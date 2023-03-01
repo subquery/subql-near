@@ -230,20 +230,18 @@ export class IndexerManager {
       await this.indexTransaction(transaction, dataSources, getVM);
       const actions = block.actions.filter(
         (action) =>
-          action.transaction.result.id === transaction.result.id &&
           //check if action is not produced by receipts
-          action.receipt === undefined,
+          action.receipt === undefined &&
+          action.transaction.result.id === transaction.result.id,
       );
       for (const action of actions) {
         await this.indexAction(action, dataSources, getVM);
       }
-      const receipts = block.receipts.filter(
-        (receipt) => receipt.transaction.result.id === transaction.result.id,
-      );
-      for (const receipt of receipts) {
+      for (const receipt of block.receipts) {
         await this.indexReceipt(receipt, dataSources, getVM);
         const actions = block.actions.filter(
-          (action) => action.receipt && action.receipt.receipt_id,
+          (action) =>
+            action.receipt && action.receipt.receipt_id === receipt.receipt_id,
         );
         for (const action of actions) {
           await this.indexAction(action, dataSources, getVM);

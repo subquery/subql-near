@@ -58,15 +58,24 @@ export interface TransactionResult {
 
 export interface NearTransactionReceipt {
   id: number;
+  block_height: number;
   receipt_id: string;
-  transaction: NearTransaction;
   predecessor_id: string;
-  actions: NearAction[];
-  gas_price: BN;
-  input_data_ids: string[];
-  output_data_receivers: string[];
-  signer_id: string;
-  signer_public_key: string;
+  Action?: {
+    actions: NearAction[];
+    gas_price: BN;
+    input_data_ids: string[];
+    output_data_receivers: {
+      data_id: string;
+      receiver_id: string;
+    }[];
+    signer_id: string;
+    signer_public_key: string;
+  };
+  Data?: {
+    data: string;
+    data_id: string;
+  };
   receiver_id: string;
 }
 

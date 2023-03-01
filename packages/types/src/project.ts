@@ -26,7 +26,7 @@ type RuntimeFilterMap = {
   [NearHandlerKind.Block]: NearBlockFilter;
   [NearHandlerKind.Transaction]: NearTransactionFilter;
   [NearHandlerKind.Action]: NearActionFilter;
-  [NearHandlerKind.Receipt]: NearReceiptFilter;
+  [NearHandlerKind.Receipt]: NearTransactionFilter;
 };
 
 export interface ProjectManifest {
@@ -55,15 +55,11 @@ export interface NearBlockFilter {
 export interface NearTransactionFilter {
   sender?: string;
   receiver?: string;
+  //For Action Receipts:
+  signer?: string;
 }
 
-export interface NearReceiptFilter extends NearTransactionFilter {
-  predecessor_id?: string;
-  signer_id?: string;
-  receipt_receiver?: string;
-}
-
-export interface NearActionFilter extends NearReceiptFilter {
+export interface NearActionFilter extends NearTransactionFilter {
   type: string;
 
   //FunctionCall
@@ -83,7 +79,7 @@ export interface NearActionFilter extends NearReceiptFilter {
 export type NearBlockHandler = NearCustomHandler<NearHandlerKind.Block, NearBlockFilter>;
 export type NearTransactionHandler = NearCustomHandler<NearHandlerKind.Transaction, NearTransactionFilter>;
 export type NearActionHandler = NearCustomHandler<NearHandlerKind.Action, NearActionFilter>;
-export type NearReceiptHandler = NearCustomHandler<NearHandlerKind.Receipt, NearReceiptFilter>;
+export type NearReceiptHandler = NearCustomHandler<NearHandlerKind.Receipt, NearTransactionFilter>;
 export interface NearCustomHandler<K extends string = string, F = Record<string, unknown>> {
   handler: string;
   kind: K;
@@ -92,7 +88,7 @@ export interface NearCustomHandler<K extends string = string, F = Record<string,
 
 export type NearRuntimeHandler = NearBlockHandler | NearTransactionHandler | NearActionHandler | NearReceiptHandler;
 export type NearHandler = NearRuntimeHandler | NearCustomHandler<string, unknown>;
-export type NearRuntimeHandlerFilter = NearBlockFilter | NearTransactionFilter | NearActionFilter | NearReceiptFilter;
+export type NearRuntimeHandlerFilter = NearBlockFilter | NearTransactionFilter | NearActionFilter;
 
 export interface NearMapping<T extends NearHandler = NearHandler> extends FileReference {
   handlers: T[];
