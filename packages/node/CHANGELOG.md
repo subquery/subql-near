@@ -6,6 +6,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.19.0] - 2023-03-02
+### Added
+- Add transaction receipt handlers and filters (#13)
+
 ## [1.18.1] - 2023-02-03
 ### Changed
 - Add `toJson` method to function args (#9)
