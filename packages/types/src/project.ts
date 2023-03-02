@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import {providers} from 'near-api-js';
-import {NearBlock, NearTransaction, NearAction} from './interfaces';
+import {NearBlock, NearTransaction, NearAction, NearTransactionReceipt} from './interfaces';
 
 export enum NearDatasourceKind {
   Runtime = 'near/Runtime',
@@ -12,18 +12,21 @@ export enum NearHandlerKind {
   Block = 'near/BlockHandler',
   Transaction = 'near/TransactionHandler',
   Action = 'near/ActionHandler',
+  Receipt = 'near/ReceiptHandler',
 }
 
 export type RuntimeHandlerInputMap = {
   [NearHandlerKind.Block]: NearBlock;
   [NearHandlerKind.Transaction]: NearTransaction;
   [NearHandlerKind.Action]: NearAction;
+  [NearHandlerKind.Receipt]: NearTransactionReceipt;
 };
 
 type RuntimeFilterMap = {
   [NearHandlerKind.Block]: NearBlockFilter;
   [NearHandlerKind.Transaction]: NearTransactionFilter;
-  [NearHandlerKind.Action]: NearAction;
+  [NearHandlerKind.Action]: NearActionFilter;
+  [NearHandlerKind.Receipt]: NearTransactionFilter;
 };
 
 export interface ProjectManifest {
@@ -54,7 +57,12 @@ export interface NearTransactionFilter {
   receiver?: string;
 }
 
-export interface NearActionFilter extends NearTransactionFilter {
+export interface NearReceiptFilter extends NearTransactionFilter {
+  //For Action Receipts:
+  signer?: string;
+}
+
+export interface NearActionFilter extends NearReceiptFilter {
   type: string;
 
   //FunctionCall
@@ -74,14 +82,14 @@ export interface NearActionFilter extends NearTransactionFilter {
 export type NearBlockHandler = NearCustomHandler<NearHandlerKind.Block, NearBlockFilter>;
 export type NearTransactionHandler = NearCustomHandler<NearHandlerKind.Transaction, NearTransactionFilter>;
 export type NearActionHandler = NearCustomHandler<NearHandlerKind.Action, NearActionFilter>;
-
+export type NearReceiptHandler = NearCustomHandler<NearHandlerKind.Receipt, NearTransactionFilter>;
 export interface NearCustomHandler<K extends string = string, F = Record<string, unknown>> {
   handler: string;
   kind: K;
   filter?: F;
 }
 
-export type NearRuntimeHandler = NearBlockHandler | NearTransactionHandler | NearActionHandler;
+export type NearRuntimeHandler = NearBlockHandler | NearTransactionHandler | NearActionHandler | NearReceiptHandler;
 export type NearHandler = NearRuntimeHandler | NearCustomHandler<string, unknown>;
 export type NearRuntimeHandlerFilter = NearBlockFilter | NearTransactionFilter | NearActionFilter;
 
@@ -165,7 +173,8 @@ type SecondLayerHandlerProcessorArray<
 > =
   | SecondLayerHandlerProcessor<NearHandlerKind.Block, F, T, DS>
   | SecondLayerHandlerProcessor<NearHandlerKind.Transaction, F, T, DS>
-  | SecondLayerHandlerProcessor<NearHandlerKind.Action, F, T, DS>;
+  | SecondLayerHandlerProcessor<NearHandlerKind.Action, F, T, DS>
+  | SecondLayerHandlerProcessor<NearHandlerKind.Receipt, F, T, DS>;
 
 export interface NearDatasourceProcessor<
   K extends string,

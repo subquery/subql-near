@@ -29,6 +29,12 @@ export function isActionHandlerProcessor<T extends NearNetworkFilter, E>(
   return hp.baseHandlerKind === NearHandlerKind.Action;
 }
 
+export function isReceiptHandlerProcessor<T extends NearNetworkFilter, E>(
+  hp: SecondLayerHandlerProcessor<NearHandlerKind, T, unknown>
+): hp is SecondLayerHandlerProcessor<NearHandlerKind.Receipt, T, E> {
+  return hp.baseHandlerKind === NearHandlerKind.Receipt;
+}
+
 export function isCustomDs<F extends NearNetworkFilter>(ds: NearDatasource): ds is NearCustomDatasource<string, F> {
   return ds.kind !== NearDatasourceKind.Runtime && !!(ds as NearCustomDatasource<string, F>).processor;
 }

@@ -19,6 +19,8 @@ import {
   NearRuntimeHandlerFilter,
   NearCustomDatasource,
   ActionType,
+  NearReceiptHandler,
+  NearReceiptFilter,
 } from '@subql/types-near';
 import BN from 'bn.js';
 import {plainToClass, Transform, Type} from 'class-transformer';
@@ -78,7 +80,13 @@ export function IsActionType(validationOptions?: ValidationOptions) {
   };
 }
 
-export class ActionFilter extends TransactionFilter implements NearActionFilter {
+export class ReceiptFilter extends TransactionFilter implements NearReceiptFilter {
+  @IsOptional()
+  @IsString()
+  signer?: string;
+}
+
+export class ActionFilter extends ReceiptFilter implements NearActionFilter {
   @IsString()
   @IsActionType()
   type: ActionType;
@@ -152,6 +160,17 @@ export class ActionHandler implements NearActionHandler {
   handler: string;
 }
 
+export class ReceiptHandler implements NearReceiptHandler {
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => ReceiptFilter)
+  filter?: NearReceiptFilter;
+  @IsEnum(NearHandlerKind, {groups: [NearHandlerKind.Receipt]})
+  kind: NearHandlerKind.Receipt;
+  @IsString()
+  handler: string;
+}
+
 export class CustomHandler implements NearCustomHandler {
   @IsString()
   kind: string;
@@ -167,6 +186,8 @@ export class RuntimeMapping implements BaseMapping<NearRuntimeHandlerFilter, Nea
     const handlers: NearRuntimeHandler[] = params.value;
     return handlers.map((handler) => {
       switch (handler.kind) {
+        case NearHandlerKind.Receipt:
+          return plainToClass(ReceiptHandler, handler);
         case NearHandlerKind.Action:
           return plainToClass(ActionHandler, handler);
         case NearHandlerKind.Transaction:

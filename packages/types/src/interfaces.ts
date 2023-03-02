@@ -34,7 +34,7 @@ export interface NearBlock {
   chunks: Chunk[];
   transactions: NearTransaction[];
   actions: NearAction[];
-  receipts: any[];
+  receipts: NearTransactionReceipt[];
 }
 
 export interface NearTransaction {
@@ -54,6 +54,29 @@ export interface NearTransaction {
 export interface TransactionResult {
   id: string;
   logs: string[];
+}
+
+export interface NearTransactionReceipt {
+  id: number;
+  block_height: number;
+  receipt_id: string;
+  predecessor_id: string;
+  Action?: {
+    actions: NearAction[];
+    gas_price: BN;
+    input_data_ids: string[];
+    output_data_receivers: {
+      data_id: string;
+      receiver_id: string;
+    }[];
+    signer_id: string;
+    signer_public_key: string;
+  };
+  Data?: {
+    data: string;
+    data_id: string;
+  };
+  receiver_id: string;
 }
 
 //eslint-disable-next-line @typescript-eslint/no-empty-interface
@@ -120,6 +143,7 @@ export interface NearAction<T = Action | any> {
   type: ActionType;
   action: T;
   transaction: NearTransaction;
+  receipt?: NearTransactionReceipt;
 }
 
 export type DynamicDatasourceCreator = (name: string, args: Record<string, unknown>) => Promise<void>;
