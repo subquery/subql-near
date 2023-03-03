@@ -23,6 +23,7 @@ import {
   NumFetchedBlocks,
   NumFetchingBlocks,
   GetWorkerStatus,
+  ReloadDynamicDs,
 } from '../worker/worker';
 import { BaseBlockDispatcher } from './base-block-dispatcher';
 
@@ -34,6 +35,7 @@ type IIndexerWorker = {
   numFetchedBlocks: NumFetchedBlocks;
   numFetchingBlocks: NumFetchingBlocks;
   getStatus: GetWorkerStatus;
+  reloadDynamicDs: ReloadDynamicDs;
 };
 
 type IInitIndexerWorker = IIndexerWorker & {
@@ -54,6 +56,7 @@ async function createIndexerWorker(): Promise<IndexerWorker> {
       'numFetchedBlocks',
       'numFetchingBlocks',
       'getStatus',
+      'reloadDynamicDs',
     ],
   );
 
@@ -161,12 +164,11 @@ export class WorkerBlockDispatcherService
 
     // Used to compare before and after as a way to check if queue was flushed
     const bufferedHeight = this.latestBufferedHeight;
-    const pendingBlock = worker.fetchBlock(height);
 
     const processBlock = async () => {
       try {
         const start = new Date();
-        const result = await pendingBlock;
+        await worker.fetchBlock(height);
         const end = new Date();
 
         if (bufferedHeight > this.latestBufferedHeight) {
@@ -187,10 +189,6 @@ export class WorkerBlockDispatcherService
           );
         }
 
-        // logger.info(
-        //   `worker ${workerIdx} processing block ${height}, fetched blocks: ${await worker.numFetchedBlocks()}, fetching blocks: ${await worker.numFetchingBlocks()}`,
-        // );
-
         this.preProcessBlock(height);
 
         const { dynamicDsCreated, operationHash, reindexBlockHeight } =
@@ -201,6 +199,11 @@ export class WorkerBlockDispatcherService
           operationHash: Buffer.from(operationHash, 'base64'),
           reindexBlockHeight,
         });
+
+        if (dynamicDsCreated) {
+          // Ensure all workers are aware of all dynamic ds
+          await Promise.all(this.workers.map((w) => w.reloadDynamicDs()));
+        }
       } catch (e) {
         logger.error(
           e,
