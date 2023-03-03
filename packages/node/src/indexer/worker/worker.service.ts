@@ -3,10 +3,10 @@
 
 import { threadId } from 'node:worker_threads';
 import { Injectable } from '@nestjs/common';
-import { RuntimeVersion } from '@polkadot/types/interfaces';
 import { NodeConfig, getLogger, AutoQueue } from '@subql/node-core';
 import { fetchBlocksBatches } from '../../utils/near';
 import { ApiService } from '../api.service';
+import { SpecVersion } from '../dictionary.service';
 import { IndexerManager } from '../indexer.manager';
 import { BlockContent } from '../types';
 
@@ -56,7 +56,6 @@ export class WorkerService {
         }
 
         const block = this.fetchedBlocks[height];
-
         // Return info to get the runtime version, this lets the worker thread know
         return undefined;
       });
