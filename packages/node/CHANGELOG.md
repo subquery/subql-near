@@ -6,11 +6,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [1.91.3] - 2023-03-06
+## [1.19.3] - 2023-03-06
 ### Added
 - Sync latest changes from @subql/node
 
-## [1.91.2] - 2023-03-06
+## [1.19.2] - 2023-03-06
 ### Added
 - Sync latest changes from @subql/node
 
