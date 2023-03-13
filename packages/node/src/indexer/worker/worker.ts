@@ -18,9 +18,15 @@ initLogger(
 
 import assert from 'assert';
 import { threadId } from 'node:worker_threads';
+import { getHeapStatistics } from 'v8';
 import { INestApplication } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
-import { registerWorker, getLogger, NestLogger } from '@subql/node-core';
+import {
+  registerWorker,
+  getLogger,
+  NestLogger,
+  waitForBatchSize,
+} from '@subql/node-core';
 import { SpecVersion } from '../dictionary.service';
 import { DynamicDsService } from '../dynamic-ds.service';
 import { IndexerManager } from '../indexer.manager';
@@ -102,6 +108,18 @@ async function getStatus(): Promise<WorkerStatusResponse> {
   };
 }
 
+// eslint-disable-next-line @typescript-eslint/require-await
+async function getMemoryLeft(): Promise<number> {
+  const totalHeap = getHeapStatistics().heap_size_limit;
+  const heapUsed = process.memoryUsage().heapUsed;
+
+  return totalHeap - heapUsed;
+}
+
+async function waitForWorkerBatchSize(heapSizeInBytes) {
+  await waitForBatchSize(heapSizeInBytes);
+}
+
 async function reloadDynamicDs(): Promise<void> {
   return dynamicDsService.reloadDynamicDatasources();
 }
@@ -114,6 +132,8 @@ registerWorker({
   numFetchedBlocks,
   numFetchingBlocks,
   getStatus,
+  getMemoryLeft,
+  waitForWorkerBatchSize,
   reloadDynamicDs,
 });
 
@@ -124,6 +144,8 @@ export type ProcessBlock = typeof processBlock;
 export type NumFetchedBlocks = typeof numFetchedBlocks;
 export type NumFetchingBlocks = typeof numFetchingBlocks;
 export type GetWorkerStatus = typeof getStatus;
+export type GetMemoryLeft = typeof getMemoryLeft;
+export type waitForWorkerBatchSize = typeof waitForWorkerBatchSize;
 export type ReloadDynamicDs = typeof reloadDynamicDs;
 
 process.on('uncaughtException', (e) => {
