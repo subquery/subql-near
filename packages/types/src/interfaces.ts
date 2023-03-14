@@ -54,6 +54,7 @@ export interface NearTransaction {
 export interface TransactionResult {
   id: string;
   logs: string[];
+  receipt_ids: string[];
 }
 
 export interface NearTransactionReceipt {
@@ -136,7 +137,7 @@ export const ActionType = {
   DeleteAccount: 'DeleteAccount' as const,
 } as const;
 
-export type ActionType = typeof ActionType[keyof typeof ActionType];
+export type ActionType = (typeof ActionType)[keyof typeof ActionType];
 
 export interface NearAction<T = Action | any> {
   id: number;
