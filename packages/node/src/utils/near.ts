@@ -163,6 +163,7 @@ export function wrapTransaction(
     result: {
       id: exectuionOutcome.transaction_outcome.id,
       logs: exectuionOutcome.transaction_outcome.outcome.logs,
+      receipt_ids: exectuionOutcome.transaction_outcome.outcome.receipt_ids,
     },
   };
 }
