@@ -6,6 +6,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.21.0] - 2023-03-28
+### Update
+- Sync latest changes from main SDK
+
 ## [1.20.1] - 2023-03-15
 ### Added
 - Index ids of receipt created by a transaction
