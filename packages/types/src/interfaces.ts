@@ -58,7 +58,7 @@ export interface TransactionResult {
 }
 
 export interface NearTransactionReceipt {
-  id: number;
+  id: number; // This is the index
   block_height: number;
   receipt_id: string;
   predecessor_id: string;
@@ -143,7 +143,7 @@ export interface NearAction<T = Action | any> {
   id: number;
   type: ActionType;
   action: T;
-  transaction: NearTransaction;
+  transaction?: NearTransaction;
   receipt?: NearTransactionReceipt;
 }
 

@@ -242,12 +242,12 @@ export function wrapAction(
   id: number,
   transaction?: NearTransaction,
 ): NearAction {
-  let type, actionValue;
+  let type: ActionType, actionValue: any;
   if (action === 'CreateAccount') {
     type = 'CreateAccount';
     actionValue = parseNearAction(type, {});
   } else {
-    type = Object.keys(action)[0];
+    type = Object.keys(action)[0] as ActionType;
     actionValue = parseNearAction(type, action[type]);
   }
 
