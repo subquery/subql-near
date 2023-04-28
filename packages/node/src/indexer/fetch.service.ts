@@ -35,8 +35,7 @@ import {
   NearReceiptFilter,
 } from '@subql/types-near';
 import { MetaData } from '@subql/utils';
-import { filter, range, sortBy, uniqBy, without } from 'lodash';
-import { Near, providers } from 'near-api-js';
+import { range, sortBy, uniqBy, without } from 'lodash';
 import { JsonRpcProvider } from 'near-api-js/lib/providers';
 import { SubqlProjectDs, SubqueryProject } from '../configure/SubqueryProject';
 import { calcInterval } from '../utils/near';
@@ -52,7 +51,6 @@ const logger = getLogger('fetch');
 let BLOCK_TIME_VARIANCE = 5000; //ms
 const DICTIONARY_MAX_QUERY_SIZE = 10000;
 const CHECK_MEMORY_INTERVAL = 60000;
-const MINIMUM_BATCH_SIZE = 5;
 const INTERVAL_PERCENT = 0.9;
 
 function txFilterToQueryEntry(

@@ -29,13 +29,6 @@ import * as NearUtil from '../utils/near';
 import { NearApiConnection } from './nearApi.connection';
 import { BlockContent } from './types';
 
-const NOT_SUPPORT = (name: string) => () => {
-  throw new Error(`${name}() is not supported`);
-};
-
-// https://github.com/polkadot-js/api/blob/12750bc83d8d7f01957896a80a7ba948ba3690b7/packages/rpc-provider/src/ws/index.ts#L43
-const MAX_RECONNECT_ATTEMPTS = 5;
-const TIMEOUT = 90 * 1000;
 const GENESIS_BLOCK = 9_820_210;
 
 const logger = getLogger('api');

@@ -2,7 +2,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { Inject, Injectable } from '@nestjs/common';
-import { hexToU8a, u8aEq } from '@polkadot/util';
 import {
   isBlockHandlerProcessor,
   isActionHandlerProcessor,
@@ -31,8 +30,7 @@ import {
   NearTransaction,
   NearTransactionReceipt,
 } from '@subql/types-near';
-import { Sequelize, Transaction } from 'sequelize';
-import { SubqlProjectDs, SubqueryProject } from '../configure/SubqueryProject';
+import { SubqlProjectDs } from '../configure/SubqueryProject';
 import * as NearUtil from '../utils/near';
 import { yargsOptions } from '../yargs';
 import { ApiService, SafeJsonRpcProvider } from './api.service';

@@ -5,7 +5,7 @@ import { Injectable } from '@nestjs/common';
 import { getLogger, NodeConfig, StoreCacheService } from '@subql/node-core';
 import { NearBlock } from '@subql/types-near';
 import { last } from 'lodash';
-import { Near, providers } from 'near-api-js';
+import { providers } from 'near-api-js';
 import { BlockHeader } from 'near-api-js/lib/providers/provider';
 import { ApiService } from './api.service';
 
