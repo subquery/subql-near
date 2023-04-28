@@ -19,11 +19,9 @@ import { SubqueryProject } from './SubqueryProject';
 
 const logger = getLogger('configure');
 
-const YargsNameMapping: Record<string, string> = {
-  local: 'localMode',
-};
+const YargsNameMapping: Record<string, string> = {};
 
-type Args = typeof yargsOptions.argv['argv'];
+type Args = (typeof yargsOptions.argv)['argv'];
 
 function yargsToIConfig(yargs: Args): Partial<IConfig> {
   return Object.entries(yargs).reduce((acc, [key, value]) => {
@@ -108,7 +106,7 @@ export class ConfigureModule {
         config.subquery,
         omitBy<NearProjectNetworkConfig>(
           {
-            endpoint: config.networkEndpoint,
+            endpoint: config.networkEndpoints,
             dictionary: config.networkDictionary,
           },
           isNil,
@@ -170,7 +168,7 @@ export class ConfigureModule {
         argv.subquery,
         omitBy<NearProjectNetworkConfig>(
           {
-            endpoint: config.networkEndpoint,
+            endpoint: config.networkEndpoints,
             dictionary: config.networkDictionary,
           },
           isNil,

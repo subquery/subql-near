@@ -1,12 +1,16 @@
 // Copyright 2020-2022 OnFinality Limited authors & contributors
 // SPDX-License-Identifier: Apache-2.0
 
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, OnApplicationShutdown } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import {
   IndexerEvent,
   NetworkMetadataPayload,
   getLogger,
+  NodeConfig,
+  profilerWrap,
+  ConnectionPoolService,
+  ApiService as BaseApiService,
 } from '@subql/node-core';
 import * as Near from 'near-api-js';
 import {
@@ -21,28 +25,53 @@ import {
 import { ConnectionInfo } from 'near-api-js/lib/utils/web';
 
 import { SubqueryProject } from '../configure/SubqueryProject';
-
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const { version: packageVersion } = require('../../package.json');
+import * as NearUtil from '../utils/near';
+import { NearApiConnection } from './nearApi.connection';
+import { BlockContent } from './types';
 
 const NOT_SUPPORT = (name: string) => () => {
   throw new Error(`${name}() is not supported`);
 };
 
 // https://github.com/polkadot-js/api/blob/12750bc83d8d7f01957896a80a7ba948ba3690b7/packages/rpc-provider/src/ws/index.ts#L43
-const RETRY_DELAY = 2_500;
+const MAX_RECONNECT_ATTEMPTS = 5;
+const TIMEOUT = 90 * 1000;
 const GENESIS_BLOCK = 9_820_210;
+
 const logger = getLogger('api');
 
 @Injectable()
-export class ApiService {
-  private api: Near.providers.JsonRpcProvider;
+export class ApiService
+  extends BaseApiService<SubqueryProject, Near.providers.JsonRpcProvider>
+  implements OnApplicationShutdown
+{
+  private fetchBlocksBatches = NearUtil.fetchBlocksBatches;
   networkMeta: NetworkMetadataPayload;
 
   constructor(
-    @Inject('ISubqueryProject') protected project: SubqueryProject,
+    @Inject('ISubqueryProject') project: SubqueryProject,
+    private connectionPoolService: ConnectionPoolService<NearApiConnection>,
     private eventEmitter: EventEmitter2,
-  ) {}
+    private nodeConfig: NodeConfig,
+  ) {
+    super(project);
+  }
+
+  async onApplicationShutdown(): Promise<void> {
+    await this.connectionPoolService.onApplicationShutdown();
+  }
+
+  private metadataMismatchError(
+    metadata: string,
+    expected: string,
+    actual: string,
+  ): Error {
+    return Error(
+      `Value of ${metadata} does not match across all endpoints\n
+       Expected: ${expected}
+       Actual: ${actual}`,
+    );
+  }
 
   async init(): Promise<ApiService> {
     let network;
@@ -53,50 +82,83 @@ export class ApiService {
       process.exit(1);
     }
 
-    const headers = {
-      'User-Agent': `SubQuery-Node ${packageVersion}`,
-    };
-
-    const connectionInfo: ConnectionInfo = {
-      url: network.endpoint,
-      headers: headers,
-    };
-
-    this.api = new Near.providers.JsonRpcProvider(connectionInfo);
-
-    this.eventEmitter.emit(IndexerEvent.ApiConnected, { value: 1 });
-
-    const chainId = (await this.api.status()).chain_id;
-
-    this.networkMeta = {
-      chain: chainId,
-      specName: chainId,
-      //mainnet genesis at block 9820210
-      genesisHash: (await this.api.block({ blockId: GENESIS_BLOCK })).header
-        .hash,
-    };
-
-    if (network.chainId && network.chainId !== this.networkMeta.chain) {
-      const err = new Error(
-        `Network chainId doesn't match expected genesisHash. Your SubQuery project is expecting to index data from "${
-          network.chainId ?? network.genesisHash
-        }", however the endpoint that you are connecting to is different("${
-          this.networkMeta.chain
-        }). Please check that the RPC endpoint is actually for your desired network or update the chainId.`,
+    if (this.nodeConfig?.profiler) {
+      this.fetchBlocksBatches = profilerWrap(
+        NearUtil.fetchBlocksBatches,
+        'NearUtil',
+        'fetchBlocksBatches',
       );
-      logger.error(err, err.message);
-      throw err;
     }
 
+    const connections: NearApiConnection[] = [];
+
+    await Promise.all(
+      network.endpoint.map(async (endpoint, i) => {
+        const connection = await NearApiConnection.create(endpoint);
+        const api = connection.api;
+
+        this.eventEmitter.emit(IndexerEvent.ApiConnected, {
+          value: 1,
+          apiIndex: i,
+          endpoint: endpoint,
+        });
+
+        const chainId = (await api.status()).chain_id;
+
+        if (!this.networkMeta) {
+          this.networkMeta = {
+            chain: chainId,
+            specName: chainId,
+            //mainnet genesis at block 9820210
+            genesisHash: (await api.block({ blockId: GENESIS_BLOCK })).header
+              .hash,
+          };
+
+          if (network.chainId && network.chainId !== this.networkMeta.chain) {
+            const err = new Error(
+              `Network chainId doesn't match expected genesisHash. Your SubQuery project is expecting to index data from "${
+                network.chainId ?? network.genesisHash
+              }", however the endpoint that you are connecting to is different("${
+                this.networkMeta.chain
+              }). Please check that the RPC endpoint is actually for your desired network or update the genesisHash.`,
+            );
+            logger.error(err, err.message);
+            throw err;
+          }
+        } else {
+          const genesisHash = (await api.block({ blockId: GENESIS_BLOCK }))
+            .header.hash;
+          if (this.networkMeta.genesisHash !== genesisHash) {
+            throw this.metadataMismatchError(
+              'Genesis Hash',
+              this.networkMeta.genesisHash,
+              genesisHash,
+            );
+          }
+        }
+
+        connections.push(connection);
+      }),
+    );
+
+    this.connectionPoolService.addBatchToConnections(connections);
     return this;
   }
 
-  getApi(): Near.providers.JsonRpcProvider {
-    return this.api;
+  get api(): Near.providers.JsonRpcProvider {
+    return this.connectionPoolService.api.api;
   }
 
   genesisHash(): string {
     return this.networkMeta.genesisHash;
+  }
+
+  async fetchBlocks(batch: number[]): Promise<BlockContent[]> {
+    return this.fetchBlocksGeneric<BlockContent>(
+      () => (blockArray: number[]) =>
+        this.fetchBlocksBatches(this.api, blockArray),
+      batch,
+    );
   }
 }
 

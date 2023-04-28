@@ -47,11 +47,14 @@ const NOT_SUPPORT = (name: string) => {
   throw new Error(`Manifest specVersion ${name}() is not supported`);
 };
 
+// This is the runtime type after we have mapped genesisHash to chainId and endpoint/dict have been provided when dealing with deployments
+type NetworkConfig = NearProjectNetworkConfig & { chainId: string };
+
 @Injectable()
 export class SubqueryProject {
   id: string;
   root: string;
-  network: Partial<NearProjectNetworkConfig>;
+  network: NetworkConfig;
   dataSources: SubqlProjectDs[];
   schema: GraphQLSchema;
   templates: SubqlProjectDsTemplate[];
@@ -90,14 +93,7 @@ export class SubqueryProject {
   }
 }
 
-export interface SubqueryProjectNetwork {
-  chainId: string;
-  endpoint?: string;
-  dictionary?: string;
-  chaintypes?: FileType;
-}
-
-function processChainId(network: any): SubqueryProjectNetwork {
+function processChainId(network: any): NetworkConfig {
   if (network.chainId && network.genesisHash) {
     throw new Error('Please only provide one of chainId and genesisHash');
   } else if (network.genesisHash && !network.chainId) {
@@ -116,6 +112,10 @@ async function loadProjectFromManifestBase(
   networkOverrides?: Partial<NearProjectNetworkConfig>,
 ): Promise<SubqueryProject> {
   const root = await getProjectRoot(reader);
+
+  if (typeof projectManifest.network.endpoint === 'string') {
+    projectManifest.network.endpoint = [projectManifest.network.endpoint];
+  }
 
   const network = processChainId({
     ...projectManifest.network,

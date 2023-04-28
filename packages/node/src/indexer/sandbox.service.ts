@@ -1,9 +1,16 @@
 // Copyright 2020-2022 OnFinality Limited authors & contributors
 // SPDX-License-Identifier: Apache-2.0
 
+import { isMainThread } from 'worker_threads';
 import { Inject, Injectable } from '@nestjs/common';
 import { isDatasourceV0_2_0, NearDataSource } from '@subql/common-near';
-import { NodeConfig, StoreService, IndexerSandbox } from '@subql/node-core';
+import {
+  NodeConfig,
+  StoreService,
+  IndexerSandbox,
+  hostStoreToStore,
+} from '@subql/node-core';
+import { Store } from '@subql/types';
 import { SubqlProjectDs, SubqueryProject } from '../configure/SubqueryProject';
 import { getProjectEntry } from '../utils/project';
 import { ApiService, SafeJsonRpcProvider } from './api.service';
@@ -20,14 +27,19 @@ export class SandboxService {
   ) {}
 
   getDsProcessor(ds: SubqlProjectDs, api: SafeJsonRpcProvider): IndexerSandbox {
+    const store: Store = isMainThread
+      ? this.storeService.getStore()
+      : hostStoreToStore((global as any).host); // Provided in worker.ts
+
     const entry = this.getDataSourceEntry(ds);
     let processor = this.processorCache[entry];
     if (!processor) {
       processor = new IndexerSandbox(
         {
-          store: this.storeService.getStore(),
+          // api: await this.apiService.getPatchedApi(),
+          store,
           root: this.project.root,
-          script: ds.mapping.entryScript,
+          // script: ds.mapping.entryScript,
           entry,
         },
         this.nodeConfig,
@@ -37,7 +49,7 @@ export class SandboxService {
 
     processor.freeze(api, 'api');
     if (this.nodeConfig.unsafe) {
-      processor.freeze(this.apiService.getApi(), 'unsafeApi');
+      processor.freeze(this.apiService.api, 'unsafeApi');
     }
     return processor;
   }
