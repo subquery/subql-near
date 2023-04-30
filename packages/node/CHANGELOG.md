@@ -15,7 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - If enabled `--store-cache-async` writing data to the store is asynchronous with regard to block processing (default is enabled)
 - Testing Framework, allow users to test their projects filters and handler functions without having to index the project
   - Create test files with the naming convention `*.test.ts` and place them in the `src/tests` or `src/test` folder. Each test file should contain test cases for specific mapping handlers.
-  - Run the testing service using the command: `subql-node test`.
+  - Run the testing service using the command: `subql-node-near test`.
 
 ## [1.21.1] - 2023-03-30
 ### Fixed
