@@ -2997,7 +2997,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@subql/common-near@workspace:packages/common-near"
   dependencies:
-    "@subql/common": latest
+    "@subql/common": ^2.0.0
     "@subql/types-near": "workspace:*"
     "@types/bn.js": 4.11.6
     "@types/js-yaml": ^4.0.4
@@ -3009,7 +3009,7 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@subql/common@npm:2.0.0, @subql/common@npm:latest":
+"@subql/common@npm:2.0.0, @subql/common@npm:^2.0.0":
   version: 2.0.0
   resolution: "@subql/common@npm:2.0.0"
   dependencies:
@@ -3065,7 +3065,7 @@ __metadata:
     "@nestjs/schedule": ^1.0.2
     "@nestjs/schematics": ^8.0.5
     "@nestjs/testing": ^8.2.6
-    "@subql/common": latest
+    "@subql/common": ^2.0.0
     "@subql/common-near": "workspace:*"
     "@subql/node-core": 2.0.2
     "@subql/types-near": "workspace:*"
