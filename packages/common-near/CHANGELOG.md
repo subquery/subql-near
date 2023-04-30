@@ -6,6 +6,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 All logs must start with the format: [x.y.z] - yyyy-mm-dd
 
+## [2.0.0] - 2023-05-01
+### Changed
+- Sync with main SDK for 2.0 release
+
 ## [1.1.0] - 2023-03-02
 ### Added
 - Add transaction receipts handlers and filters (#13)
