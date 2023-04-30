@@ -191,18 +191,18 @@ export class ProjectService implements IProjectService<SubqlProjectDs> {
         { key: 'runnerQueryVersion', value: query.version },
       ]);
     }
-    if (!existing.chain) {
-      metadata.set('chain', chain);
+    if (!existing.genesisHash) {
+      metadata.set('genesisHash', genesisHash);
     } else {
       // Check if the configured genesisHash matches the currently stored genesisHash
       assert(
         // Configured project yaml genesisHash only exists in specVersion v0.2.0, fallback to api fetched genesisHash on v0.0.1
-        (this.project.network.chainId ?? chain) === existing.chain,
+        genesisHash === existing.genesisHash,
         'Specified project manifest chain id / genesis hash does not match database stored genesis hash, consider cleaning project schema using --force-clean',
       );
     }
-    if (existing.genesisHash !== genesisHash) {
-      metadata.set('chain', genesisHash);
+    if (existing.chain !== chain) {
+      metadata.set('chain', chain);
     }
 
     if (existing.specName !== specName) {
