@@ -1,14 +1,12 @@
 // Copyright 2020-2022 OnFinality Limited authors & contributors
 // SPDX-License-Identifier: Apache-2.0
 
-import { Inject, Injectable, OnApplicationShutdown } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { Interval, SchedulerRegistry } from '@nestjs/schedule';
 
 import {
   isCustomDs,
-  isRuntimeDataSourceV0_2_0,
-  isRuntimeDataSourceV0_3_0,
   isRuntimeDs,
   NearBlockFilter,
   NearTransactionFilter,
@@ -18,20 +16,12 @@ import {
   NearHandlerKind,
   NearRuntimeHandlerFilter,
 } from '@subql/common-near';
-import {
-  cleanedBatchBlocks,
-  checkMemoryUsage,
-  delay,
-  getLogger,
-  IndexerEvent,
-  NodeConfig,
-  transformBypassBlocks,
-  waitForBatchSize,
-} from '@subql/node-core';
+import { NodeConfig, BaseFetchService } from '@subql/node-core';
 import {
   DictionaryQueryCondition,
   DictionaryQueryEntry,
   NearCustomHandler,
+  NearDatasource,
   NearReceiptFilter,
 } from '@subql/types-near';
 import { MetaData } from '@subql/utils';
@@ -45,10 +35,12 @@ import { INearBlockDispatcher } from './blockDispatcher/near-block-dispatcher';
 import { DictionaryService } from './dictionary.service';
 import { DsProcessorService } from './ds-processor.service';
 import { DynamicDsService } from './dynamic-ds.service';
-import { UnfinalizedBlocksService } from './unfinalizedBlocks.service';
+import {
+  UnfinalizedBlocksService,
+  nearHeaderToHeader,
+} from './unfinalizedBlocks.service';
 
-const logger = getLogger('fetch');
-let BLOCK_TIME_VARIANCE = 5000; //ms
+const BLOCK_TIME_VARIANCE = 5000; //ms
 const DICTIONARY_MAX_QUERY_SIZE = 10000;
 const CHECK_MEMORY_INTERVAL = 60000;
 const INTERVAL_PERCENT = 0.9;
@@ -105,57 +97,47 @@ function actionFilterToQueryEntry(
 }
 
 @Injectable()
-export class FetchService implements OnApplicationShutdown {
-  private latestBestHeight: number;
-  private latestFinalizedHeight: number;
-  private isShutdown = false;
-  private batchSizeScale: number;
-  private templateDynamicDatasouces: SubqlProjectDs[];
-  private dictionaryMetaValid = false;
-  private bypassBlocks: number[] = [];
-
+export class FetchService extends BaseFetchService<
+  NearDatasource,
+  INearBlockDispatcher,
+  DictionaryService
+> {
   constructor(
-    private apiService: ApiService,
-    private nodeConfig: NodeConfig,
-    @Inject('ISubqueryProject') private project: SubqueryProject,
+    apiService: ApiService,
+    nodeConfig: NodeConfig,
+    @Inject('ISubqueryProject') project: SubqueryProject,
     @Inject('IBlockDispatcher')
-    private blockDispatcher: INearBlockDispatcher,
-    private dictionaryService: DictionaryService,
-    private dsProcessorService: DsProcessorService,
-    private dynamicDsService: DynamicDsService,
+    blockDispatcher: INearBlockDispatcher,
+    dictionaryService: DictionaryService,
+    dsProcessorService: DsProcessorService,
+    dynamicDsService: DynamicDsService,
     private unfinalizedBlocksService: UnfinalizedBlocksService,
-    private eventEmitter: EventEmitter2,
-    private schedulerRegistry: SchedulerRegistry,
+    eventEmitter: EventEmitter2,
+    schedulerRegistry: SchedulerRegistry,
   ) {
-    this.batchSizeScale = 1;
+    super(
+      apiService,
+      nodeConfig,
+      project,
+      blockDispatcher,
+      dictionaryService,
+      dsProcessorService,
+      dynamicDsService,
+      eventEmitter,
+      schedulerRegistry,
+    );
   }
 
-  onApplicationShutdown(): void {
-    try {
-      this.schedulerRegistry.deleteInterval('getFinalizedBlockHead');
-      this.schedulerRegistry.deleteInterval('getBestBlockHead');
-    } catch (e) {
-      //ignore if interval not exist
-    }
-    this.isShutdown = true;
-  }
-
-  api(): JsonRpcProvider {
+  get api(): JsonRpcProvider {
     return this.apiService.api;
-  }
-
-  async syncDynamicDatascourcesFromMeta(): Promise<void> {
-    this.templateDynamicDatasouces =
-      await this.dynamicDsService.getDynamicDatasources();
   }
 
   buildDictionaryQueryEntries(startBlock: number): DictionaryQueryEntry[] {
     const queryEntries: DictionaryQueryEntry[] = [];
 
+    // Only run the ds that is equal or less than startBlock
+    // sort array from lowest ds.startBlock to highest
     const filteredDs = this.project.dataSources
-      .filter(
-        (ds) => isRuntimeDataSourceV0_3_0(ds) || isRuntimeDataSourceV0_2_0(ds),
-      )
       .concat(this.templateDynamicDatasouces)
       .filter((ds) => ds.startBlock <= startBlock)
       .sort((a, b) => a.startBlock - b.startBlock);
@@ -256,143 +238,35 @@ export class FetchService implements OnApplicationShutdown {
     );
   }
 
-  updateDictionary(): void {
-    this.dictionaryService.buildDictionaryEntryMap<SubqlProjectDs>(
-      this.project.dataSources.concat(this.templateDynamicDatasouces),
-      this.buildDictionaryQueryEntries.bind(this),
+  protected async getFinalizedHeight(): Promise<number> {
+    const finalizedHeader = (await this.api.block({ finality: 'final' }))
+      .header;
+    this.unfinalizedBlocksService.registerFinalizedBlock(
+      nearHeaderToHeader(finalizedHeader),
     );
+    return finalizedHeader.height;
   }
 
-  private get useDictionary(): boolean {
-    return (
-      !!this.project.network.dictionary &&
-      this.dictionaryMetaValid &&
-      !!this.dictionaryService.getDictionaryQueryEntries(
-        this.blockDispatcher.latestBufferedHeight || // avoid when init latestBufferedHeight is 0,
-          Math.min(...this.project.dataSources.map((ds) => ds.startBlock)),
-      ).length
-    );
+  protected async getBestHeight(): Promise<number> {
+    const bestHeader = (await this.api.block({ finality: 'optimistic' }))
+      .header;
+    return bestHeader.height;
   }
 
-  async init(startHeight: number): Promise<void> {
-    if (this.project.network?.bypassBlocks !== undefined) {
-      this.bypassBlocks = transformBypassBlocks(
-        this.project.network.bypassBlocks,
-      ).filter((blk) => blk >= startHeight);
-    }
-    if (this.api()) {
-      const CHAIN_INTERVAL = calcInterval(this.api())
-        .muln(INTERVAL_PERCENT)
-        .toNumber();
+  // eslint-disable-next-line @typescript-eslint/require-await
+  protected async getChainInterval(): Promise<number> {
+    const chainInterval = calcInterval(this.api)
+      .muln(INTERVAL_PERCENT)
+      .toNumber();
 
-      BLOCK_TIME_VARIANCE = Math.min(BLOCK_TIME_VARIANCE, CHAIN_INTERVAL);
-
-      this.schedulerRegistry.addInterval(
-        'getFinalizedBlockHead',
-        setInterval(
-          () => void this.getFinalizedBlockHead(),
-          BLOCK_TIME_VARIANCE,
-        ),
-      );
-      this.schedulerRegistry.addInterval(
-        'getBestBlockHead',
-        setInterval(() => void this.getBestBlockHead(), BLOCK_TIME_VARIANCE),
-      );
-    }
-
-    await this.syncDynamicDatascourcesFromMeta();
-    let dictionaryValid = false;
-
-    if (this.project.network.dictionary) {
-      this.updateDictionary();
-      //  Call metadata here, other network should align with this
-      //  For substrate, we might use the specVersion metadata in future if we have same error handling as in node-core
-      const metadata = await this.dictionaryService.getMetadata();
-      dictionaryValid = this.dictionaryValidation(metadata);
-    }
-
-    this.eventEmitter.emit(IndexerEvent.UsingDictionary, {
-      value: Number(this.useDictionary),
-    });
-    await this.getFinalizedBlockHead();
-    await this.getBestBlockHead();
-
-    await this.blockDispatcher.init(this.resetForNewDs.bind(this));
-    void this.startLoop(startHeight);
+    return Math.min(BLOCK_TIME_VARIANCE, chainInterval);
   }
 
-  getUseDictionary(): boolean {
-    return this.useDictionary;
+  protected async getChainId(): Promise<string> {
+    return Promise.resolve((await this.api.status()).chain_id);
   }
 
-  getLatestFinalizedHeight(): number {
-    return this.latestFinalizedHeight;
-  }
-
-  @Interval(CHECK_MEMORY_INTERVAL)
-  checkBatchScale(): void {
-    if (this.nodeConfig['scale-batch-size']) {
-      const scale = checkMemoryUsage(this.batchSizeScale, this.nodeConfig);
-
-      if (this.batchSizeScale !== scale) {
-        this.batchSizeScale = scale;
-      }
-    }
-  }
-
-  async getFinalizedBlockHead(): Promise<void> {
-    if (!this.api) {
-      logger.debug(`Skip fetch finalized block until API is ready`);
-      return;
-    }
-    try {
-      const finalizedHeader = (await this.api().block({ finality: 'final' }))
-        .header;
-      this.unfinalizedBlocksService.registerFinalizedBlock(finalizedHeader);
-      const currentFinalizedHeight = finalizedHeader.height;
-      if (this.latestFinalizedHeight !== currentFinalizedHeight) {
-        this.latestFinalizedHeight = currentFinalizedHeight;
-        if (!this.nodeConfig.unfinalizedBlocks) {
-          this.eventEmitter.emit(IndexerEvent.BlockTarget, {
-            height: this.latestFinalizedHeight,
-          });
-        }
-      }
-    } catch (e) {
-      logger.error(e, `Having a problem when getting finalized block`);
-    }
-  }
-
-  async getBestBlockHead(): Promise<void> {
-    if (!this.api) {
-      logger.debug(`Skip fetch best block until API is ready`);
-      return;
-    }
-    try {
-      const bestHeader = (await this.api().block({ finality: 'optimistic' }))
-        .header;
-      const currentBestHeight = bestHeader.height;
-      if (this.latestBestHeight !== currentBestHeight) {
-        this.latestBestHeight = currentBestHeight;
-        this.eventEmitter.emit(IndexerEvent.BlockBest, {
-          height: this.latestBestHeight,
-        });
-
-        if (this.nodeConfig.unfinalizedBlocks) {
-          this.eventEmitter.emit(IndexerEvent.BlockTarget, {
-            height: this.latestBestHeight,
-          });
-        }
-      }
-    } catch (e) {
-      logger.error(e, `Having a problem when get best block`);
-    }
-  }
-  private async startLoop(initBlockHeight: number): Promise<void> {
-    await this.fillNextBlockBuffer(initBlockHeight);
-  }
-
-  getModulos(): number[] {
+  protected getModulos(): number[] {
     const modulos: number[] = [];
     for (const ds of this.project.dataSources) {
       if (isCustomDs(ds)) {
@@ -411,249 +285,12 @@ export class FetchService implements OnApplicationShutdown {
     return modulos;
   }
 
-  getModuloBlocks(startHeight: number, endHeight: number): number[] {
-    const modulos = this.getModulos();
-    const moduloBlocks: number[] = [];
-    for (let i = startHeight; i < endHeight; i++) {
-      if (modulos.find((m) => i % m === 0)) {
-        moduloBlocks.push(i);
-      }
-    }
-    return moduloBlocks;
+  protected async initBlockDispatcher(): Promise<void> {
+    await this.blockDispatcher.init(this.resetForNewDs.bind(this));
   }
 
-  getEnqueuedModuloBlocks(startBlockHeight: number): number[] {
-    return this.getModuloBlocks(
-      startBlockHeight,
-      this.nodeConfig.batchSize * Math.max(...this.getModulos()) +
-        startBlockHeight,
-    ).slice(0, this.nodeConfig.batchSize);
-  }
-
-  async fillNextBlockBuffer(initBlockHeight: number): Promise<void> {
-    let startBlockHeight: number;
-    let scaledBatchSize: number;
-    const handlers = [].concat(
-      ...this.project.dataSources.map((ds) => ds.mapping.handlers),
-    );
-
-    const getStartBlockHeight = (): number => {
-      return this.blockDispatcher.latestBufferedHeight
-        ? this.blockDispatcher.latestBufferedHeight + 1
-        : initBlockHeight;
-    };
-
-    if (
-      this.useDictionary &&
-      this.dictionaryService.startHeight > getStartBlockHeight()
-    ) {
-      logger.warn(
-        `Dictionary start height ${
-          this.dictionaryService.startHeight
-        } is beyond indexing height ${getStartBlockHeight()}, skipping dictionary for now`,
-      );
-    }
-
-    while (!this.isShutdown) {
-      startBlockHeight = getStartBlockHeight();
-
-      scaledBatchSize = this.blockDispatcher.smartBatchSize;
-
-      if (scaledBatchSize === 0) {
-        await waitForBatchSize(this.blockDispatcher.minimumHeapLimit);
-        continue;
-      }
-
-      const latestHeight = this.nodeConfig.unfinalizedBlocks
-        ? this.latestBestHeight
-        : this.latestFinalizedHeight;
-
-      if (
-        this.blockDispatcher.freeSize < scaledBatchSize ||
-        startBlockHeight > latestHeight
-      ) {
-        await delay(1);
-        continue;
-      }
-
-      if (
-        this.useDictionary &&
-        startBlockHeight >= this.dictionaryService.startHeight
-      ) {
-        const queryEndBlock = startBlockHeight + DICTIONARY_MAX_QUERY_SIZE;
-        const moduloBlocks = this.getModuloBlocks(
-          startBlockHeight,
-          queryEndBlock,
-        );
-
-        try {
-          const dictionary =
-            await this.dictionaryService.scopedDictionaryEntries(
-              startBlockHeight,
-              queryEndBlock,
-              scaledBatchSize,
-            );
-
-          if (startBlockHeight !== getStartBlockHeight()) {
-            logger.debug(
-              `Queue was reset for new DS, discarding dictionary query result`,
-            );
-            continue;
-          }
-
-          if (
-            dictionary &&
-            this.dictionaryValidation(dictionary, startBlockHeight)
-          ) {
-            let { batchBlocks } = dictionary;
-
-            batchBlocks = batchBlocks
-              .concat(moduloBlocks)
-              .sort((a, b) => a - b);
-            if (batchBlocks.length === 0) {
-              // There we're no blocks in this query range, we can set a new height we're up to
-              // eslint-disable-next-line @typescript-eslint/await-thenable
-              await this.blockDispatcher.enqueueBlocks(
-                [],
-                Math.min(
-                  queryEndBlock - 1,
-                  dictionary._metadata.lastProcessedHeight,
-                ),
-              );
-            } else {
-              const maxBlockSize = Math.min(
-                batchBlocks.length,
-                this.blockDispatcher.freeSize,
-              );
-              const enqueuingBlocks = batchBlocks.slice(0, maxBlockSize);
-              const cleanedBatchBlocks =
-                this.filteredBlockBatch(enqueuingBlocks);
-              // eslint-disable-next-line @typescript-eslint/await-thenable
-              await this.blockDispatcher.enqueueBlocks(
-                cleanedBatchBlocks,
-                this.getLatestBufferHeight(cleanedBatchBlocks, enqueuingBlocks),
-              );
-            }
-            continue; // skip nextBlockRange() way
-          }
-          // else use this.nextBlockRange()
-        } catch (e) {
-          logger.debug(`Fetch dictionary stopped: ${e.message}`);
-          this.eventEmitter.emit(IndexerEvent.SkipDictionary);
-        }
-      }
-
-      const endHeight = this.nextEndBlockHeight(
-        startBlockHeight,
-        scaledBatchSize,
-      );
-
-      const enqueuingBlocks =
-        handlers.length && this.getModulos().length === handlers.length
-          ? this.getEnqueuedModuloBlocks(startBlockHeight)
-          : range(startBlockHeight, endHeight + 1);
-
-      const cleanedBatchBlocks = this.filteredBlockBatch(enqueuingBlocks);
-      await this.blockDispatcher.enqueueBlocks(
-        cleanedBatchBlocks,
-        this.getLatestBufferHeight(cleanedBatchBlocks, enqueuingBlocks),
-      );
-    }
-  }
-  private getLatestBufferHeight(
-    cleanedBatchBlocks: number[],
-    rawBatchBlocks: number[],
-  ): number {
-    return Math.max(...cleanedBatchBlocks, ...rawBatchBlocks);
-  }
-  private filteredBlockBatch(currentBatchBlocks: number[]): number[] {
-    if (!this.bypassBlocks.length || !currentBatchBlocks) {
-      return currentBatchBlocks;
-    }
-
-    const cleanedBatch = cleanedBatchBlocks(
-      this.bypassBlocks,
-      currentBatchBlocks,
-    );
-
-    const pollutedBlocks = this.bypassBlocks.filter(
-      (b) => b < Math.max(...currentBatchBlocks),
-    );
-    if (pollutedBlocks.length) {
-      logger.info(`Bypassing blocks: ${pollutedBlocks}`);
-    }
-    this.bypassBlocks = without(this.bypassBlocks, ...pollutedBlocks);
-    return cleanedBatch;
-  }
-
-  private nextEndBlockHeight(
-    startBlockHeight: number,
-    scaledBatchSize: number,
-  ): number {
-    let endBlockHeight = startBlockHeight + scaledBatchSize - 1;
-
-    if (endBlockHeight > this.latestFinalizedHeight) {
-      if (this.nodeConfig.unfinalizedBlocks) {
-        if (endBlockHeight >= this.latestBestHeight) {
-          endBlockHeight = this.latestBestHeight;
-        }
-      } else {
-        endBlockHeight = this.latestFinalizedHeight;
-      }
-    }
-    return endBlockHeight;
-  }
-
-  async resetForNewDs(blockHeight: number): Promise<void> {
-    await this.syncDynamicDatascourcesFromMeta();
-    this.dynamicDsService.deleteTempDsRecords(blockHeight);
-    this.updateDictionary();
-    this.blockDispatcher.flushQueue(blockHeight);
-  }
-  async resetForIncorrectBestBlock(blockHeight: number): Promise<void> {
-    await this.syncDynamicDatascourcesFromMeta();
-    this.updateDictionary();
-    this.blockDispatcher.flushQueue(blockHeight);
-  }
-
-  private dictionaryValidation(
-    dictionary: { _metadata: MetaData },
-    startBlockHeight?: number,
-  ): boolean {
-    const validate = (): boolean => {
-      if (dictionary !== undefined) {
-        const { _metadata: metaData } = dictionary;
-
-        if (metaData.genesisHash !== this.apiService.genesisHash()) {
-          logger.error(
-            'The dictionary that you have specified does not match the chain you are indexing, it will be ignored. Please update your project manifest to reference the correct dictionary',
-          );
-          return false;
-        }
-
-        if (
-          startBlockHeight !== undefined &&
-          metaData.lastProcessedHeight < startBlockHeight
-        ) {
-          logger.warn(
-            `Dictionary indexed block is behind current indexing block height`,
-          );
-          return false;
-        }
-        return true;
-      }
-      return false;
-    };
-
-    const valid = validate();
-
-    this.dictionaryMetaValid = valid;
-    this.eventEmitter.emit(IndexerEvent.UsingDictionary, {
-      value: Number(this.useDictionary),
-    });
-    this.eventEmitter.emit(IndexerEvent.SkipDictionary);
-
-    return valid;
+  protected async preLoopHook({ startHeight, valid }): Promise<void> {
+    return Promise.resolve();
   }
 
   private getBaseHandlerKind(
@@ -686,7 +323,7 @@ export class FetchService implements OnApplicationShutdown {
         ? (processor.baseFilter as T[])
         : ([processor.baseFilter] as T[]);
     } else {
-      throw new Error(`expect custom datasource here`);
+      throw new Error(`Expected a custom datasource here`);
     }
   }
 }

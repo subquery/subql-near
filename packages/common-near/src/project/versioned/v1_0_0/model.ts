@@ -2,14 +2,17 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import {
+  BaseMapping,
+  FileType,
   NodeSpec,
   ProjectManifestBaseImpl,
   QuerySpec,
+  RunnerNodeImpl,
   RunnerQueryBaseModel,
   RunnerSpecs,
-  SemverVersionValidator,
+  validateObject,
 } from '@subql/common';
-import {NearRuntimeDatasource} from '@subql/types-near';
+import {NearCustomDatasource, NearNetworkFilter, NearRuntimeDatasource} from '@subql/types-near';
 import {plainToClass, Transform, TransformFnParams, Type} from 'class-transformer';
 import {
   Equals,
@@ -22,30 +25,43 @@ import {
   ValidateNested,
   validateSync,
 } from 'class-validator';
-import {
-  CustomDatasourceV0_2_0,
-  FileType,
-  RuntimeDataSourceV0_2_0,
-  NearCustomDataSourceV0_2_0Impl,
-  NearRuntimeDataSourceV0_2_0Impl,
-} from '../v0_2_0';
-import {
-  CustomDatasourceTemplate,
-  CustomDatasourceTemplateImpl,
-  RuntimeDatasourceTemplate,
-  RuntimeDatasourceTemplateImpl,
-} from '../v0_2_1';
-import {NearProjectManifestV1_0_0} from './types';
+import {CustomDataSourceBase, RuntimeDataSourceBase} from '../../models';
+import {CustomDatasourceTemplate, RuntimeDatasourceTemplate, NearProjectManifestV1_0_0} from './types';
 
 const NEAR_NODE_NAME = `@subql/node-near`;
 
-export class NearRunnerNodeImpl implements NodeSpec {
+export class NearRunnerNodeImpl extends RunnerNodeImpl {
   @Equals(NEAR_NODE_NAME, {message: `Runner Near node name incorrect, suppose be '${NEAR_NODE_NAME}'`})
   name: string;
+}
+
+export class NearRuntimeDataSourceImpl extends RuntimeDataSourceBase implements NearRuntimeDatasource {
+  validate(): void {
+    return validateObject(this, 'failed to validate runtime datasource.');
+  }
+}
+
+export class NearCustomDataSourceImpl<
+    K extends string = string,
+    T extends NearNetworkFilter = NearNetworkFilter,
+    M extends BaseMapping<any, any> = BaseMapping<Record<string, unknown>, any>
+  >
+  extends CustomDataSourceBase<K, T, M>
+  implements NearCustomDatasource<K, T, M>
+{
+  validate(): void {
+    return validateObject(this, 'failed to validate custom datasource.');
+  }
+}
+
+export class RuntimeDatasourceTemplateImpl extends NearRuntimeDataSourceImpl implements RuntimeDatasourceTemplate {
   @IsString()
-  @Validate(SemverVersionValidator)
-  // @Matches(RUNNER_REGEX,{message: 'runner version is not correct'})
-  version: string;
+  name: string;
+}
+
+export class CustomDatasourceTemplateImpl extends NearCustomDataSourceImpl implements CustomDatasourceTemplate {
+  @IsString()
+  name: string;
 }
 
 export class NearRunnerSpecsImpl implements RunnerSpecs {
@@ -104,14 +120,14 @@ export class DeploymentV1_0_0 {
   schema: FileType;
   @IsArray()
   @ValidateNested()
-  @Type(() => NearCustomDataSourceV0_2_0Impl, {
+  @Type(() => NearCustomDataSourceImpl, {
     discriminator: {
       property: 'kind',
-      subTypes: [{value: NearRuntimeDataSourceV0_2_0Impl, name: 'near/Runtime'}],
+      subTypes: [{value: NearRuntimeDataSourceImpl, name: 'near/Runtime'}],
     },
     keepDiscriminatorProperty: true,
   })
-  dataSources: (RuntimeDataSourceV0_2_0 | CustomDatasourceV0_2_0)[];
+  dataSources: (NearRuntimeDatasource | NearCustomDatasource)[];
   @IsOptional()
   @IsArray()
   @ValidateNested()
@@ -131,14 +147,14 @@ export class ProjectManifestV1_0_0Impl<D extends object = DeploymentV1_0_0>
 {
   @Equals('1.0.0')
   specVersion: string;
-  @Type(() => NearCustomDataSourceV0_2_0Impl, {
+  @Type(() => NearCustomDataSourceImpl, {
     discriminator: {
       property: 'kind',
-      subTypes: [{value: NearRuntimeDataSourceV0_2_0Impl, name: 'near/Runtime'}],
+      subTypes: [{value: NearRuntimeDataSourceImpl, name: 'near/Runtime'}],
     },
     keepDiscriminatorProperty: true,
   })
-  dataSources: (NearRuntimeDatasource | CustomDatasourceV0_2_0)[];
+  dataSources: (NearRuntimeDatasource | NearCustomDatasource)[];
   @Type(() => ProjectNetworkV1_0_0)
   network: ProjectNetworkV1_0_0;
   @IsString()

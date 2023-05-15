@@ -2,68 +2,25 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import fs from 'fs';
-import os from 'os';
 import path from 'path';
+import { LocalReader, Reader, loadFromJsonOrYaml } from '@subql/common';
 import {
-  GithubReader,
-  IPFSReader,
-  LocalReader,
-  Reader,
-  loadFromJsonOrYaml,
-} from '@subql/common';
-import {
-  CustomDatasourceV0_2_0,
   isCustomDs,
-  RuntimeDataSourceV0_0_1,
-  RuntimeDataSourceV0_2_0,
   NearRuntimeHandler,
   NearCustomHandler,
   NearHandler,
   NearHandlerKind,
 } from '@subql/common-near';
-import { StoreService } from '@subql/node-core';
+import {
+  loadDataSourceScript,
+  updateDataSourcesEntry,
+  updateProcessor,
+} from '@subql/node-core';
+import { NearCustomDatasource, NearRuntimeDatasource } from '@subql/types-near';
 import { getAllEntitiesRelations } from '@subql/utils';
 import yaml from 'js-yaml';
-import tar from 'tar';
 import { NodeVM, VMScript } from 'vm2';
-import { SubqlProjectDs, SubqueryProject } from '../configure/SubqueryProject';
-
-export async function prepareProjectDir(projectPath: string): Promise<string> {
-  const stats = fs.statSync(projectPath);
-  if (stats.isFile()) {
-    const sep = path.sep;
-    const tmpDir = os.tmpdir();
-    const tempPath = fs.mkdtempSync(`${tmpDir}${sep}`);
-    // Will promote errors if incorrect format/extension
-    await tar.x({ file: projectPath, cwd: tempPath });
-    return tempPath.concat('/package');
-  } else if (stats.isDirectory()) {
-    return projectPath;
-  }
-}
-
-// We cache this to avoid repeated reads from fs
-const projectEntryCache: Record<string, string> = {};
-
-export function getProjectEntry(root: string): string {
-  const pkgPath = path.join(root, 'package.json');
-  try {
-    if (!projectEntryCache[pkgPath]) {
-      const content = fs.readFileSync(pkgPath).toString();
-      const pkg = JSON.parse(content);
-      if (!pkg.main) {
-        return './dist';
-      }
-      projectEntryCache[pkgPath] = pkg.main.startsWith('./')
-        ? pkg.main
-        : `./${pkg.main}`;
-    }
-
-    return projectEntryCache[pkgPath];
-  } catch (err) {
-    throw new Error(`can not find package.json within directory ${root}`);
-  }
-}
+import { SubqlProjectDs } from '../configure/SubqueryProject';
 
 export function isBaseHandler(
   handler: NearHandler,
@@ -77,22 +34,8 @@ export function isCustomHandler(
   return !isBaseHandler(handler);
 }
 
-export async function updateDataSourcesV0_0_1(
-  _dataSources: RuntimeDataSourceV0_0_1[],
-  reader: Reader,
-): Promise<SubqlProjectDs[]> {
-  // force convert to updated ds
-  const dataSources = _dataSources as SubqlProjectDs[];
-  await Promise.all(
-    dataSources.map(async (ds) => {
-      ds.mapping.entryScript = await loadDataSourceScript(reader);
-    }),
-  );
-  return dataSources;
-}
-
-export async function updateDataSourcesV0_2_0(
-  _dataSources: (RuntimeDataSourceV0_2_0 | CustomDatasourceV0_2_0)[],
+export async function updateDataSourcesV1_0_0(
+  _dataSources: (NearRuntimeDatasource | NearCustomDatasource)[],
   reader: Reader,
   root: string,
 ): Promise<SubqlProjectDs[]> {
@@ -144,71 +87,6 @@ export async function updateDataSourcesV0_2_0(
       }
     }),
   );
-}
-
-async function updateDataSourcesEntry(
-  reader: Reader,
-  file: string,
-  root: string,
-  script: string,
-): Promise<string> {
-  if (reader instanceof LocalReader) return file;
-  else if (reader instanceof IPFSReader || reader instanceof GithubReader) {
-    const outputPath = `${path.resolve(root, file.replace('ipfs://', ''))}.js`;
-    await fs.promises.writeFile(outputPath, script);
-    return outputPath;
-  }
-}
-
-async function updateProcessor(
-  reader: Reader,
-  root: string,
-  file: string,
-): Promise<string> {
-  if (reader instanceof LocalReader) {
-    return path.resolve(root, file);
-  } else {
-    const res = await reader.getFile(file);
-    const outputPath = `${path.resolve(root, file.replace('ipfs://', ''))}.js`;
-    await fs.promises.writeFile(outputPath, res);
-    return outputPath;
-  }
-}
-
-export async function loadDataSourceScript(
-  reader: Reader,
-  file?: string,
-): Promise<string> {
-  let entry: string;
-  //For RuntimeDataSourceV0_0_1
-  if (!file) {
-    const pkg = await reader.getPkg();
-    if (pkg === undefined) throw new Error('Project package.json is not found');
-    if (pkg.main) {
-      entry = pkg.main.startsWith('./') ? pkg.main : `./${pkg.main}`;
-    } else {
-      entry = './dist';
-    }
-  }
-  //Else get file
-  const entryScript = await reader.getFile(file ? file : entry);
-  if (entryScript === undefined) {
-    throw new Error(`Entry file ${entry} for datasource not exist`);
-  }
-  return entryScript;
-}
-
-async function makeTempDir(): Promise<string> {
-  const sep = path.sep;
-  const tmpDir = os.tmpdir();
-  return fs.promises.mkdtemp(`${tmpDir}${sep}`);
-}
-
-export async function getProjectRoot(reader: Reader): Promise<string> {
-  if (reader instanceof LocalReader) return reader.root;
-  if (reader instanceof IPFSReader || reader instanceof GithubReader) {
-    return makeTempDir();
-  }
 }
 
 export function loadChainTypes(file: string, projectRoot: string): unknown {
@@ -266,20 +144,4 @@ export function loadChainTypesFromJs(
     );
   }
   return rawContent;
-}
-
-export async function initDbSchema(
-  project: SubqueryProject,
-  schema: string,
-  storeService: StoreService,
-): Promise<void> {
-  const modelsRelation = getAllEntitiesRelations(project.schema);
-  await storeService.init(modelsRelation, schema);
-}
-
-export async function initHotSchemaReload(
-  schema: string,
-  storeService: StoreService,
-): Promise<void> {
-  await storeService.initHotSchemaReloadQueries(schema);
 }
