@@ -263,7 +263,7 @@ export class FetchService extends BaseFetchService<
   }
 
   protected async getChainId(): Promise<string> {
-    return Promise.resolve((await this.api.status()).chain_id);
+    return (await this.api.status()).chain_id;
   }
 
   protected getModulos(): number[] {

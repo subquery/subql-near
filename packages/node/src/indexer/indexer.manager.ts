@@ -8,10 +8,7 @@ import {
   isTransactionHandlerProcessor,
   isCustomDs,
   isRuntimeDs,
-  NearCustomDataSource,
-  NearCustomHandler,
   NearHandlerKind,
-  NearNetworkFilter,
   NearRuntimeHandlerInputMap,
   isReceiptHandlerProcessor,
 } from '@subql/common-near';
@@ -109,10 +106,7 @@ export class IndexerManager extends BaseIndexerManager<
 
   // eslint-disable-next-line @typescript-eslint/require-await
   private async getApi(block: BlockContent): Promise<SafeJsonRpcProvider> {
-    return new SafeJsonRpcProvider(
-      block.block.header.height,
-      this.apiService.api.connection,
-    );
+    return this.apiService.safeApi(block.block.header.height);
   }
 
   protected async indexBlockData(

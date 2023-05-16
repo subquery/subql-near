@@ -33,11 +33,8 @@
     "@willsoto/nestjs-prometheus": "^4.4.0",
     "cron-converter": "^1.0.2",
     "eventemitter2": "^6.4.5",
-    "fetch-h2": "3.0.2",
     "lodash": "^4.17.21",
-    "merkle-tools": "^1.4.1",
     "near-api-js": "^1.1.0",
-    "parse-json": "^6.0.2",
     "pg": "^8.7.1",
     "reflect-metadata": "^0.1.13",
     "rimraf": "^3.0.2",
@@ -62,6 +59,5 @@
   "files": [
     "/dist",
     "/bin"
-  ],
-  "stableVersion": "2.1.4-0"
+  ]
 }
