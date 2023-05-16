@@ -8,10 +8,7 @@ import {
   isTransactionHandlerProcessor,
   isCustomDs,
   isRuntimeDs,
-  NearCustomDataSource,
-  NearCustomHandler,
   NearHandlerKind,
-  NearNetworkFilter,
   NearRuntimeHandlerInputMap,
   isReceiptHandlerProcessor,
 } from '@subql/common-near';
@@ -19,16 +16,18 @@ import {
   NodeConfig,
   getLogger,
   profiler,
-  profilerWrap,
   IndexerSandbox,
-  IIndexerManager,
   ProcessBlockResponse,
+  BaseIndexerManager,
 } from '@subql/node-core';
 import {
   NearBlock,
   NearAction,
   NearTransaction,
   NearTransactionReceipt,
+  NearDatasource,
+  NearCustomDatasource,
+  NearBlockFilter,
 } from '@subql/types-near';
 import { SubqlProjectDs } from '../configure/SubqueryProject';
 import * as NearUtil from '../utils/near';
@@ -47,81 +46,39 @@ import { UnfinalizedBlocksService } from './unfinalizedBlocks.service';
 const logger = getLogger('indexer');
 
 @Injectable()
-export class IndexerManager
-  implements IIndexerManager<BlockContent, SubqlProjectDs>
-{
+export class IndexerManager extends BaseIndexerManager<
+  ApiService,
+  SafeJsonRpcProvider,
+  BlockContent,
+  NearDatasource,
+  NearCustomDatasource,
+  typeof FilterTypeMap,
+  typeof ProcessorTypeMap,
+  NearRuntimeHandlerInputMap
+> {
+  protected isRuntimeDs = isRuntimeDs;
+  protected isCustomDs = isCustomDs;
+  protected updateCustomProcessor = asSecondLayerHandlerProcessor_1_0_0;
+
   constructor(
-    private apiService: ApiService,
-    private nodeConfig: NodeConfig,
-    private sandboxService: SandboxService,
-    private dsProcessorService: DsProcessorService,
-    private dynamicDsService: DynamicDsService,
-    private unfinalizedBlocksService: UnfinalizedBlocksService,
+    apiService: ApiService,
+    nodeConfig: NodeConfig,
+    sandboxService: SandboxService<SafeJsonRpcProvider>,
+    dsProcessorService: DsProcessorService,
+    dynamicDsService: DynamicDsService,
+    unfinalizedBlocksService: UnfinalizedBlocksService,
     @Inject('IProjectService') private projectService: ProjectService,
   ) {
-    logger.info('indexer manager start');
-  }
-
-  @profiler(yargsOptions.argv.profiler)
-  async indexBlock(
-    blockContent: BlockContent,
-    dataSources: SubqlProjectDs[],
-  ): Promise<ProcessBlockResponse> {
-    const { block } = blockContent;
-    let dynamicDsCreated = false;
-    let reindexBlockHeight: number | null = null;
-    const blockHeight = block.header.height;
-
-    const filteredDataSources = this.filterDataSources(
-      block.header.height,
-      dataSources,
+    super(
+      apiService,
+      nodeConfig,
+      sandboxService,
+      dsProcessorService,
+      dynamicDsService,
+      unfinalizedBlocksService,
+      FilterTypeMap,
+      ProcessorTypeMap,
     );
-
-    this.assertDataSources(filteredDataSources, blockHeight);
-
-    reindexBlockHeight = await this.processUnfinalizedBlocks(block);
-
-    // Only index block if we're not going to reindex
-    if (!reindexBlockHeight) {
-      await this.indexBlockData(
-        blockContent,
-        filteredDataSources,
-        //eslint-disable-next-line @typescript-eslint/require-await
-        async (ds: SubqlProjectDs) => {
-          // Injected runtimeVersion from fetch service might be outdated
-          const safeApi = new SafeJsonRpcProvider(
-            blockContent.block.header.height,
-            this.apiService.api.connection,
-          );
-          const vm = this.sandboxService.getDsProcessor(ds, safeApi);
-
-          // Inject function to create ds into vm
-          vm.freeze(
-            async (templateName: string, args?: Record<string, unknown>) => {
-              const newDs = await this.dynamicDsService.createDynamicDatasource(
-                {
-                  templateName,
-                  args,
-                  startBlock: blockHeight,
-                },
-              );
-              // Push the newly created dynamic ds to be processed this block on any future extrinsics/events
-              filteredDataSources.push(newDs);
-              dynamicDsCreated = true;
-            },
-            'createDynamicDatasource',
-          );
-
-          return vm;
-        },
-      );
-    }
-
-    return {
-      dynamicDsCreated,
-      blockHash: block.header.hash,
-      reindexBlockHeight,
-    };
   }
 
   async start(): Promise<void> {
@@ -129,59 +86,31 @@ export class IndexerManager
     logger.info('indexer manager started');
   }
 
-  private async processUnfinalizedBlocks(
-    block: NearBlock,
-  ): Promise<number | null> {
-    if (this.nodeConfig.unfinalizedBlocks) {
-      return this.unfinalizedBlocksService.processUnfinalizedBlocks(block);
-    }
-    return null;
-  }
-
-  private filterDataSources(
-    nextProcessingHeight: number,
-    dataSources: SubqlProjectDs[],
-  ): SubqlProjectDs[] {
-    let filteredDs: SubqlProjectDs[];
-
-    filteredDs = dataSources.filter(
-      (ds) => ds.startBlock <= nextProcessingHeight,
+  @profiler(yargsOptions.argv.profiler)
+  async indexBlock(
+    block: BlockContent,
+    dataSources: NearDatasource[],
+  ): Promise<ProcessBlockResponse> {
+    return super.internalIndexBlock(block, dataSources, () =>
+      this.getApi(block),
     );
-
-    if (filteredDs.length === 0) {
-      logger.error(`Did not find any matching datasouces`);
-      process.exit(1);
-    }
-    // perform filter for custom ds
-    filteredDs = filteredDs.filter((ds) => {
-      if (isCustomDs(ds)) {
-        return this.dsProcessorService
-          .getDsProcessor(ds)
-          .dsFilterProcessor(ds, this.apiService.api);
-      } else {
-        return true;
-      }
-    });
-
-    if (!filteredDs.length) {
-      logger.error(`Did not find any datasources with associated processor`);
-      process.exit(1);
-    }
-    return filteredDs;
   }
 
-  private assertDataSources(ds: SubqlProjectDs[], blockHeight: number) {
-    if (!ds.length) {
-      logger.error(
-        `Your start block is greater than the current indexed block height in your database. Either change your startBlock (project.yaml) to <= ${blockHeight}
-         or delete your database and start again from the currently specified startBlock`,
-      );
-      process.exit(1);
-    }
+  getBlockHeight(block: BlockContent): number {
+    return block.block.header.height;
   }
 
-  private async indexBlockData(
-    { block, transactions }: BlockContent,
+  getBlockHash(block: BlockContent): string {
+    return block.block.header.hash;
+  }
+
+  // eslint-disable-next-line @typescript-eslint/require-await
+  private async getApi(block: BlockContent): Promise<SafeJsonRpcProvider> {
+    return this.apiService.safeApi(block.block.header.height);
+  }
+
+  protected async indexBlockData(
+    { actions, block, receipts, transactions }: BlockContent,
     dataSources: SubqlProjectDs[],
     getVM: (d: SubqlProjectDs) => Promise<IndexerSandbox>,
   ): Promise<void> {
@@ -251,132 +180,32 @@ export class IndexerManager
     }
   }
 
-  private async indexData<K extends NearHandlerKind>(
-    kind: K,
-    data: NearRuntimeHandlerInputMap[K],
-    ds: SubqlProjectDs,
-    getVM: (ds: SubqlProjectDs) => Promise<IndexerSandbox>,
-  ): Promise<void> {
-    let vm: IndexerSandbox;
-    if (isRuntimeDs(ds)) {
-      const handlers = ds.mapping.handlers.filter(
-        (h) =>
-          h.kind === kind && FilterTypeMap[kind](data as any, h.filter as any),
-      );
-
-      for (const handler of handlers) {
-        vm = vm ?? (await getVM(ds));
-        this.nodeConfig.profiler
-          ? await profilerWrap(
-              vm.securedExec.bind(vm),
-              'handlerPerformance',
-              handler.handler,
-            )(handler.handler, [data])
-          : await vm.securedExec(handler.handler, [data]);
-      }
-    } else if (isCustomDs(ds)) {
-      const handlers = this.filterCustomDsHandlers<K>(
-        ds,
-        data,
-        ProcessorTypeMap[kind],
-        (data, baseFilter) => {
-          switch (kind) {
-            case NearHandlerKind.Block:
-              return !!NearUtil.filterBlock(data as NearBlock, baseFilter);
-            case NearHandlerKind.Action:
-              return !!NearUtil.filterActions([data as NearAction], baseFilter)
-                .length;
-            case NearHandlerKind.Transaction:
-              return !!NearUtil.filterTransactions(
-                [data as NearTransaction],
-                baseFilter,
-              ).length;
-            case NearHandlerKind.Receipt:
-              return !!NearUtil.filterReceipts(
-                [data as NearTransactionReceipt],
-                baseFilter,
-              ).length;
-            default:
-              throw new Error('Unsupported handler kind');
-          }
-        },
-      );
-
-      for (const handler of handlers) {
-        vm = vm ?? (await getVM(ds));
-        await this.transformAndExecuteCustomDs(ds, vm, handler, data);
-      }
-    }
+  protected async prepareFilteredData<T = any>(
+    kind: NearHandlerKind,
+    data: T,
+  ): Promise<T> {
+    return Promise.resolve(data);
   }
 
-  private filterCustomDsHandlers<K extends NearHandlerKind>(
-    ds: NearCustomDataSource<string, NearNetworkFilter>,
-    data: NearRuntimeHandlerInputMap[K],
-    baseHandlerCheck: ProcessorTypeMap[K],
-    baseFilter: (
-      data: NearRuntimeHandlerInputMap[K],
-      baseFilter: any,
-    ) => boolean,
-  ): NearCustomHandler[] {
-    const plugin = this.dsProcessorService.getDsProcessor(ds);
-
-    return ds.mapping.handlers
-      .filter((handler) => {
-        const processor = plugin.handlerProcessors[handler.kind];
-        if (baseHandlerCheck(processor)) {
-          processor.baseFilter;
-          return baseFilter(data, processor.baseFilter);
-        }
-        return false;
-      })
-      .filter((handler) => {
-        const processor = asSecondLayerHandlerProcessor_1_0_0(
-          plugin.handlerProcessors[handler.kind],
+  protected baseCustomHandlerFilter(
+    kind: NearHandlerKind,
+    data: any,
+    baseFilter: any,
+  ): boolean {
+    switch (kind) {
+      case NearHandlerKind.Block:
+        return !!NearUtil.filterBlock(data as NearBlock, baseFilter);
+      case NearHandlerKind.Transaction:
+        return NearUtil.filterTransaction(data as NearTransaction, baseFilter);
+      case NearHandlerKind.Action:
+        return NearUtil.filterAction(data as NearAction, baseFilter);
+      case NearHandlerKind.Receipt:
+        return NearUtil.filterReceipt(
+          data as NearTransactionReceipt,
+          baseFilter,
         );
-
-        try {
-          return processor.filterProcessor({
-            filter: handler.filter,
-            input: data,
-            ds,
-          });
-        } catch (e) {
-          logger.error(e, 'Failed to run ds processer filter.');
-          throw e;
-        }
-      });
-  }
-
-  private async transformAndExecuteCustomDs<K extends NearHandlerKind>(
-    ds: NearCustomDataSource<string, NearNetworkFilter>,
-    vm: IndexerSandbox,
-    handler: NearCustomHandler,
-    data: NearRuntimeHandlerInputMap[K],
-  ): Promise<void> {
-    const plugin = this.dsProcessorService.getDsProcessor(ds);
-    const assets = await this.dsProcessorService.getAssets(ds);
-
-    const processor = asSecondLayerHandlerProcessor_1_0_0(
-      plugin.handlerProcessors[handler.kind],
-    );
-
-    const transformedData = await processor
-      .transformer({
-        input: data,
-        ds,
-        filter: handler.filter,
-        api: this.apiService.api,
-        assets,
-      })
-      .catch((e) => {
-        logger.error(e, 'Failed to transform data with ds processor.');
-        throw e;
-      });
-
-    // We can not run this in parallel. the transformed data items may be dependent on one another.
-    // An example of this is with Acala EVM packing multiple EVM logs into a single Near event
-    for (const _data of transformedData) {
-      await vm.securedExec(handler.handler, [_data]);
+      default:
+        throw new Error('Unsuported handler kind');
     }
   }
 }
@@ -396,7 +225,8 @@ const ProcessorTypeMap = {
 };
 
 const FilterTypeMap = {
-  [NearHandlerKind.Block]: NearUtil.filterBlock,
+  [NearHandlerKind.Block]: (block: NearBlock, filter?: NearBlockFilter) =>
+    !!NearUtil.filterBlock(block, filter),
   [NearHandlerKind.Transaction]: NearUtil.filterTransaction,
   [NearHandlerKind.Action]: NearUtil.filterAction,
   [NearHandlerKind.Receipt]: NearUtil.filterReceipt,

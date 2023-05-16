@@ -3,6 +3,7 @@
 
 import { Inject, Injectable, OnApplicationShutdown } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
+import { NearDataSource } from '@subql/common-near';
 import {
   NodeConfig,
   SmartBatchService,
@@ -27,7 +28,7 @@ import { BlockContent } from '../types';
  */
 @Injectable()
 export class BlockDispatcherService
-  extends BlockDispatcher<BlockContent, SubqlProjectDs>
+  extends BlockDispatcher<BlockContent, NearDataSource>
   implements OnApplicationShutdown
 {
   constructor(
@@ -35,7 +36,7 @@ export class BlockDispatcherService
     nodeConfig: NodeConfig,
     private indexerManager: IndexerManager,
     eventEmitter: EventEmitter2,
-    @Inject('IProjectService') projectService: IProjectService<SubqlProjectDs>,
+    @Inject('IProjectService') projectService: IProjectService<NearDataSource>,
     smartBatchService: SmartBatchService,
     storeService: StoreService,
     storeCacheService: StoreCacheService,

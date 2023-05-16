@@ -2,31 +2,24 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { Injectable } from '@nestjs/common';
-import { RegisteredTypes } from '@polkadot/types/types';
-import {
-  ReaderFactory,
-  ReaderOptions,
-  Reader,
-  RunnerSpecs,
-  validateSemver,
-} from '@subql/common';
+import { Reader, RunnerSpecs, validateSemver } from '@subql/common';
 import {
   NearProjectNetworkConfig,
   parseNearProjectManifest,
   NearDataSource,
-  FileType,
   ProjectManifestV1_0_0Impl,
   NearBlockFilter,
   isRuntimeDs,
   NearHandlerKind,
 } from '@subql/common-near';
+import { getProjectRoot } from '@subql/node-core';
 import { buildSchemaFromString } from '@subql/utils';
 import Cron from 'cron-converter';
 import { GraphQLSchema } from 'graphql';
 import { providers } from 'near-api-js';
 import { BlockResult } from 'near-api-js/lib/providers/provider';
 import { getBlockByHeight } from '../utils/near';
-import { getProjectRoot, updateDataSourcesV0_2_0 } from '../utils/project';
+import { updateDataSourcesV1_0_0 } from '../utils/project';
 
 export type SubqlProjectDs = NearDataSource & {
   mapping: NearDataSource['mapping'] & { entryScript: string };
@@ -44,7 +37,7 @@ export type SubqlProjectDsTemplate = Omit<SubqlProjectDs, 'startBlock'> & {
 };
 
 const NOT_SUPPORT = (name: string) => {
-  throw new Error(`Manifest specVersion ${name}() is not supported`);
+  throw new Error(`Manifest specVersion ${name} is not supported`);
 };
 
 // This is the runtime type after we have mapped genesisHash to chainId and endpoint/dict have been provided when dealing with deployments
@@ -58,38 +51,36 @@ export class SubqueryProject {
   dataSources: SubqlProjectDs[];
   schema: GraphQLSchema;
   templates: SubqlProjectDsTemplate[];
-  chainTypes?: RegisteredTypes;
   runner?: RunnerSpecs;
 
   static async create(
     path: string,
+    rawManifest: unknown,
+    reader: Reader,
     networkOverrides?: Partial<NearProjectNetworkConfig>,
-    readerOptions?: ReaderOptions,
   ): Promise<SubqueryProject> {
-    // We have to use reader here, because path can be remote or local
+    // rawManifest and reader can be reused here.
+    // It has been pre-fetched and used for rebase manifest runner options with args
+    // in order to generate correct configs.
+
+    // But we still need reader here, because path can be remote or local
     // and the `loadProjectManifest(projectPath)` only support local mode
-    const reader = await ReaderFactory.create(path, readerOptions);
-    const projectSchema = await reader.getProjectSchema();
-    if (projectSchema === undefined) {
+    if (rawManifest === undefined) {
       throw new Error(`Get manifest from project path ${path} failed`);
     }
 
-    const manifest = parseNearProjectManifest(projectSchema);
+    const manifest = parseNearProjectManifest(rawManifest);
 
-    if (manifest.isV0_0_1) {
-      NOT_SUPPORT('0.0.1');
-    } else if (manifest.isV0_2_0 || manifest.isV0_3_0) {
-      NOT_SUPPORT('0.2.0');
-    } else if (manifest.isV0_2_1) {
-      NOT_SUPPORT('0.2.1');
-    } else if (manifest.isV1_0_0) {
-      return loadProjectFromManifest1_0_0(
-        manifest.asV1_0_0,
-        reader,
-        path,
-        networkOverrides,
-      );
+    if (!manifest.isV1_0_0) {
+      NOT_SUPPORT('<1.0.0');
     }
+
+    return loadProjectFromManifest1_0_0(
+      manifest.asV1_0_0,
+      reader,
+      path,
+      networkOverrides,
+    );
   }
 }
 
@@ -138,7 +129,7 @@ async function loadProjectFromManifestBase(
   }
   const schema = buildSchemaFromString(schemaString);
 
-  const dataSources = await updateDataSourcesV0_2_0(
+  const dataSources = await updateDataSourcesV1_0_0(
     projectManifest.dataSources,
     reader,
     root,
@@ -186,17 +177,18 @@ async function loadProjectTemplates(
   root: string,
   reader: Reader,
 ): Promise<SubqlProjectDsTemplate[]> {
-  if (projectManifest.templates && projectManifest.templates.length !== 0) {
-    const dsTemplates = await updateDataSourcesV0_2_0(
-      projectManifest.templates,
-      reader,
-      root,
-    );
-    return dsTemplates.map((ds, index) => ({
-      ...ds,
-      name: projectManifest.templates[index].name,
-    }));
+  if (!projectManifest.templates || !projectManifest.templates.length) {
+    return [];
   }
+  const dsTemplates = await updateDataSourcesV1_0_0(
+    projectManifest.templates,
+    reader,
+    root,
+  );
+  return dsTemplates.map((ds, index) => ({
+    ...ds,
+    name: projectManifest.templates[index].name,
+  }));
 }
 
 // eslint-disable-next-line @typescript-eslint/require-await

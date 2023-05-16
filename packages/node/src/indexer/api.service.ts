@@ -142,6 +142,10 @@ export class ApiService
     return this.connectionPoolService.api.api;
   }
 
+  safeApi(height: number): SafeJsonRpcProvider {
+    return new SafeJsonRpcProvider(height, this.api.connection);
+  }
+
   genesisHash(): string {
     return this.networkMeta.genesisHash;
   }

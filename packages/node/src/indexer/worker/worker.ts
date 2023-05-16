@@ -30,15 +30,14 @@ import {
   HostStore,
   hostDynamicDsKeys,
   HostDynamicDS,
+  ProcessBlockResponse,
 } from '@subql/node-core';
 import { SubqlProjectDs } from '../../configure/SubqueryProject';
-import { SpecVersion } from '../dictionary.service';
 import { DynamicDsService } from '../dynamic-ds.service';
 import { IndexerManager } from '../indexer.manager';
 import { WorkerModule } from './worker.module';
 import {
   FetchBlockResponse,
-  ProcessBlockResponse,
   WorkerService,
   WorkerStatusResponse,
 } from './worker.service';
@@ -46,6 +45,7 @@ import {
   HostUnfinalizedBlocks,
   hostUnfinalizedBlocksKeys,
 } from './worker.unfinalizedBlocks.service';
+
 let app: INestApplication;
 let workerService: WorkerService;
 let dynamicDsService: DynamicDsService;

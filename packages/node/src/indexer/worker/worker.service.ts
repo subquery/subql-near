@@ -9,22 +9,17 @@ import {
   AutoQueue,
   memoryLock,
   IProjectService,
+  ProcessBlockResponse,
 } from '@subql/node-core';
+import { NearDatasource } from '@subql/types-near';
 import { SubqlProjectDs } from '../../configure/SubqueryProject';
 import { ApiService } from '../api.service';
-import { SpecVersion } from '../dictionary.service';
 import { IndexerManager } from '../indexer.manager';
 import { BlockContent } from '../types';
 
 export type FetchBlockResponse =
   | { specVersion: number; parentHash: string }
   | undefined;
-
-export type ProcessBlockResponse = {
-  dynamicDsCreated: boolean;
-  blockHash: string;
-  reindexBlockHeight: number;
-};
 
 export type WorkerStatusResponse = {
   threadId: number;
@@ -46,7 +41,7 @@ export class WorkerService {
     private apiService: ApiService,
     private indexerManager: IndexerManager,
     @Inject('IProjectService')
-    private projectService: IProjectService<SubqlProjectDs>,
+    private projectService: IProjectService<NearDatasource>,
     nodeConfig: NodeConfig,
   ) {
     this.queue = new AutoQueue(undefined, nodeConfig.batchSize);

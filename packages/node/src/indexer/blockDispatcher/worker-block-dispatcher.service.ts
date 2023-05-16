@@ -16,17 +16,17 @@ import {
   HostStore,
   HostDynamicDS,
   WorkerBlockDispatcher,
+  IUnfinalizedBlocksService,
 } from '@subql/node-core';
 import { Store } from '@subql/types';
+import { NearDatasource } from '@subql/types-near';
 import {
   SubqlProjectDs,
   SubqueryProject,
 } from '../../configure/SubqueryProject';
 import { DynamicDsService } from '../dynamic-ds.service';
-import {
-  IUnfinalizedBlocksService,
-  UnfinalizedBlocksService,
-} from '../unfinalizedBlocks.service';
+import { BlockContent } from '../types';
+import { UnfinalizedBlocksService } from '../unfinalizedBlocks.service';
 import { IIndexerWorker, IInitIndexerWorker } from '../worker/worker';
 import { HostUnfinalizedBlocks } from '../worker/worker.unfinalizedBlocks.service';
 
@@ -36,8 +36,8 @@ type IndexerWorker = IIndexerWorker & {
 
 async function createIndexerWorker(
   store: Store,
-  dynamicDsService: IDynamicDsService<SubqlProjectDs>,
-  unfinalizedBlocksService: IUnfinalizedBlocksService,
+  dynamicDsService: IDynamicDsService<NearDatasource>,
+  unfinalizedBlocksService: IUnfinalizedBlocksService<BlockContent>,
 ): Promise<IndexerWorker> {
   const indexerWorker = Worker.create<
     IInitIndexerWorker,
@@ -62,6 +62,7 @@ async function createIndexerWorker(
       storeBulkCreate: store.bulkCreate.bind(store),
       storeBulkUpdate: store.bulkUpdate.bind(store),
       storeRemove: store.remove.bind(store),
+      storeBulkRemove: store.bulkRemove.bind(store),
       dynamicDsCreateDynamicDatasource:
         dynamicDsService.createDynamicDatasource.bind(dynamicDsService),
       dynamicDsGetDynamicDatasources:
@@ -80,7 +81,7 @@ async function createIndexerWorker(
 
 @Injectable()
 export class WorkerBlockDispatcherService
-  extends WorkerBlockDispatcher<SubqlProjectDs, IndexerWorker>
+  extends WorkerBlockDispatcher<NearDatasource, IndexerWorker>
   implements OnApplicationShutdown
 {
   constructor(
