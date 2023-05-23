@@ -26,10 +26,8 @@
     "@nestjs/schedule": "^1.0.2",
     "@subql/common": "^2.1.0",
     "@subql/common-near": "workspace:*",
-    "@subql/node-core": "2.2.1",
+    "@subql/node-core": "^2.2.2",
     "@subql/types-near": "workspace:*",
-    "@subql/utils": "2.0.0",
-    "@subql/x-merkle-mountain-range": "2.0.0-0.1.2",
     "@willsoto/nestjs-prometheus": "^4.4.0",
     "cron-converter": "^1.0.2",
     "eventemitter2": "^6.4.5",
@@ -55,6 +53,9 @@
     "@types/yargs": "^16.0.4",
     "dotenv": "^15.0.1",
     "nodemon": "^2.0.15"
+  },
+  "peerDependencies": {
+    "@subql/utils": "*"
   },
   "files": [
     "/dist",
