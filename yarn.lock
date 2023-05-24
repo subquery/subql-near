@@ -2776,7 +2776,7 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@subql/common@npm:2.1.1, @subql/common@npm:^2.1.0, @subql/common@npm:^2.1.1":
+"@subql/common@npm:2.1.1, @subql/common@npm:^2.1.1":
   version: 2.1.1
   resolution: "@subql/common@npm:2.1.1"
   dependencies:
@@ -2792,9 +2792,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@subql/node-core@npm:^2.2.2":
-  version: 2.2.2
-  resolution: "@subql/node-core@npm:2.2.2"
+"@subql/node-core@npm:^2.3.0":
+  version: 2.3.0
+  resolution: "@subql/node-core@npm:2.3.0"
   dependencies:
     "@nestjs/common": ^8.2.6
     "@nestjs/event-emitter": ^1.3.0
@@ -2803,7 +2803,7 @@ __metadata:
     "@subql/common": 2.1.1
     "@subql/testing": 2.0.1
     "@subql/types": 2.1.2
-    "@subql/utils": 2.2.0
+    "@subql/utils": 2.3.0
     "@subql/x-merkle-mountain-range": ^2.0.0-0.1.3
     "@willsoto/nestjs-prometheus": ^5.1.1
     async-lock: ^1.4.0
@@ -2819,7 +2819,7 @@ __metadata:
     tar: ^6.1.11
     vm2: 3.9.17
     yargs: ^16.2.0
-  checksum: 49d6c540e20ca2fc2fe4e99b89fb31818e84534f36a0e03776ccdb500779894a46ad0608c49b568b510e38b694fb4991e0330c38a8ef32426efe158020f52e78
+  checksum: ae822b29b0b9112046b8238af86dabca3cc6730601f6dd58c3c8bf894145addd718d2f07a8f0147509cd58091e9bb51a3a440e2e112037c35783f7250ab01be1
   languageName: node
   linkType: hard
 
@@ -2835,9 +2835,9 @@ __metadata:
     "@nestjs/schedule": ^1.0.2
     "@nestjs/schematics": ^8.0.5
     "@nestjs/testing": ^8.2.6
-    "@subql/common": ^2.1.0
+    "@subql/common": ^2.1.1
     "@subql/common-near": "workspace:*"
-    "@subql/node-core": ^2.2.2
+    "@subql/node-core": ^2.3.0
     "@subql/types-near": "workspace:*"
     "@types/express": ^4.17.13
     "@types/jest": ^27.4.0
@@ -2895,9 +2895,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@subql/utils@npm:2.2.0":
-  version: 2.2.0
-  resolution: "@subql/utils@npm:2.2.0"
+"@subql/utils@npm:2.3.0":
+  version: 2.3.0
+  resolution: "@subql/utils@npm:2.3.0"
   dependencies:
     "@polkadot/util": ^12.2.1
     "@polkadot/util-crypto": ^12.2.1
@@ -2913,7 +2913,7 @@ __metadata:
     semver: ^7.3.7
     sequelize: 6.28.0
     tar: ^6.1.11
-  checksum: 4dd61522ef52ae74f95f9f1f5b3fd0b1d5df92f622b0687a5cda08d005f34818c723a5f49100b7fa7b90ac5908833b5049070291816bcf12851d8cbdec952f1f
+  checksum: 5242d5cdd60d4e10774e21d4e672caec7489da6b71567546bb09fbe6ce66e0d5d118019e405cb6ab04e17d06dc4ee055d8e3a0065e2239ff99f865919ea5a101
   languageName: node
   linkType: hard
 
