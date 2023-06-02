@@ -11,15 +11,15 @@ import {
   NearBlockFilter,
   isRuntimeDs,
   NearHandlerKind,
+  isCustomDs,
 } from '@subql/common-near';
-import { getProjectRoot } from '@subql/node-core';
+import { getProjectRoot, updateDataSourcesV1_0_0 } from '@subql/node-core';
 import { buildSchemaFromString } from '@subql/utils';
 import Cron from 'cron-converter';
 import { GraphQLSchema } from 'graphql';
 import { providers } from 'near-api-js';
 import { BlockResult } from 'near-api-js/lib/providers/provider';
 import { getBlockByHeight } from '../utils/near';
-import { updateDataSourcesV1_0_0 } from '../utils/project';
 
 export type SubqlProjectDs = NearDataSource & {
   mapping: NearDataSource['mapping'] & { entryScript: string };
@@ -58,6 +58,7 @@ export class SubqueryProject {
     rawManifest: unknown,
     reader: Reader,
     networkOverrides?: Partial<NearProjectNetworkConfig>,
+    root?: string,
   ): Promise<SubqueryProject> {
     // rawManifest and reader can be reused here.
     // It has been pre-fetched and used for rebase manifest runner options with args
@@ -80,6 +81,7 @@ export class SubqueryProject {
       reader,
       path,
       networkOverrides,
+      root,
     );
   }
 }
@@ -101,8 +103,9 @@ async function loadProjectFromManifestBase(
   reader: Reader,
   path: string,
   networkOverrides?: Partial<NearProjectNetworkConfig>,
+  root?: string,
 ): Promise<SubqueryProject> {
-  const root = await getProjectRoot(reader);
+  root = root ?? (await getProjectRoot(reader));
 
   if (typeof projectManifest.network.endpoint === 'string') {
     projectManifest.network.endpoint = [projectManifest.network.endpoint];
@@ -133,6 +136,7 @@ async function loadProjectFromManifestBase(
     projectManifest.dataSources,
     reader,
     root,
+    isCustomDs,
   );
   return {
     id: reader.root ? reader.root : path, //TODO, need to method to get project_id
@@ -151,12 +155,14 @@ async function loadProjectFromManifest1_0_0(
   reader: Reader,
   path: string,
   networkOverrides?: Partial<NearProjectNetworkConfig>,
+  root?: string,
 ): Promise<SubqueryProject> {
   const project = await loadProjectFromManifestBase(
     projectManifest,
     reader,
     path,
     networkOverrides,
+    root,
   );
   project.templates = await loadProjectTemplates(
     projectManifest,
@@ -184,6 +190,7 @@ async function loadProjectTemplates(
     projectManifest.templates,
     reader,
     root,
+    isCustomDs as any,
   );
   return dsTemplates.map((ds, index) => ({
     ...ds,

@@ -31,7 +31,6 @@ import {
 } from '@subql/types-near';
 import { SubqlProjectDs } from '../configure/SubqueryProject';
 import * as NearUtil from '../utils/near';
-import { yargsOptions } from '../yargs';
 import { ApiService, SafeJsonRpcProvider } from './api.service';
 import {
   asSecondLayerHandlerProcessor_1_0_0,
@@ -86,7 +85,7 @@ export class IndexerManager extends BaseIndexerManager<
     logger.info('indexer manager started');
   }
 
-  @profiler(yargsOptions.argv.profiler)
+  @profiler()
   async indexBlock(
     block: BlockContent,
     dataSources: NearDatasource[],
