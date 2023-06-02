@@ -6,6 +6,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.5.0] - 2023-06-02
+### Fixed
+- Updated dependencies with fixes and ported over relevant fixes from main sdk (#41)
+
 ## [2.3.1] - 2023-05-25
 ### Changed
 - Updated node-core to fix issue with base58 block hashes and POI
@@ -76,6 +80,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add `toJson` method to function args (#9)
 
 ## 1.18.0 - 2023-01-26
-[Unreleased]: https://github.com/subquery/subql-near/compare/near/v2.3.1...HEAD
+[Unreleased]: https://github.com/subquery/subql-near/compare/near/v2.5.0...HEAD
+[2.5.0]: https://github.com/subquery/subql-near/compare/near/v2.3.1...near/v2.5.0
 [2.3.1]: https://github.com/subquery/subql-near/compare/near/v2.3.0...near/v2.3.1
 [2.3.0]: https://github.com/subquery/subql-near/compare/node/v2.1.1...node/v2.3.0
