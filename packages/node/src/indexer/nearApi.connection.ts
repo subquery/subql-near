@@ -1,18 +1,56 @@
 // Copyright 2020-2022 OnFinality Limited authors & contributors
 // SPDX-License-Identifier: Apache-2.0
 
-import { ApiConnection } from '@subql/node-core';
+import {
+  ApiConnectionError,
+  ApiErrorType,
+  IApiConnectionSpecific,
+  NetworkMetadataPayload,
+} from '@subql/node-core';
 import * as Near from 'near-api-js';
 import { ConnectionInfo } from 'near-api-js/lib/utils/web';
+import { SafeJsonRpcProvider } from './api.service';
+import { BlockContent } from './types';
+
+const GENESIS_BLOCK = 9_820_210;
+
+type FetchFunc = (
+  api: Near.providers.JsonRpcProvider,
+  batch: number[],
+) => Promise<BlockContent[]>;
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const { version: packageVersion } = require('../../package.json');
 
-export class NearApiConnection implements ApiConnection {
-  constructor(private _api: Near.providers.JsonRpcProvider) {}
+export class NearApiConnection
+  implements
+    IApiConnectionSpecific<
+      Near.providers.JsonRpcProvider,
+      SafeJsonRpcProvider,
+      BlockContent
+    >
+{
+  readonly networkMeta: NetworkMetadataPayload;
+
+  constructor(
+    public unsafeApi: Near.providers.JsonRpcProvider,
+    private fetchBlocksBatches: FetchFunc,
+    chainId: string,
+    genesisHash: string,
+  ) {
+    this.networkMeta = {
+      chain: chainId,
+      specName: chainId,
+      //mainnet genesis at block 9820210
+      genesisHash: genesisHash,
+    };
+  }
 
   //eslint-disable-next-line @typescript-eslint/require-await
-  static async create(endpoint: string): Promise<NearApiConnection> {
+  static async create(
+    endpoint: string,
+    fetchBlockBatches: FetchFunc,
+  ): Promise<NearApiConnection> {
     const headers = {
       'User-Agent': `SubQuery-Node ${packageVersion}`,
     };
@@ -23,11 +61,16 @@ export class NearApiConnection implements ApiConnection {
     };
 
     const api = new Near.providers.JsonRpcProvider(connectionInfo);
-    return new NearApiConnection(api);
+    return new NearApiConnection(
+      api,
+      fetchBlockBatches,
+      (await api.status()).chain_id,
+      (await api.block({ blockId: GENESIS_BLOCK })).header.hash,
+    );
   }
 
-  get api(): Near.providers.JsonRpcProvider {
-    return this._api;
+  safeApi(height: number): SafeJsonRpcProvider {
+    throw new Error(`Not Implemented`);
   }
 
   //eslint-disable-next-line @typescript-eslint/require-await
@@ -38,5 +81,57 @@ export class NearApiConnection implements ApiConnection {
   //eslint-disable-next-line @typescript-eslint/require-await
   async apiDisconnect(): Promise<void> {
     throw new Error(`Not Implemented`);
+  }
+
+  async fetchBlocks(heights: number[]): Promise<BlockContent[]> {
+    const blocks = await this.fetchBlocksBatches(this.unsafeApi, heights);
+    return blocks;
+  }
+
+  handleError = NearApiConnection.handleError;
+
+  static handleError(e: Error): ApiConnectionError {
+    let formatted_error: ApiConnectionError;
+    if (e.message.includes(`timed out`)) {
+      formatted_error = NearApiConnection.handleTimeoutError(e);
+    } else if (e.message.startsWith(`disconnected from `)) {
+      formatted_error = NearApiConnection.handleDisconnectionError(e);
+    } else if (e.message.startsWith(`Rate Limited at endpoint`)) {
+      formatted_error = NearApiConnection.handleRateLimitError(e);
+    } else {
+      formatted_error = new ApiConnectionError(
+        e.name,
+        e.message,
+        ApiErrorType.Default,
+      );
+    }
+    return formatted_error;
+  }
+
+  static handleRateLimitError(e: Error): ApiConnectionError {
+    const formatted_error = new ApiConnectionError(
+      'RateLimit',
+      e.message,
+      ApiErrorType.RateLimit,
+    );
+    return formatted_error;
+  }
+
+  static handleTimeoutError(e: Error): ApiConnectionError {
+    const formatted_error = new ApiConnectionError(
+      'TimeoutError',
+      e.message,
+      ApiErrorType.Timeout,
+    );
+    return formatted_error;
+  }
+
+  static handleDisconnectionError(e: Error): ApiConnectionError {
+    const formatted_error = new ApiConnectionError(
+      'ConnectionError',
+      e.message,
+      ApiErrorType.Connection,
+    );
+    return formatted_error;
   }
 }

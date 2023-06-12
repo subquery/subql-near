@@ -3,7 +3,7 @@
 
 import { Inject, Injectable } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
-import { Interval, SchedulerRegistry } from '@nestjs/schedule';
+import { SchedulerRegistry } from '@nestjs/schedule';
 
 import {
   isCustomDs,
@@ -24,10 +24,10 @@ import {
   NearDatasource,
   NearReceiptFilter,
 } from '@subql/types-near';
-import { MetaData } from '@subql/utils';
-import { range, sortBy, uniqBy, without } from 'lodash';
+import { sortBy, uniqBy } from 'lodash';
+import { Near } from 'near-api-js';
 import { JsonRpcProvider } from 'near-api-js/lib/providers';
-import { SubqlProjectDs, SubqueryProject } from '../configure/SubqueryProject';
+import { SubqueryProject } from '../configure/SubqueryProject';
 import { calcInterval } from '../utils/near';
 import { isBaseHandler, isCustomHandler } from '../utils/project';
 import { ApiService } from './api.service';
@@ -98,6 +98,7 @@ function actionFilterToQueryEntry(
 
 @Injectable()
 export class FetchService extends BaseFetchService<
+  ApiService,
   NearDatasource,
   INearBlockDispatcher,
   DictionaryService
@@ -129,7 +130,7 @@ export class FetchService extends BaseFetchService<
   }
 
   get api(): JsonRpcProvider {
-    return this.apiService.api;
+    return this.apiService.unsafeApi;
   }
 
   buildDictionaryQueryEntries(startBlock: number): DictionaryQueryEntry[] {
