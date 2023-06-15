@@ -475,7 +475,7 @@ export async function fetchBlocksArray(
       }
     }),
   );
-  return results.filter((result) => result !== null);
+  return results;
 }
 
 export async function fetchBlocksBatches(
@@ -485,6 +485,7 @@ export async function fetchBlocksBatches(
   const blocks = await fetchBlocksArray(api, blockArray);
 
   const blockContentPromises = blocks.map(async (blockResult) => {
+    if (blockResult === null) return null; // unavailable blocks
     const block = await wrapBlock(api, blockResult);
     return {
       block,

@@ -55,9 +55,10 @@ export class BlockDispatcherService
       project,
       dynamicDsService,
       async (blockNums: number[]): Promise<BlockContent[]> => {
-        // If specVersion not changed, a known overallSpecVer will be pass in
-        // Otherwise use api to fetch runtimes
-        return this.apiService.fetchBlocks(blockNums);
+        //filter out null values, they represent blocks that were not available in chain
+        return (await this.apiService.fetchBlocks(blockNums)).filter(
+          (block) => block !== null,
+        );
       },
     );
   }
