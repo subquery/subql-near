@@ -8,7 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [2.5.2] - 2023-06-15
 ### Fixed
-- Fixed workers to handle unavailable blocks without throwing errors
+- Fixed workers to handle unavailable blocks without throwing errors (#46)
 
 ## [2.5.1] - 2023-06-08
 ### Fixed
