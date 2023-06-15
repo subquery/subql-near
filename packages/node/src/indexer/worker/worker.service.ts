@@ -30,6 +30,13 @@ export type WorkerStatusResponse = {
 
 const logger = getLogger(`Worker Service #${threadId}`);
 
+class BlockUnavailableError extends Error {
+  constructor(message) {
+    super(message);
+    this.name = 'BlockUnavailableError';
+  }
+}
+
 @Injectable()
 export class WorkerService {
   private fetchedBlocks: Record<string, BlockContent> = {};
@@ -77,6 +84,12 @@ export class WorkerService {
       this._isIndexing = true;
       const block = this.fetchedBlocks[height];
 
+      if (block === null) {
+        throw new BlockUnavailableError(
+          `Block ${height} is unavailable in the chain`,
+        );
+      }
+
       if (!block) {
         throw new Error(`Block ${height} has not been fetched`);
       }
@@ -88,8 +101,17 @@ export class WorkerService {
         await this.projectService.getAllDataSources(height),
       );
     } catch (e) {
-      logger.error(e, `Failed to index block ${height}: ${e.stack}`);
-      throw e;
+      if (e instanceof BlockUnavailableError) {
+        logger.warn(e.message);
+        return {
+          blockHash: null,
+          dynamicDsCreated: false,
+          reindexBlockHeight: null,
+        };
+      } else {
+        logger.error(e, `Failed to index block ${height}: ${e.stack}`);
+        throw e;
+      }
     } finally {
       this._isIndexing = false;
     }
