@@ -6,6 +6,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.5.2] - 2023-06-15
+### Fixed
+- Fixed workers to handle unavailable blocks without throwing errors (#46)
+
 ## [2.5.1] - 2023-06-08
 ### Fixed
 - Sync with node-core 2.4.4, fixed various issue for mmr
@@ -84,7 +88,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add `toJson` method to function args (#9)
 
 ## 1.18.0 - 2023-01-26
-[Unreleased]: https://github.com/subquery/subql-near/compare/node/v2.5.1...HEAD
+[Unreleased]: https://github.com/subquery/subql-near/compare/node/v2.5.2...HEAD
+[2.5.2]: https://github.com/subquery/subql-near/compare/node/v2.5.1...node/v2.5.2
 [2.5.1]: https://github.com/subquery/subql-near/compare/node/v2.5.0...node/v2.5.1
 [2.5.0]: https://github.com/subquery/subql-near/compare/node/v2.3.1...node/v2.5.0
 [2.3.1]: https://github.com/subquery/subql-near/compare/node/v2.3.0...node/v2.3.1
