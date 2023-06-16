@@ -2839,6 +2839,7 @@ __metadata:
     "@subql/common-near": "workspace:*"
     "@subql/node-core": ^2.5.0
     "@subql/types-near": "workspace:*"
+    "@subql/x-sequelize": 6.32.0-0.0.2
     "@types/express": ^4.17.13
     "@types/jest": ^27.4.0
     "@types/lodash": ^4.14.178
