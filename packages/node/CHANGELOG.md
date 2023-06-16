@@ -6,6 +6,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.6.1] - 2023-06-16
+### Fixed
+- Fixed an issue where MetaService caught NodeConfig undefined
+
 ## [2.6.0] - 2023-06-16
 ### Added
 - Multiple-endpoint improvements from latest node-core (#44)
@@ -95,7 +99,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add `toJson` method to function args (#9)
 
 ## 1.18.0 - 2023-01-26
-[Unreleased]: https://github.com/subquery/subql-near/compare/node/v2.6.0...HEAD
+[Unreleased]: https://github.com/subquery/subql-near/compare/node/v2.6.1...HEAD
+[2.6.1]: https://github.com/subquery/subql-near/compare/node/v2.6.0...node/v2.6.1
 [2.6.0]: https://github.com/subquery/subql-near/compare/node/v2.5.2...node/v2.6.0
 [2.5.2]: https://github.com/subquery/subql-near/compare/node/v2.5.1...node/v2.5.2
 [2.5.1]: https://github.com/subquery/subql-near/compare/node/v2.5.0...node/v2.5.1
