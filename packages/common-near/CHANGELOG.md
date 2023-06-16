@@ -8,6 +8,10 @@ All logs must start with the format: [x.y.z] - yyyy-mm-dd
 
 ## [Unreleased]
 
+## [2.2.1] - 2023-06-16
+### Updated
+- Update @subql/common package to v2.2.1 (#44)
+
 ## [2.2.0] - 2023-06-02
 ### Changed
 - update common package (#41)
@@ -30,7 +34,8 @@ All logs must start with the format: [x.y.z] - yyyy-mm-dd
 ### Changed
 Initial Release
 
-[Unreleased]: https://github.com/subquery/subql-near/compare/common-near/2.2.0...HEAD
+[Unreleased]: https://github.com/subquery/subql-near/compare/common-near/2.2.1...HEAD
+[2.2.1]: https://github.com/subquery/subql-near/compare/common-near/2.2.0.../common-near/2.2.1
 [2.1.1]: https://github.com/subquery/subql-near/compare/common-near/2.1.1.../common-near/2.2.0
 [2.1.1]: https://github.com/subquery/subql-near/compare/common-near/2.1.0.../common-near/2.1.1
 [2.1.0]: https://github.com/subquery/subql-near/compare/common-near/2.0.0.../common-near/2.1.0
