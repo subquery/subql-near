@@ -3,7 +3,6 @@
 
 import { Inject, Injectable } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
-import { NearDataSource } from '@subql/common-near';
 import {
   PoiService,
   MmrService,
@@ -11,8 +10,7 @@ import {
   StoreService,
   NodeConfig,
 } from '@subql/node-core';
-import { SubstrateDatasource } from '@subql/types';
-import { Sequelize } from 'sequelize';
+import { Sequelize } from '@subql/x-sequelize';
 import {
   generateTimestampReferenceForBlockFilters,
   SubqlProjectDs,
@@ -27,7 +25,10 @@ import { UnfinalizedBlocksService } from './unfinalizedBlocks.service';
 const { version: packageVersion } = require('../../package.json');
 
 @Injectable()
-export class ProjectService extends BaseProjectService<SubqlProjectDs> {
+export class ProjectService extends BaseProjectService<
+  ApiService,
+  SubqlProjectDs
+> {
   protected packageVersion = packageVersion;
 
   constructor(

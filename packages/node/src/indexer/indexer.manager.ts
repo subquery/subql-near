@@ -29,6 +29,7 @@ import {
   NearCustomDatasource,
   NearBlockFilter,
 } from '@subql/types-near';
+import { JsonRpcProvider } from 'near-api-js/lib/providers';
 import { SubqlProjectDs } from '../configure/SubqueryProject';
 import * as NearUtil from '../utils/near';
 import { ApiService, SafeJsonRpcProvider } from './api.service';
@@ -46,9 +47,10 @@ const logger = getLogger('indexer');
 
 @Injectable()
 export class IndexerManager extends BaseIndexerManager<
-  ApiService,
   SafeJsonRpcProvider,
+  JsonRpcProvider,
   BlockContent,
+  ApiService,
   NearDatasource,
   NearCustomDatasource,
   typeof FilterTypeMap,

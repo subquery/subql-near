@@ -34,24 +34,21 @@ const GENESIS_BLOCK = 9_820_210;
 const logger = getLogger('api');
 
 @Injectable()
-export class ApiService
-  extends BaseApiService<SubqueryProject, Near.providers.JsonRpcProvider>
-  implements OnApplicationShutdown
-{
+export class ApiService extends BaseApiService<
+  Near.providers.JsonRpcProvider,
+  SafeJsonRpcProvider,
+  BlockContent
+> {
   private fetchBlocksBatches = NearUtil.fetchBlocksBatches;
   networkMeta: NetworkMetadataPayload;
 
   constructor(
-    @Inject('ISubqueryProject') project: SubqueryProject,
-    private connectionPoolService: ConnectionPoolService<NearApiConnection>,
+    @Inject('ISubqueryProject') private project: SubqueryProject,
+    connectionPoolService: ConnectionPoolService<NearApiConnection>,
     private eventEmitter: EventEmitter2,
     private nodeConfig: NodeConfig,
   ) {
-    super(project);
-  }
-
-  async onApplicationShutdown(): Promise<void> {
-    await this.connectionPoolService.onApplicationShutdown();
+    super(connectionPoolService);
   }
 
   private metadataMismatchError(
@@ -83,12 +80,15 @@ export class ApiService
       );
     }
 
-    const connections: NearApiConnection[] = [];
+    const endpointToApiIndex: Record<string, NearApiConnection> = {};
 
     await Promise.all(
       network.endpoint.map(async (endpoint, i) => {
-        const connection = await NearApiConnection.create(endpoint);
-        const api = connection.api;
+        const connection = await NearApiConnection.create(
+          endpoint,
+          this.fetchBlocksBatches,
+        );
+        const api = connection.unsafeApi;
 
         this.eventEmitter.emit(IndexerEvent.ApiConnected, {
           value: 1,
@@ -99,13 +99,7 @@ export class ApiService
         const chainId = (await api.status()).chain_id;
 
         if (!this.networkMeta) {
-          this.networkMeta = {
-            chain: chainId,
-            specName: chainId,
-            //mainnet genesis at block 9820210
-            genesisHash: (await api.block({ blockId: GENESIS_BLOCK })).header
-              .hash,
-          };
+          this.networkMeta = connection.networkMeta;
 
           if (network.chainId && network.chainId !== this.networkMeta.chain) {
             const err = new Error(
@@ -130,16 +124,16 @@ export class ApiService
           }
         }
 
-        connections.push(connection);
+        endpointToApiIndex[endpoint] = connection;
       }),
     );
 
-    this.connectionPoolService.addBatchToConnections(connections);
+    this.connectionPoolService.addBatchToConnections(endpointToApiIndex);
     return this;
   }
 
   get api(): Near.providers.JsonRpcProvider {
-    return this.connectionPoolService.api.api;
+    return this.unsafeApi;
   }
 
   safeApi(height: number): SafeJsonRpcProvider {
@@ -148,14 +142,6 @@ export class ApiService
 
   genesisHash(): string {
     return this.networkMeta.genesisHash;
-  }
-
-  async fetchBlocks(batch: number[]): Promise<BlockContent[]> {
-    return this.fetchBlocksGeneric<BlockContent>(
-      () => (blockArray: number[]) =>
-        this.fetchBlocksBatches(this.api, blockArray),
-      batch,
-    );
   }
 }
 
