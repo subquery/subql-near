@@ -9,7 +9,7 @@ import {
   filterReceipts,
 } from './near';
 
-jest.setTimeout(20000);
+jest.setTimeout(30000);
 
 describe('Near api', () => {
   let nearApi: Near.providers.JsonRpcProvider;
