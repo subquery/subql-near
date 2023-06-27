@@ -2,12 +2,15 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import * as Near from 'near-api-js';
+import { BlockContent } from '../indexer/types';
 import {
   filterActions,
   fetchBlocksBatches,
   filterReceipt,
   filterReceipts,
 } from './near';
+
+jest.setTimeout(30000);
 
 describe('Near api', () => {
   let nearApi: Near.providers.JsonRpcProvider;
@@ -19,9 +22,13 @@ describe('Near api', () => {
   });
 
   describe('Receipt Filters', () => {
-    it('Can filter receipts with sender, receiver and signer', async () => {
-      const [block] = await fetchBlocksBatches(nearApi, [85686945]);
+    let block: BlockContent;
 
+    beforeAll(async () => {
+      [block] = await fetchBlocksBatches(nearApi, [85686945]);
+    });
+
+    it('Can filter receipts with sender, receiver and signer', () => {
       const actions = filterReceipts(block.receipts, {
         sender: 'a0b86991c6218b36c1d19d4a2e9eb0ce3606eb48.factory.bridge.near',
         receiver: 'dclv2.ref-labs.near',
@@ -32,9 +39,7 @@ describe('Near api', () => {
       expect(actions.length).toBe(1);
     });
 
-    it('Can filter receipts with sender, receiver and signer - filter does not match', async () => {
-      const [block] = await fetchBlocksBatches(nearApi, [85686945]);
-
+    it('Can filter receipts with sender, receiver and signer - filter does not match', () => {
       const actions = filterReceipts(block.receipts, {
         sender: 'a0b86991c6218b36c1d19d4a2e9eb0ce3606eb48.factory.bridge.near',
         receiver: '1234',
@@ -47,10 +52,18 @@ describe('Near api', () => {
   });
 
   describe('Action Filters', () => {
-    it('Can filter FunctionCall actions', async () => {
-      const [block] = await fetchBlocksBatches(nearApi, [50838341]);
+    let block50838341: BlockContent,
+      block83788766: BlockContent,
+      block85686945: BlockContent;
+    beforeAll(async () => {
+      [block50838341, block83788766, block85686945] = await fetchBlocksBatches(
+        nearApi,
+        [50838341, 83788766, 85686945],
+      );
+    });
 
-      const actions = filterActions(block.actions, {
+    it('Can filter FunctionCall actions', () => {
+      const actions = filterActions(block50838341.actions, {
         type: 'FunctionCall',
         methodName: 'add_oracle',
         receiver: 'priceoracle.near',
@@ -60,10 +73,8 @@ describe('Near api', () => {
     });
 
     // TODO find transaction of this type
-    it.skip('Can filter Stake actions', async () => {
-      const [block] = await fetchBlocksBatches(nearApi, [50838341]);
-
-      const actions = filterActions(block.actions, {
+    it.skip('Can filter Stake actions', () => {
+      const actions = filterActions(block50838341.actions, {
         type: 'Stake',
         publicKey: '',
       });
@@ -71,10 +82,8 @@ describe('Near api', () => {
       expect(actions.length).toBe(1);
     });
 
-    it('Can filter AddKey actions', async () => {
-      const [block] = await fetchBlocksBatches(nearApi, [83788766]);
-
-      const actions = filterActions(block.actions, {
+    it('Can filter AddKey actions', () => {
+      const actions = filterActions(block83788766.actions, {
         type: 'AddKey',
         publicKey: 'ed25519:7uCZ9oSNZgLWApTgnYyAMTbqtnsmBYQ2Zn2p5XHnibJ2',
       });
@@ -82,10 +91,8 @@ describe('Near api', () => {
       expect(actions.length).toBe(1);
     });
 
-    it('Can filter DeleteKey actions', async () => {
-      const [block] = await fetchBlocksBatches(nearApi, [83788766]);
-
-      const actions = filterActions(block.actions, {
+    it('Can filter DeleteKey actions', () => {
+      const actions = filterActions(block83788766.actions, {
         type: 'DeleteKey',
         publicKey: 'ed25519:9KNsmHHBPfoHZZHKjmBzRQsRDEe9EyNeptamK21hGK9a',
       });
@@ -93,10 +100,8 @@ describe('Near api', () => {
       expect(actions.length).toBe(1);
     });
 
-    it('Can filter actions with receipt filters', async () => {
-      const [block] = await fetchBlocksBatches(nearApi, [85686945]);
-
-      const actions = filterActions(block.actions, {
+    it('Can filter actions with receipt filters', () => {
+      const actions = filterActions(block85686945.actions, {
         type: 'FunctionCall',
         methodName: 'ft_on_transfer',
         receiver: 'dclv2.ref-labs.near',

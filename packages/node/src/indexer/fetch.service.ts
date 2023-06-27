@@ -25,7 +25,6 @@ import {
   NearReceiptFilter,
 } from '@subql/types-near';
 import { sortBy, uniqBy } from 'lodash';
-import { Near } from 'near-api-js';
 import { JsonRpcProvider } from 'near-api-js/lib/providers';
 import { SubqueryProject } from '../configure/SubqueryProject';
 import { calcInterval } from '../utils/near';

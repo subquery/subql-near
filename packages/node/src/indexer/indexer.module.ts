@@ -12,6 +12,7 @@ import {
   ConnectionPoolService,
   StoreCacheService,
   WorkerDynamicDsService,
+  PgMmrCacheService,
 } from '@subql/node-core';
 import { SubqueryProject } from '../configure/SubqueryProject';
 import { ApiService } from './api.service';
@@ -68,6 +69,7 @@ import { WorkerUnfinalizedBlocksService } from './worker/worker.unfinalizedBlock
     },
     PoiService,
     MmrService,
+    PgMmrCacheService,
     {
       provide: 'IProjectService',
       useClass: ProjectService,

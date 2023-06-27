@@ -12,6 +12,7 @@ import {
   ConnectionPoolService,
   SmartBatchService,
   StoreCacheService,
+  PgMmrCacheService,
 } from '@subql/node-core';
 import { SubqueryProject } from '../configure/SubqueryProject';
 import { ApiService } from './api.service';
@@ -101,20 +102,13 @@ import { UnfinalizedBlocksService } from './unfinalizedBlocks.service';
     },
     FetchService,
     BenchmarkService,
-    {
-      provide: DictionaryService,
-      useFactory: async (project: SubqueryProject, nodeConfig: NodeConfig) => {
-        const dictionaryService = new DictionaryService(project, nodeConfig);
-        await dictionaryService.init();
-        return dictionaryService;
-      },
-      inject: ['ISubqueryProject', NodeConfig],
-    },
+    DictionaryService,
     SandboxService,
     DsProcessorService,
     DynamicDsService,
     PoiService,
     MmrService,
+    PgMmrCacheService,
     {
       useClass: ProjectService,
       provide: 'IProjectService',
