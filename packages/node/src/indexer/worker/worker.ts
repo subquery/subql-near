@@ -1,9 +1,9 @@
-// Copyright 2020-2021 OnFinality Limited authors & contributors
-// SPDX-License-Identifier: Apache-2.0
+// Copyright 2020-2023 SubQuery Pte Ltd authors & contributors
+// SPDX-License-Identifier: GPL-3.0
 
 // initlogger and yargs must be imported before all other imports
 // making sure logger is defined before its called
-// eslint-disable-next-line import/order
+// eslint-disable-next-line import/order,header/header
 import { initLogger } from '@subql/node-core/logger';
 // eslint-disable-next-line import/order
 import { yargsOptions } from '../../yargs';
