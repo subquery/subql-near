@@ -20,11 +20,11 @@ on:
         require: true
       deployment:
         description: 'Deployment'
-        default: 'QmakYyTWzTxaDU842CczyDWV51Ay9E55k7kbRRXTB3f395'
+        default: 'QmY4koPD2LXyLGa9saKg4dihgNe26uEsk1VyNUi3ofb7fU'
         require: false
       network-endpoint:
         description: 'Network endpoint'
-        default: 'wss://rpc-polkadot.luckyfriday.io'
+        default: 'https://archival-rpc.mainnet.near.org'
         require: true
       disableHistorical:
         description: 'Disable historical'
