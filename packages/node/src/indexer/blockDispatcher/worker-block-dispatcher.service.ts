@@ -1,5 +1,5 @@
-// Copyright 2020-2021 OnFinality Limited authors & contributors
-// SPDX-License-Identifier: Apache-2.0
+// Copyright 2020-2023 SubQuery Pte Ltd authors & contributors
+// SPDX-License-Identifier: GPL-3.0
 
 import path from 'path';
 import { Inject, Injectable, OnApplicationShutdown } from '@nestjs/common';
@@ -17,6 +17,9 @@ import {
   HostDynamicDS,
   WorkerBlockDispatcher,
   IUnfinalizedBlocksService,
+  HostConnectionPoolState,
+  ConnectionPoolStateManager,
+  connectionPoolStateHostFunctions,
 } from '@subql/node-core';
 import { Store } from '@subql/types';
 import { NearDatasource } from '@subql/types-near';
@@ -25,6 +28,7 @@ import {
   SubqueryProject,
 } from '../../configure/SubqueryProject';
 import { DynamicDsService } from '../dynamic-ds.service';
+import { NearApiConnection } from '../nearApi.connection';
 import { BlockContent } from '../types';
 import { UnfinalizedBlocksService } from '../unfinalizedBlocks.service';
 import { IIndexerWorker, IInitIndexerWorker } from '../worker/worker';
@@ -38,11 +42,15 @@ async function createIndexerWorker(
   store: Store,
   dynamicDsService: IDynamicDsService<NearDatasource>,
   unfinalizedBlocksService: IUnfinalizedBlocksService<BlockContent>,
+  connectionPoolState: ConnectionPoolStateManager<NearApiConnection>,
   root: string,
 ): Promise<IndexerWorker> {
   const indexerWorker = Worker.create<
     IInitIndexerWorker,
-    HostDynamicDS<SubqlProjectDs> & HostStore & HostUnfinalizedBlocks
+    HostDynamicDS<SubqlProjectDs> &
+      HostStore &
+      HostUnfinalizedBlocks &
+      HostConnectionPoolState<NearApiConnection>
   >(
     path.resolve(__dirname, '../../../dist/indexer/worker/worker.js'),
     [
@@ -72,6 +80,7 @@ async function createIndexerWorker(
         unfinalizedBlocksService.processUnfinalizedBlockHeader.bind(
           unfinalizedBlocksService,
         ),
+      ...connectionPoolStateHostFunctions(connectionPoolState),
     },
     root,
   );
@@ -97,6 +106,7 @@ export class WorkerBlockDispatcherService
     @Inject('ISubqueryProject') project: SubqueryProject,
     dynamicDsService: DynamicDsService,
     unfinalizedBlocksSevice: UnfinalizedBlocksService,
+    connectionPoolState: ConnectionPoolStateManager<NearApiConnection>,
   ) {
     super(
       nodeConfig,
@@ -113,6 +123,7 @@ export class WorkerBlockDispatcherService
           storeService.getStore(),
           dynamicDsService,
           unfinalizedBlocksSevice,
+          connectionPoolState,
           project.root,
         ),
     );

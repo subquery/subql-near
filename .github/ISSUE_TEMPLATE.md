@@ -2,7 +2,6 @@
 
 * [ ] Are you running the latest version(s)?
 * [ ] Have you searched the [documentation for your issue](https://academy.subquery.network/)?
-* [ ] Are you reporting to the correct repository?
 * [ ] Did you search for an existing issue or pull request?
 
 ### Description

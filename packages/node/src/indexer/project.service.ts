@@ -1,5 +1,5 @@
-// Copyright 2020-2022 OnFinality Limited authors & contributors
-// SPDX-License-Identifier: Apache-2.0
+// Copyright 2020-2023 SubQuery Pte Ltd authors & contributors
+// SPDX-License-Identifier: GPL-3.0
 
 import { Inject, Injectable } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
@@ -9,6 +9,7 @@ import {
   BaseProjectService,
   StoreService,
   NodeConfig,
+  MmrQueryService,
 } from '@subql/node-core';
 import { Sequelize } from '@subql/x-sequelize';
 import {
@@ -36,6 +37,7 @@ export class ProjectService extends BaseProjectService<
     apiService: ApiService,
     poiService: PoiService,
     mmrService: MmrService,
+    mmrQueryService: MmrQueryService,
     sequelize: Sequelize,
     @Inject('ISubqueryProject') project: SubqueryProject,
     storeService: StoreService,
@@ -49,6 +51,7 @@ export class ProjectService extends BaseProjectService<
       apiService,
       poiService,
       mmrService,
+      mmrQueryService,
       sequelize,
       project,
       storeService,

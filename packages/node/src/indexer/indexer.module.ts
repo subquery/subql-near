@@ -1,5 +1,5 @@
-// Copyright 2020-2022 OnFinality Limited authors & contributors
-// SPDX-License-Identifier: Apache-2.0
+// Copyright 2020-2023 SubQuery Pte Ltd authors & contributors
+// SPDX-License-Identifier: GPL-3.0
 
 import { isMainThread } from 'worker_threads';
 import { Module } from '@nestjs/common';
@@ -8,11 +8,14 @@ import {
   StoreService,
   PoiService,
   MmrService,
-  NodeConfig,
   ConnectionPoolService,
   StoreCacheService,
   WorkerDynamicDsService,
+  WorkerConnectionPoolStateManager,
+  ConnectionPoolStateManager,
+  NodeConfig,
   PgMmrCacheService,
+  MmrQueryService,
 } from '@subql/node-core';
 import { SubqueryProject } from '../configure/SubqueryProject';
 import { ApiService } from './api.service';
@@ -31,6 +34,16 @@ import { WorkerUnfinalizedBlocksService } from './worker/worker.unfinalizedBlock
     IndexerManager,
     StoreCacheService,
     StoreService,
+    ConnectionPoolService,
+    {
+      provide: ConnectionPoolStateManager,
+      useFactory: () => {
+        if (isMainThread) {
+          throw new Error('Expected to be worker thread');
+        }
+        return new WorkerConnectionPoolStateManager((global as any).host);
+      },
+    },
     ConnectionPoolService,
     {
       provide: ApiService,
@@ -70,6 +83,7 @@ import { WorkerUnfinalizedBlocksService } from './worker/worker.unfinalizedBlock
     PoiService,
     MmrService,
     PgMmrCacheService,
+    MmrQueryService,
     {
       provide: 'IProjectService',
       useClass: ProjectService,
@@ -85,6 +99,6 @@ import { WorkerUnfinalizedBlocksService } from './worker/worker.unfinalizedBlock
       },
     },
   ],
-  exports: [StoreService, MmrService],
+  exports: [StoreService, MmrService, MmrQueryService],
 })
 export class IndexerModule {}

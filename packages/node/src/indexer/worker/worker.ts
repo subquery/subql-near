@@ -1,5 +1,5 @@
-// Copyright 2020-2021 OnFinality Limited authors & contributors
-// SPDX-License-Identifier: Apache-2.0
+// Copyright 2020-2023 SubQuery Pte Ltd authors & contributors
+// SPDX-License-Identifier: GPL-3.0
 
 // initlogger and yargs must be imported before all other imports
 // making sure logger is defined before its called
@@ -31,10 +31,13 @@ import {
   hostDynamicDsKeys,
   HostDynamicDS,
   ProcessBlockResponse,
+  HostConnectionPoolState,
+  hostConnectionPoolStateKeys,
 } from '@subql/node-core';
 import { SubqlProjectDs } from '../../configure/SubqueryProject';
 import { DynamicDsService } from '../dynamic-ds.service';
 import { IndexerManager } from '../indexer.manager';
+import { NearApiConnection } from '../nearApi.connection';
 import { WorkerModule } from './worker.module';
 import {
   FetchBlockResponse,
@@ -123,10 +126,18 @@ async function waitForWorkerBatchSize(heapSizeInBytes: number): Promise<void> {
 
 // Register these functions to be exposed to worker host
 (global as any).host = WorkerHost.create<
-  HostStore & HostDynamicDS<SubqlProjectDs> & HostUnfinalizedBlocks,
+  HostStore &
+    HostDynamicDS<SubqlProjectDs> &
+    HostUnfinalizedBlocks &
+    HostConnectionPoolState<NearApiConnection>,
   IInitIndexerWorker
 >(
-  [...hostStoreKeys, ...hostDynamicDsKeys, ...hostUnfinalizedBlocksKeys],
+  [
+    ...hostStoreKeys,
+    ...hostDynamicDsKeys,
+    ...hostUnfinalizedBlocksKeys,
+    ...hostConnectionPoolStateKeys,
+  ],
   {
     initWorker,
     fetchBlock,
