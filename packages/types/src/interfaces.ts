@@ -10,7 +10,7 @@ export interface Entity {
   save?: () => Promise<void>;
 }
 
-export interface IArgs extends string {
+export interface IArgs extends String {
   toJson<T = any>(): T;
 }
 
