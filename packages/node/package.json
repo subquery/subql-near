@@ -3,7 +3,7 @@
   "version": "2.8.0",
   "description": "",
   "author": "Ian He",
-  "license": "Apache-2.0",
+  "license": "GPL-3.0",
   "scripts": {
     "prebuild": "rimraf dist",
     "build": "rm -rf dist && tsc -b",
@@ -24,9 +24,9 @@
     "@nestjs/event-emitter": "^2.0.0",
     "@nestjs/platform-express": "^9.4.0",
     "@nestjs/schedule": "^3.0.1",
-    "@subql/common": "^2.3.0",
+    "@subql/common": "^2.4.0",
     "@subql/common-near": "workspace:*",
-    "@subql/node-core": "^3.0.0",
+    "@subql/node-core": "4.0.2-0",
     "@subql/types-near": "workspace:*",
     "@willsoto/nestjs-prometheus": "^4.4.0",
     "cron-converter": "^1.0.2",
@@ -41,6 +41,9 @@
     "vm2": "^3.9.9",
     "yargs": "^16.2.0"
   },
+  "peerDependencies": {
+    "@apollo/client": "^3.7.16"
+  },
   "devDependencies": {
     "@nestjs/schematics": "^9.2.0",
     "@nestjs/testing": "^9.4.0",
@@ -52,9 +55,6 @@
     "@types/yargs": "^16.0.4",
     "dotenv": "^15.0.1",
     "nodemon": "^2.0.15"
-  },
-  "peerDependencies": {
-    "@subql/utils": "*"
   },
   "files": [
     "/dist",

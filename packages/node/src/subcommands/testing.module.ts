@@ -1,5 +1,5 @@
-// Copyright 2020-2022 OnFinality Limited authors & contributors
-// SPDX-License-Identifier: Apache-2.0
+// Copyright 2020-2023 SubQuery Pte Ltd authors & contributors
+// SPDX-License-Identifier: GPL-3.0
 
 import { Module } from '@nestjs/common';
 import { EventEmitter2, EventEmitterModule } from '@nestjs/event-emitter';
@@ -10,6 +10,7 @@ import {
   NodeConfig,
   PoiService,
   StoreService,
+  TestRunner,
 } from '@subql/node-core';
 import { ConfigureModule } from '../configure/configure.module';
 import { SubqueryProject } from '../configure/SubqueryProject';
@@ -23,19 +24,17 @@ import { ProjectService } from '../indexer/project.service';
 import { SandboxService } from '../indexer/sandbox.service';
 import { UnfinalizedBlocksService } from '../indexer/unfinalizedBlocks.service';
 import { MetaModule } from '../meta/meta.module';
-import { TestingService } from './testing.service';
 
 @Module({
   providers: [
     StoreService,
-    TestingService,
     EventEmitter2,
     PoiService,
     SandboxService,
     DsProcessorService,
     DynamicDsService,
-    UnfinalizedBlocksService,
     ProjectService,
+    UnfinalizedBlocksService,
     ConnectionPoolService,
     {
       provide: 'IProjectService',
@@ -65,12 +64,21 @@ import { TestingService } from './testing.service';
         NodeConfig,
       ],
     },
-    IndexerManager,
     SchedulerRegistry,
+    TestRunner,
+    {
+      provide: 'IApi',
+      useClass: ApiService,
+    },
+    {
+      provide: 'IIndexerManager',
+      useClass: IndexerManager,
+    },
   ],
 
   imports: [MetaModule, FetchModule],
   controllers: [],
+  exports: [TestRunner],
 })
 export class TestingFeatureModule {}
 

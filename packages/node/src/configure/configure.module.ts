@@ -1,5 +1,5 @@
-// Copyright 2020-2022 OnFinality Limited authors & contributors
-// SPDX-License-Identifier: Apache-2.0
+// Copyright 2020-2023 SubQuery Pte Ltd authors & contributors
+// SPDX-License-Identifier: GPL-3.0
 
 import assert from 'assert';
 import { DynamicModule, Global, Module } from '@nestjs/common';
@@ -7,6 +7,7 @@ import {
   handleCreateSubqueryProjectError,
   Reader,
   ReaderFactory,
+  RUNNER_ERROR_REGEX,
 } from '@subql/common';
 import { NearProjectNetworkConfig } from '@subql/common-near';
 import {
@@ -59,7 +60,10 @@ function warnDeprecations() {
 @Global()
 @Module({})
 export class ConfigureModule {
-  static async register(): Promise<DynamicModule> {
+  static async getInstance(): Promise<{
+    config: NodeConfig;
+    project: () => Promise<SubqueryProject>;
+  }> {
     const { argv } = yargsOptions;
     let config: NodeConfig;
     let rawManifest: unknown;
@@ -130,6 +134,11 @@ export class ConfigureModule {
       });
       return p;
     };
+
+    return { config, project };
+  }
+  static async register(): Promise<DynamicModule> {
+    const { config, project } = await ConfigureModule.getInstance();
 
     return {
       module: ConfigureModule,

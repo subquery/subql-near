@@ -1,5 +1,5 @@
-// Copyright 2020-2022 OnFinality Limited authors & contributors
-// SPDX-License-Identifier: Apache-2.0
+// Copyright 2020-2023 SubQuery Pte Ltd authors & contributors
+// SPDX-License-Identifier: GPL-3.0
 
 import { Inject, Injectable } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
@@ -16,7 +16,7 @@ import {
   NearHandlerKind,
   NearRuntimeHandlerFilter,
 } from '@subql/common-near';
-import { NodeConfig, BaseFetchService } from '@subql/node-core';
+import { NodeConfig, BaseFetchService, IApi } from '@subql/node-core';
 import {
   DictionaryQueryCondition,
   DictionaryQueryEntry,

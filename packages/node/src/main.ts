@@ -1,5 +1,5 @@
-// Copyright 2020-2022 OnFinality Limited authors & contributors
-// SPDX-License-Identifier: Apache-2.0
+// Copyright 2020-2023 SubQuery Pte Ltd authors & contributors
+// SPDX-License-Identifier: GPL-3.0
 
 import { initLogger } from '@subql/node-core/logger';
 import { yargsOptions } from './yargs';
@@ -12,6 +12,9 @@ initLogger(
   argv.outputFmt as 'json' | 'colored',
   argv.logLevel as string | undefined,
 );
+
+const { setProfiler } = require('@subql/node-core');
+setProfiler(argv.profiler);
 
 // Lazy import, to allow logger to be initialised before bootstrap()
 // As bootstrap runs services that requires logger
