@@ -10,7 +10,7 @@ export interface Entity {
   save?: () => Promise<void>;
 }
 
-export interface IArgs extends String {
+export interface IArgs extends string {
   toJson<T = any>(): T;
 }
 
@@ -118,6 +118,10 @@ export interface DeleteAccount {
   beneficiary_id: string;
 }
 
+export interface Delegate {
+  public_key: string;
+}
+
 export type Action =
   | CreateAccount
   | DeployContract
@@ -126,7 +130,8 @@ export type Action =
   | Stake
   | AddKey
   | DeleteKey
-  | DeleteAccount;
+  | DeleteAccount
+  | Delegate;
 
 export const ActionType = {
   CreateAccount: 'CreateAccount' as const,
@@ -137,6 +142,7 @@ export const ActionType = {
   AddKey: 'AddKey' as const,
   DeleteKey: 'DeleteKey' as const,
   DeleteAccount: 'DeleteAccount' as const,
+  Delegate: 'Delegate' as const,
 } as const;
 
 export type ActionType = (typeof ActionType)[keyof typeof ActionType];

@@ -18,6 +18,7 @@ import {
   AddKey,
   DeleteKey,
   DeleteAccount,
+  Delegate,
   Action,
   ActionType,
   IArgs,
@@ -86,6 +87,9 @@ export const mappingFilterAction: Record<
   [ActionType.CreateAccount]: {},
   [ActionType.DeployContract]: {},
   [ActionType.Transfer]: {},
+  [ActionType.Delegate]: {
+    publicKey: 'action.publicKey',
+  },
 };
 
 export async function wrapBlock(
@@ -232,8 +236,10 @@ function parseNearAction(type: ActionType, action: any): Action {
       return action as DeleteKey;
     case ActionType.DeleteAccount:
       return action as DeleteAccount;
+    case ActionType.Delegate:
+      return action as Delegate;
     default:
-      throw new Error('Invalid type string for NearAction');
+      throw new Error('Invalid type string for NearAction.');
   }
 }
 
