@@ -58,10 +58,9 @@ export class ProjectService extends BaseProjectService<
   }
 
   protected async getBlockTimestamp(height: number): Promise<Date> {
-    const block = await getBlockByHeight(this.apiService.api, height);
+    const block = await getBlockByHeight(this.apiService.unsafeApi, height);
 
-    throw new Error('Needs a test');
-    return new Date(block.header.timestamp);
+    return new Date(block.header.timestamp / 1_000_000);
   }
 
   protected onProjectChange(project: SubqueryProject): void | Promise<void> {
