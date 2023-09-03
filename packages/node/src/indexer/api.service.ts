@@ -1,7 +1,7 @@
 // Copyright 2020-2023 SubQuery Pte Ltd authors & contributors
 // SPDX-License-Identifier: GPL-3.0
 
-import { Inject, Injectable, OnApplicationShutdown } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import {
   IndexerEvent,
@@ -38,7 +38,7 @@ const logger = getLogger('api');
 export class ApiService extends BaseApiService<
   Near.providers.JsonRpcProvider,
   SafeJsonRpcProvider,
-  BlockContent
+  BlockContent[]
 > {
   private fetchBlocksBatches = NearUtil.fetchBlocksBatches;
   networkMeta: NetworkMetadataPayload;

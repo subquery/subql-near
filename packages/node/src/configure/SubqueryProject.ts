@@ -1,8 +1,14 @@
 // Copyright 2020-2023 SubQuery Pte Ltd authors & contributors
 // SPDX-License-Identifier: GPL-3.0
 
+import assert from 'assert';
 import { Injectable } from '@nestjs/common';
-import { Reader, RunnerSpecs, validateSemver } from '@subql/common';
+import {
+  ParentProject,
+  Reader,
+  RunnerSpecs,
+  validateSemver,
+} from '@subql/common';
 import {
   NearProjectNetworkConfig,
   parseNearProjectManifest,
@@ -12,18 +18,22 @@ import {
   isRuntimeDs,
   NearHandlerKind,
   isCustomDs,
+  RuntimeDatasourceTemplate,
+  CustomDatasourceTemplate,
 } from '@subql/common-near';
-import { getProjectRoot, updateDataSourcesV1_0_0 } from '@subql/node-core';
+import {
+  insertBlockFiltersCronSchedules,
+  loadProjectTemplates,
+  SubqlProjectDs,
+  updateDataSourcesV1_0_0,
+} from '@subql/node-core';
 import { buildSchemaFromString } from '@subql/utils';
 import Cron from 'cron-converter';
 import { GraphQLSchema } from 'graphql';
-import { providers } from 'near-api-js';
-import { BlockResult } from 'near-api-js/lib/providers/provider';
-import { getBlockByHeight } from '../utils/near';
 
-export type SubqlProjectDs = NearDataSource & {
-  mapping: NearDataSource['mapping'] & { entryScript: string };
-};
+const { version: packageVersion } = require('../../package.json');
+
+export type NearProjectDs = SubqlProjectDs<NearDataSource>;
 
 export type SubqlProjectBlockFilter = NearBlockFilter & {
   cronSchedule?: {
@@ -32,9 +42,9 @@ export type SubqlProjectBlockFilter = NearBlockFilter & {
   };
 };
 
-export type SubqlProjectDsTemplate = Omit<SubqlProjectDs, 'startBlock'> & {
-  name: string;
-};
+export type NearProjectDsTemplate =
+  | SubqlProjectDs<RuntimeDatasourceTemplate>
+  | SubqlProjectDs<CustomDatasourceTemplate>;
 
 const NOT_SUPPORT = (name: string) => {
   throw new Error(`Manifest specVersion ${name} is not supported`);
@@ -45,20 +55,42 @@ type NetworkConfig = NearProjectNetworkConfig & { chainId: string };
 
 @Injectable()
 export class SubqueryProject {
-  id: string;
-  root: string;
-  network: NetworkConfig;
-  dataSources: SubqlProjectDs[];
-  schema: GraphQLSchema;
-  templates: SubqlProjectDsTemplate[];
-  runner?: RunnerSpecs;
+  #dataSources: NearProjectDs[];
+
+  constructor(
+    readonly id: string,
+    readonly root: string,
+    readonly network: NetworkConfig,
+    dataSources: NearProjectDs[],
+    readonly schema: GraphQLSchema,
+    readonly templates: NearProjectDsTemplate[],
+    readonly runner?: RunnerSpecs,
+    readonly parent?: ParentProject,
+  ) {
+    this.#dataSources = dataSources;
+  }
+
+  get dataSources(): NearProjectDs[] {
+    return this.#dataSources;
+  }
+
+  async applyCronTimestamps(
+    getTimestamp: (height: number) => Promise<Date>,
+  ): Promise<void> {
+    this.#dataSources = await insertBlockFiltersCronSchedules(
+      this.dataSources,
+      getTimestamp,
+      isRuntimeDs,
+      NearHandlerKind.Block,
+    );
+  }
 
   static async create(
     path: string,
     rawManifest: unknown,
     reader: Reader,
+    root: string,
     networkOverrides?: Partial<NearProjectNetworkConfig>,
-    root?: string,
   ): Promise<SubqueryProject> {
     // rawManifest and reader can be reused here.
     // It has been pre-fetched and used for rebase manifest runner options with args
@@ -76,12 +108,12 @@ export class SubqueryProject {
       NOT_SUPPORT('<1.0.0');
     }
 
-    return loadProjectFromManifest1_0_0(
+    return loadProjectFromManifestBase(
       manifest.asV1_0_0,
       reader,
       path,
-      networkOverrides,
       root,
+      networkOverrides,
     );
   }
 }
@@ -102,11 +134,9 @@ async function loadProjectFromManifestBase(
   projectManifest: SUPPORT_MANIFEST,
   reader: Reader,
   path: string,
+  root: string,
   networkOverrides?: Partial<NearProjectNetworkConfig>,
-  root?: string,
 ): Promise<SubqueryProject> {
-  root = root ?? (await getProjectRoot(reader));
-
   if (typeof projectManifest.network.endpoint === 'string') {
     projectManifest.network.endpoint = [projectManifest.network.endpoint];
   }
@@ -138,112 +168,29 @@ async function loadProjectFromManifestBase(
     root,
     isCustomDs,
   );
-  return {
-    id: reader.root ? reader.root : path, //TODO, need to method to get project_id
+
+  const templates = await loadProjectTemplates(
+    projectManifest.templates,
+    root,
+    reader,
+    isCustomDs,
+  );
+  const runner = projectManifest.runner;
+  assert(
+    validateSemver(packageVersion, runner.node.version),
+    new Error(
+      `Runner require node version ${runner.node.version}, current node ${packageVersion}`,
+    ),
+  );
+
+  return new SubqueryProject(
+    reader.root ? reader.root : path, //TODO, need to method to get project_id
     root,
     network,
     dataSources,
     schema,
-    templates: [],
-  };
-}
-
-const { version: packageVersion } = require('../../package.json');
-
-async function loadProjectFromManifest1_0_0(
-  projectManifest: ProjectManifestV1_0_0Impl,
-  reader: Reader,
-  path: string,
-  networkOverrides?: Partial<NearProjectNetworkConfig>,
-  root?: string,
-): Promise<SubqueryProject> {
-  const project = await loadProjectFromManifestBase(
-    projectManifest,
-    reader,
-    path,
-    networkOverrides,
-    root,
+    templates,
+    runner,
+    projectManifest.parent,
   );
-  project.templates = await loadProjectTemplates(
-    projectManifest,
-    project.root,
-    reader,
-  );
-  project.runner = projectManifest.runner;
-  if (!validateSemver(packageVersion, project.runner.node.version)) {
-    throw new Error(
-      `Runner require node version ${project.runner.node.version}, current node ${packageVersion}`,
-    );
-  }
-  return project;
-}
-
-async function loadProjectTemplates(
-  projectManifest: ProjectManifestV1_0_0Impl,
-  root: string,
-  reader: Reader,
-): Promise<SubqlProjectDsTemplate[]> {
-  if (!projectManifest.templates || !projectManifest.templates.length) {
-    return [];
-  }
-  const dsTemplates = await updateDataSourcesV1_0_0(
-    projectManifest.templates,
-    reader,
-    root,
-    isCustomDs as any,
-  );
-  return dsTemplates.map((ds, index) => ({
-    ...ds,
-    name: projectManifest.templates[index].name,
-  }));
-}
-
-// eslint-disable-next-line @typescript-eslint/require-await
-export async function generateTimestampReferenceForBlockFilters(
-  dataSources: SubqlProjectDs[],
-  api: providers.JsonRpcProvider,
-): Promise<SubqlProjectDs[]> {
-  const cron = new Cron();
-
-  dataSources = await Promise.all(
-    dataSources.map(async (ds) => {
-      if (isRuntimeDs(ds)) {
-        const startBlock = ds.startBlock ?? 1;
-        let block: BlockResult;
-        let timestampReference;
-
-        ds.mapping.handlers = await Promise.all(
-          ds.mapping.handlers.map(async (handler) => {
-            if (handler.kind === NearHandlerKind.Block) {
-              if (handler.filter?.timestamp) {
-                if (!block) {
-                  block = await getBlockByHeight(api, startBlock);
-                  timestampReference = block.header.timestamp;
-                }
-                try {
-                  cron.fromString(handler.filter.timestamp);
-                } catch (e) {
-                  throw new Error(
-                    `Invalid Cron string: ${handler.filter.timestamp}`,
-                  );
-                }
-
-                const schedule = cron.schedule(timestampReference);
-                (handler.filter as SubqlProjectBlockFilter).cronSchedule = {
-                  schedule: schedule,
-                  get next() {
-                    return Date.parse(this.schedule.next().format());
-                  },
-                };
-              }
-            }
-            return handler;
-          }),
-        );
-      }
-      return ds;
-    }),
-  );
-
-  return dataSources;
 }

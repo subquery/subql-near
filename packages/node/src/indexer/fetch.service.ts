@@ -16,7 +16,12 @@ import {
   NearHandlerKind,
   NearRuntimeHandlerFilter,
 } from '@subql/common-near';
-import { NodeConfig, BaseFetchService, IApi } from '@subql/node-core';
+import {
+  NodeConfig,
+  BaseFetchService,
+  IApi,
+  getModulos,
+} from '@subql/node-core';
 import {
   DictionaryQueryCondition,
   DictionaryQueryEntry,
@@ -34,6 +39,7 @@ import { INearBlockDispatcher } from './blockDispatcher/near-block-dispatcher';
 import { DictionaryService } from './dictionary.service';
 import { DsProcessorService } from './ds-processor.service';
 import { DynamicDsService } from './dynamic-ds.service';
+import { ProjectService } from './project.service';
 import {
   UnfinalizedBlocksService,
   nearHeaderToHeader,
@@ -97,31 +103,30 @@ function actionFilterToQueryEntry(
 
 @Injectable()
 export class FetchService extends BaseFetchService<
-  ApiService,
   NearDatasource,
   INearBlockDispatcher,
   DictionaryService
 > {
   constructor(
-    apiService: ApiService,
+    private apiService: ApiService,
     nodeConfig: NodeConfig,
+    @Inject('IProjectService') projectService: ProjectService,
     @Inject('ISubqueryProject') project: SubqueryProject,
     @Inject('IBlockDispatcher')
     blockDispatcher: INearBlockDispatcher,
     dictionaryService: DictionaryService,
-    dsProcessorService: DsProcessorService,
+    private dsProcessorService: DsProcessorService,
     dynamicDsService: DynamicDsService,
     private unfinalizedBlocksService: UnfinalizedBlocksService,
     eventEmitter: EventEmitter2,
     schedulerRegistry: SchedulerRegistry,
   ) {
     super(
-      apiService,
       nodeConfig,
-      project,
+      projectService,
+      project.network,
       blockDispatcher,
       dictionaryService,
-      dsProcessorService,
       dynamicDsService,
       eventEmitter,
       schedulerRegistry,
@@ -132,17 +137,12 @@ export class FetchService extends BaseFetchService<
     return this.apiService.unsafeApi;
   }
 
-  buildDictionaryQueryEntries(startBlock: number): DictionaryQueryEntry[] {
+  buildDictionaryQueryEntries(
+    dataSources: NearDatasource[],
+  ): DictionaryQueryEntry[] {
     const queryEntries: DictionaryQueryEntry[] = [];
 
-    // Only run the ds that is equal or less than startBlock
-    // sort array from lowest ds.startBlock to highest
-    const filteredDs = this.project.dataSources
-      .concat(this.templateDynamicDatasouces)
-      .filter((ds) => ds.startBlock <= startBlock)
-      .sort((a, b) => a.startBlock - b.startBlock);
-
-    for (const ds of filteredDs) {
+    for (const ds of dataSources) {
       const plugin = isCustomDs(ds)
         ? this.dsProcessorService.getDsProcessor(ds)
         : undefined;
@@ -208,7 +208,6 @@ export class FetchService extends BaseFetchService<
                 receiptFilterToQueryEntry,
               ),
             );
-            logger.info(JSON.stringify(queryEntries));
             break;
           }
           case NearHandlerKind.Action: {
@@ -267,22 +266,11 @@ export class FetchService extends BaseFetchService<
   }
 
   protected getModulos(): number[] {
-    const modulos: number[] = [];
-    for (const ds of this.project.dataSources) {
-      if (isCustomDs(ds)) {
-        continue;
-      }
-      for (const handler of ds.mapping.handlers) {
-        if (
-          handler.kind === NearHandlerKind.Block &&
-          handler.filter &&
-          handler.filter.modulo
-        ) {
-          modulos.push(handler.filter.modulo);
-        }
-      }
-    }
-    return modulos;
+    return getModulos(
+      this.projectService.getAllDataSources(),
+      isCustomDs,
+      NearHandlerKind.Block,
+    );
   }
 
   protected async initBlockDispatcher(): Promise<void> {

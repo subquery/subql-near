@@ -1,7 +1,8 @@
 // Copyright 2020-2023 SubQuery Pte Ltd authors & contributors
 // SPDX-License-Identifier: GPL-3.0
 
-import { Inject, Injectable, OnApplicationShutdown } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import {
   NodeConfig,
   DictionaryService as CoreDictionaryService,
@@ -21,18 +22,18 @@ export type SpecVersionDictionary = {
 };
 
 @Injectable()
-export class DictionaryService
-  extends CoreDictionaryService
-  implements OnApplicationShutdown
-{
+export class DictionaryService extends CoreDictionaryService {
   constructor(
     @Inject('ISubqueryProject') protected project: SubqueryProject,
     nodeConfig: NodeConfig,
+    eventEmitter: EventEmitter2,
   ) {
-    super(project.network.dictionary, project.network.chainId, nodeConfig, [
-      'lastProcessedHeight',
-      'genesisHash',
-      'chain',
-    ]);
+    super(
+      project.network.dictionary,
+      project.network.chainId,
+      nodeConfig,
+      eventEmitter,
+      ['lastProcessedHeight', 'genesisHash', 'chain'],
+    );
   }
 }

@@ -8,9 +8,6 @@ import {
   NodeConfig,
   StoreCacheService,
 } from '@subql/node-core';
-import { NearBlock } from '@subql/types-near';
-import { last } from 'lodash';
-import { providers } from 'near-api-js';
 import { BlockHeader } from 'near-api-js/lib/providers/provider';
 import { ApiService } from './api.service';
 import { BlockContent } from './types';

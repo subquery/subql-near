@@ -27,7 +27,7 @@ export class NearApiConnection
     IApiConnectionSpecific<
       Near.providers.JsonRpcProvider,
       SafeJsonRpcProvider,
-      BlockContent
+      BlockContent[]
     >
 {
   readonly networkMeta: NetworkMetadataPayload;

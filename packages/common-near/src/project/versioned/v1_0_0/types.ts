@@ -8,6 +8,6 @@ export interface RuntimeDatasourceTemplate extends Omit<NearRuntimeDatasource, '
 export interface CustomDatasourceTemplate extends Omit<NearCustomDatasource, 'name'>, TemplateBase {}
 
 export type NearProjectManifestV1_0_0 = ProjectManifestV1_0_0<
-  RuntimeDatasourceTemplate | CustomDatasourceTemplate,
-  NearRuntimeDatasource | NearCustomDatasource
+  NearRuntimeDatasource | NearCustomDatasource,
+  RuntimeDatasourceTemplate | CustomDatasourceTemplate
 >;

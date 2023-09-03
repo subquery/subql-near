@@ -5,16 +5,13 @@ import { Inject, Injectable } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import {
   NodeConfig,
-  StoreService,
   TestingService as BaseTestingService,
   NestLogger,
   TestRunner,
 } from '@subql/node-core';
-import { Sequelize } from '@subql/x-sequelize';
 import { JsonRpcProvider } from 'near-api-js/lib/providers';
-import { SubqlProjectDs, SubqueryProject } from '../configure/SubqueryProject';
+import { NearProjectDs, SubqueryProject } from '../configure/SubqueryProject';
 import { ApiService, SafeJsonRpcProvider } from '../indexer/api.service';
-import { IndexerManager } from '../indexer/indexer.manager';
 import { ProjectService } from '../indexer/project.service';
 import { BlockContent } from '../indexer/types';
 import { TestingModule } from './testing.module';
@@ -24,7 +21,7 @@ export class TestingService extends BaseTestingService<
   JsonRpcProvider,
   SafeJsonRpcProvider,
   BlockContent,
-  SubqlProjectDs
+  NearProjectDs
 > {
   constructor(
     nodeConfig: NodeConfig,
@@ -38,7 +35,7 @@ export class TestingService extends BaseTestingService<
       JsonRpcProvider,
       SafeJsonRpcProvider,
       BlockContent,
-      SubqlProjectDs
+      NearProjectDs
     >
   > {
     const testContext = await NestFactory.createApplicationContext(
