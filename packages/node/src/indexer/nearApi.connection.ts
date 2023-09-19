@@ -80,7 +80,8 @@ export class NearApiConnection
 
   //eslint-disable-next-line @typescript-eslint/require-await
   async apiDisconnect(): Promise<void> {
-    throw new Error(`Not Implemented`);
+    //throw new Error(`Not Implemented`);
+    return;
   }
 
   async fetchBlocks(heights: number[]): Promise<BlockContent[]> {

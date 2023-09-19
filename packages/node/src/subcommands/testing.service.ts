@@ -31,12 +31,15 @@ export class TestingService extends BaseTestingService<
   }
 
   async getTestRunner(): Promise<
-    TestRunner<
-      JsonRpcProvider,
-      SafeJsonRpcProvider,
-      BlockContent,
-      NearProjectDs
-    >
+    [
+      close: () => Promise<void>,
+      runner: TestRunner<
+        JsonRpcProvider,
+        SafeJsonRpcProvider,
+        BlockContent,
+        NearProjectDs
+      >,
+    ]
   > {
     const testContext = await NestFactory.createApplicationContext(
       TestingModule,
@@ -54,6 +57,6 @@ export class TestingService extends BaseTestingService<
     await apiService.init();
     await projectService.init();
 
-    return testContext.get(TestRunner);
+    return [testContext.close.bind(testContext), testContext.get(TestRunner)];
   }
 }

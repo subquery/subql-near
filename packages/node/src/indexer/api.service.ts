@@ -41,31 +41,18 @@ export class ApiService extends BaseApiService<
   BlockContent[]
 > {
   private fetchBlocksBatches = NearUtil.fetchBlocksBatches;
-  networkMeta: NetworkMetadataPayload;
 
   constructor(
     @Inject('ISubqueryProject') private project: SubqueryProject,
     connectionPoolService: ConnectionPoolService<NearApiConnection>,
-    private eventEmitter: EventEmitter2,
+    eventEmitter: EventEmitter2,
     private nodeConfig: NodeConfig,
   ) {
-    super(connectionPoolService);
+    super(connectionPoolService, eventEmitter);
   }
 
   async onApplicationShutdown(): Promise<void> {
     await this.connectionPoolService.onApplicationShutdown();
-  }
-
-  private metadataMismatchError(
-    metadata: string,
-    expected: string,
-    actual: string,
-  ): Error {
-    return Error(
-      `Value of ${metadata} does not match across all endpoints\n
-       Expected: ${expected}
-       Actual: ${actual}`,
-    );
   }
 
   async init(): Promise<ApiService> {
@@ -85,53 +72,15 @@ export class ApiService extends BaseApiService<
       );
     }
 
-    const endpointToApiIndex: Record<string, NearApiConnection> = {};
+    await this.createConnections(
+      network,
+      (endpoint) => NearApiConnection.create(endpoint, this.fetchBlocksBatches),
+      async (connection: NearApiConnection) => {
+        const api = connection.unsafeApi;
+        return (await api.status()).chain_id;
+      },
+    );
 
-    for await (const [i, endpoint] of network.endpoint.entries()) {
-      const connection = await NearApiConnection.create(
-        endpoint,
-        this.fetchBlocksBatches,
-      );
-      const api = connection.unsafeApi;
-
-      this.eventEmitter.emit(IndexerEvent.ApiConnected, {
-        value: 1,
-        apiIndex: i,
-        endpoint: endpoint,
-      });
-
-      const chainId = (await api.status()).chain_id;
-
-      if (!this.networkMeta) {
-        this.networkMeta = connection.networkMeta;
-
-        if (network.chainId && network.chainId !== this.networkMeta.chain) {
-          const err = new Error(
-            `Network chainId doesn't match expected genesisHash. Your SubQuery project is expecting to index data from "${
-              network.chainId ?? network.genesisHash
-            }", however the endpoint that you are connecting to is different("${
-              this.networkMeta.chain
-            }). Please check that the RPC endpoint is actually for your desired network or update the genesisHash.`,
-          );
-          logger.error(err, err.message);
-          throw err;
-        }
-      } else {
-        const genesisHash = (await api.block({ blockId: GENESIS_BLOCK })).header
-          .hash;
-        if (this.networkMeta.genesisHash !== genesisHash) {
-          throw this.metadataMismatchError(
-            'Genesis Hash',
-            this.networkMeta.genesisHash,
-            genesisHash,
-          );
-        }
-      }
-
-      endpointToApiIndex[endpoint] = connection;
-    }
-
-    this.connectionPoolService.addBatchToConnections(endpointToApiIndex);
     return this;
   }
 
