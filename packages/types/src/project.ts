@@ -77,8 +77,6 @@ export interface NearActionFilter extends NearReceiptFilter {
 
   // DeleteAccount
   beneficiaryId?: string;
-
-  // Delegate action
 }
 
 export type NearBlockHandler = NearCustomHandler<NearHandlerKind.Block, NearBlockFilter>;

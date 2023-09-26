@@ -256,7 +256,6 @@ export function wrapAction(
     actionValue = parseNearAction(type, {});
   } else {
     type = Object.keys(action)[0];
-    // console.log('type', type)
     actionValue = parseNearAction(type, action[type]);
   }
 
