@@ -9,8 +9,8 @@ export interface Entity {
   _name?: string;
   save?: () => Promise<void>;
 }
-
-export interface IArgs extends string {
+// eslint-disable-next-line @typescript-eslint/ban-types
+export interface IArgs extends String {
   toJson<T = any>(): T;
 }
 
