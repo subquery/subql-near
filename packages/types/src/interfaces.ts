@@ -4,30 +4,9 @@
 import BN from 'bn.js';
 import {Chunk, BlockHeader} from 'near-api-js/lib/providers/provider';
 
-export interface Entity {
-  id: string;
-  _name?: string;
-  save?: () => Promise<void>;
-}
-
+// eslint-disable-next-line @typescript-eslint/ban-types
 export interface IArgs extends String {
   toJson<T = any>(): T;
-}
-
-export type FunctionPropertyNames<T> = {
-  [K in keyof T]: T[K] extends Function ? K : never;
-}[keyof T];
-
-export interface Store {
-  get(entity: string, id: string): Promise<Entity | undefined>;
-  getByField(entity: string, field: string, value: any, options?: {offset?: number; limit?: number}): Promise<Entity[]>;
-  getOneByField(entity: string, field: string, value: any): Promise<Entity | undefined>;
-  set(entity: string, id: string, data: Entity): Promise<void>;
-  bulkCreate(entity: string, data: Entity[]): Promise<void>;
-  //if fields in provided, only specify fields will be updated
-  bulkUpdate(entity: string, data: Entity[], fields?: string[]): Promise<void>;
-  remove(entity: string, id: string): Promise<void>;
-  bulkRemove(entity: string, ids: string[]): Promise<void>;
 }
 
 export interface NearBlock {
@@ -118,6 +97,27 @@ export interface DeleteAccount {
   beneficiary_id: string;
 }
 
+export interface SignedDelegate {
+  delegate_action: DelegateAction;
+  signature: {signature: Uint8Array; public_key: string};
+}
+
+export interface DelegateAction {
+  /// Signer of the delegated actions
+  sender_id: string;
+  /// Receiver of the delegated actions.
+  receiver_id: string;
+  /// List of actions to be executed.
+  actions: NearAction[];
+  /// Nonce to ensure that the same delegate action is not sent twice by a relayer and should match for given account's `public_key`.
+  /// After this action is processed it will increment.
+  nonce: BN;
+  /// The maximal height of the block in the blockchain below which the given DelegateAction is valid.
+  max_block_height: number;
+  /// Public key that is used to sign this delegated action.
+  public_key: string;
+}
+
 export type Action =
   | CreateAccount
   | DeployContract
@@ -126,7 +126,8 @@ export type Action =
   | Stake
   | AddKey
   | DeleteKey
-  | DeleteAccount;
+  | DeleteAccount
+  | SignedDelegate;
 
 export const ActionType = {
   CreateAccount: 'CreateAccount' as const,
@@ -137,6 +138,7 @@ export const ActionType = {
   AddKey: 'AddKey' as const,
   DeleteKey: 'DeleteKey' as const,
   DeleteAccount: 'DeleteAccount' as const,
+  SignedDelegate: 'Delegate' as const,
 } as const;
 
 export type ActionType = (typeof ActionType)[keyof typeof ActionType];

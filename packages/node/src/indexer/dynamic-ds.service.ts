@@ -23,7 +23,7 @@ export class DynamicDsService extends BaseDynamicDsService<NearProjectDs> {
   protected async getDatasource(
     params: DatasourceParams,
   ): Promise<NearProjectDs> {
-    const template = cloneDeep(
+    const { name, ...template } = cloneDeep(
       this.project.templates.find((t) => t.name === params.templateName),
     );
 
@@ -37,7 +37,7 @@ export class DynamicDsService extends BaseDynamicDsService<NearProjectDs> {
       ...template,
       startBlock: params.startBlock,
     } as NearProjectDs;
-    delete dsObj.name;
+
     try {
       if (isCustomDs(dsObj)) {
         dsObj.processor.options = {

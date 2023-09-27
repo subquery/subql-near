@@ -7,35 +7,38 @@ import {
   NearDatasource,
   NearDatasourceKind,
   NearHandlerKind,
-  NearNetworkFilter,
   NearRuntimeDatasource,
+  NearMapping,
+  NearCustomHandler,
 } from '@subql/types-near';
 
-export function isBlockHandlerProcessor<T extends NearNetworkFilter, E>(
+export function isBlockHandlerProcessor<T extends Record<string, unknown>, E>(
   hp: SecondLayerHandlerProcessor<NearHandlerKind, T, unknown>
 ): hp is SecondLayerHandlerProcessor<NearHandlerKind.Block, T, E> {
   return hp.baseHandlerKind === NearHandlerKind.Block;
 }
 
-export function isTransactionHandlerProcessor<T extends NearNetworkFilter, E>(
+export function isTransactionHandlerProcessor<T extends Record<string, unknown>, E>(
   hp: SecondLayerHandlerProcessor<NearHandlerKind, T, unknown>
 ): hp is SecondLayerHandlerProcessor<NearHandlerKind.Transaction, T, E> {
   return hp.baseHandlerKind === NearHandlerKind.Transaction;
 }
 
-export function isActionHandlerProcessor<T extends NearNetworkFilter, E>(
+export function isActionHandlerProcessor<T extends Record<string, unknown>, E>(
   hp: SecondLayerHandlerProcessor<NearHandlerKind, T, unknown>
 ): hp is SecondLayerHandlerProcessor<NearHandlerKind.Action, T, E> {
   return hp.baseHandlerKind === NearHandlerKind.Action;
 }
 
-export function isReceiptHandlerProcessor<T extends NearNetworkFilter, E>(
+export function isReceiptHandlerProcessor<T extends Record<string, unknown>, E>(
   hp: SecondLayerHandlerProcessor<NearHandlerKind, T, unknown>
 ): hp is SecondLayerHandlerProcessor<NearHandlerKind.Receipt, T, E> {
   return hp.baseHandlerKind === NearHandlerKind.Receipt;
 }
 
-export function isCustomDs<F extends NearNetworkFilter>(ds: NearDatasource): ds is NearCustomDatasource<string, F> {
+export function isCustomDs<F extends NearMapping<NearCustomHandler>>(
+  ds: NearDatasource
+): ds is NearCustomDatasource<string, F> {
   return ds.kind !== NearDatasourceKind.Runtime && !!(ds as NearCustomDatasource<string, F>).processor;
 }
 

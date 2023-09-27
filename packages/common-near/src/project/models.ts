@@ -1,7 +1,8 @@
 // Copyright 2020-2023 SubQuery Pte Ltd authors & contributors
 // SPDX-License-Identifier: GPL-3.0
 
-import {BaseMapping, FileReference} from '@subql/common';
+import {ProcessorImpl} from '@subql/common';
+import {BaseMapping, FileReference, Processor} from '@subql/types-core';
 import {
   CustomDataSourceAsset as NearCustomDataSourceAsset,
   NearBlockFilter,
@@ -243,8 +244,8 @@ export class FileReferenceImpl implements FileReference {
   file: string;
 }
 
-export class CustomDataSourceBase<K extends string, T extends NearNetworkFilter, M extends CustomMapping, O = any>
-  implements NearCustomDatasource<K, T, M, O>
+export class CustomDataSourceBase<K extends string, M extends CustomMapping, O = any>
+  implements NearCustomDatasource<K, M, O>
 {
   @IsString()
   kind: K;
@@ -257,10 +258,7 @@ export class CustomDataSourceBase<K extends string, T extends NearNetworkFilter,
   @Type(() => FileReferenceImpl)
   @ValidateNested({each: true})
   assets: Map<string, NearCustomDataSourceAsset>;
-  @Type(() => FileReferenceImpl)
+  @Type(() => ProcessorImpl)
   @IsObject()
-  processor: FileReference;
-  @IsOptional()
-  @IsObject()
-  filter?: T;
+  processor: Processor;
 }

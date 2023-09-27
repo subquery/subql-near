@@ -2,19 +2,24 @@
 // SPDX-License-Identifier: GPL-3.0
 
 import {
-  BaseMapping,
+  BaseDeploymentV1_0_0,
+  CommonProjectNetworkV1_0_0,
   FileType,
-  NodeSpec,
-  ParentProject,
   ParentProjectModel,
   ProjectManifestBaseImpl,
-  QuerySpec,
   RunnerNodeImpl,
   RunnerQueryBaseModel,
-  RunnerSpecs,
   validateObject,
 } from '@subql/common';
-import {NearCustomDatasource, NearNetworkFilter, NearRuntimeDatasource} from '@subql/types-near';
+import {BaseMapping, NodeSpec, ParentProject, QuerySpec, RunnerSpecs} from '@subql/types-core';
+import {
+  CustomDatasourceTemplate,
+  NearCustomDatasource,
+  NearNetworkFilter,
+  NearProjectManifestV1_0_0,
+  NearRuntimeDatasource,
+  RuntimeDatasourceTemplate,
+} from '@subql/types-near';
 import {plainToClass, Transform, TransformFnParams, Type} from 'class-transformer';
 import {
   Equals,
@@ -28,7 +33,6 @@ import {
   validateSync,
 } from 'class-validator';
 import {CustomDataSourceBase, RuntimeDataSourceBase} from '../../models';
-import {CustomDatasourceTemplate, RuntimeDatasourceTemplate, NearProjectManifestV1_0_0} from './types';
 
 const NEAR_NODE_NAME = `@subql/node-near`;
 
@@ -45,11 +49,10 @@ export class NearRuntimeDataSourceImpl extends RuntimeDataSourceBase implements 
 
 export class NearCustomDataSourceImpl<
     K extends string = string,
-    T extends NearNetworkFilter = NearNetworkFilter,
     M extends BaseMapping<any, any> = BaseMapping<Record<string, unknown>, any>
   >
-  extends CustomDataSourceBase<K, T, M>
-  implements NearCustomDatasource<K, T, M>
+  extends CustomDataSourceBase<K, M>
+  implements NearCustomDatasource<K, M>
 {
   validate(): void {
     return validateObject(this, 'failed to validate custom datasource.');
@@ -82,25 +85,19 @@ export class ProjectNetworkDeploymentV1_0_0 {
   @Transform(({value}: TransformFnParams) => value.trim())
   @IsString()
   chainId: string;
-  @ValidateNested()
-  @Type(() => FileType)
-  @IsOptional()
-  chaintypes?: FileType;
   @IsOptional()
   @IsArray()
   bypassBlocks?: (number | string)[];
 }
 
-export class ProjectNetworkV1_0_0 extends ProjectNetworkDeploymentV1_0_0 {
-  @IsString({each: true})
+export class ProjectNetworkV1_0_0 extends CommonProjectNetworkV1_0_0<FileType> {
+  @ValidateNested()
+  @Type(() => FileType)
   @IsOptional()
-  endpoint?: string | string[];
-  @IsString()
-  @IsOptional()
-  dictionary?: string;
+  chaintypes?: FileType;
 }
 
-export class DeploymentV1_0_0 {
+export class DeploymentV1_0_0 extends BaseDeploymentV1_0_0 {
   @Transform((params) => {
     if (params.value.genesisHash && !params.value.chainId) {
       params.value.chainId = params.value.genesisHash;
@@ -110,16 +107,12 @@ export class DeploymentV1_0_0 {
   @ValidateNested()
   @Type(() => ProjectNetworkDeploymentV1_0_0)
   network: ProjectNetworkDeploymentV1_0_0;
-  @Equals('1.0.0')
-  @IsString()
-  specVersion: string;
+
   @IsObject()
   @ValidateNested()
   @Type(() => NearRunnerSpecsImpl)
   runner: RunnerSpecs;
-  @ValidateNested()
-  @Type(() => FileType)
-  schema: FileType;
+
   @IsArray()
   @ValidateNested()
   @Type(() => NearCustomDataSourceImpl, {
@@ -141,17 +134,16 @@ export class DeploymentV1_0_0 {
     keepDiscriminatorProperty: true,
   })
   templates?: (RuntimeDatasourceTemplate | CustomDatasourceTemplate)[];
-
-  @IsOptional()
-  @IsObject()
-  @Type(() => ParentProjectModel)
-  parent?: ParentProject;
 }
 
-export class ProjectManifestV1_0_0Impl<D extends object = DeploymentV1_0_0>
-  extends ProjectManifestBaseImpl<D>
+export class ProjectManifestV1_0_0Impl
+  extends ProjectManifestBaseImpl<DeploymentV1_0_0>
   implements NearProjectManifestV1_0_0
 {
+  constructor() {
+    super(DeploymentV1_0_0);
+  }
+
   @Equals('1.0.0')
   specVersion: string;
   @Type(() => NearCustomDataSourceImpl, {
@@ -186,18 +178,9 @@ export class ProjectManifestV1_0_0Impl<D extends object = DeploymentV1_0_0>
   @ValidateNested()
   @Type(() => NearRunnerSpecsImpl)
   runner: RunnerSpecs;
-  protected _deployment: D;
 
   @IsOptional()
   @IsObject()
   @Type(() => ParentProjectModel)
   parent?: ParentProject;
-
-  get deployment(): D {
-    if (!this._deployment) {
-      this._deployment = plainToClass(DeploymentV1_0_0, this) as unknown as D;
-      validateSync(this._deployment, {whitelist: true});
-    }
-    return this._deployment;
-  }
 }

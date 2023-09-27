@@ -1,6 +1,7 @@
 // Copyright 2020-2023 SubQuery Pte Ltd authors & contributors
 // SPDX-License-Identifier: GPL-3.0
 
+import { ConnectionInfo } from '@near-js/providers/lib/fetch_json';
 import {
   ApiConnectionError,
   ApiErrorType,
@@ -8,7 +9,6 @@ import {
   NetworkMetadataPayload,
 } from '@subql/node-core';
 import * as Near from 'near-api-js';
-import { ConnectionInfo } from 'near-api-js/lib/utils/web';
 import { SafeJsonRpcProvider } from './api.service';
 import { BlockContent } from './types';
 

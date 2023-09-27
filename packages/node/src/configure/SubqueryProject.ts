@@ -3,12 +3,7 @@
 
 import assert from 'assert';
 import { Injectable } from '@nestjs/common';
-import {
-  ParentProject,
-  Reader,
-  RunnerSpecs,
-  validateSemver,
-} from '@subql/common';
+import { validateSemver } from '@subql/common';
 import {
   NearProjectNetworkConfig,
   parseNearProjectManifest,
@@ -18,8 +13,6 @@ import {
   isRuntimeDs,
   NearHandlerKind,
   isCustomDs,
-  RuntimeDatasourceTemplate,
-  CustomDatasourceTemplate,
 } from '@subql/common-near';
 import {
   insertBlockFiltersCronSchedules,
@@ -27,6 +20,11 @@ import {
   SubqlProjectDs,
   updateDataSourcesV1_0_0,
 } from '@subql/node-core';
+import { ParentProject, Reader, RunnerSpecs } from '@subql/types-core';
+import {
+  CustomDatasourceTemplate,
+  RuntimeDatasourceTemplate,
+} from '@subql/types-near';
 import { buildSchemaFromString } from '@subql/utils';
 import Cron from 'cron-converter';
 import { GraphQLSchema } from 'graphql';

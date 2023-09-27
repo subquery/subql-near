@@ -1,8 +1,22 @@
 // Copyright 2020-2023 SubQuery Pte Ltd authors & contributors
 // SPDX-License-Identifier: GPL-3.0
 
+import {
+  BaseTemplateDataSource,
+  IProjectNetworkConfig,
+  CommonSubqueryProject,
+  DictionaryQueryEntry,
+  FileReference,
+  Processor,
+  ProjectManifestV1_0_0,
+} from '@subql/types-core';
 import {providers} from 'near-api-js';
 import {NearBlock, NearTransaction, NearAction, NearTransactionReceipt} from './interfaces';
+
+export type RuntimeDatasourceTemplate = BaseTemplateDataSource<NearRuntimeDatasource>;
+export type CustomDatasourceTemplate = BaseTemplateDataSource<NearCustomDatasource>;
+
+export type NearProjectManifestV1_0_0 = ProjectManifestV1_0_0<NearRuntimeDatasource | NearCustomDatasource>;
 
 export enum NearDatasourceKind {
   Runtime = 'near/Runtime',
@@ -28,21 +42,6 @@ type RuntimeFilterMap = {
   [NearHandlerKind.Action]: NearActionFilter;
   [NearHandlerKind.Receipt]: NearTransactionFilter;
 };
-
-export interface ProjectManifest {
-  specVersion: string;
-  description: string;
-  repository: string;
-
-  schema: string;
-
-  network: {
-    endpoint: string;
-  };
-
-  dataSources: NearDatasource[];
-  bypassBlocks?: number[];
-}
 
 // [startSpecVersion?, endSpecVersion?] closed range
 export type SpecVersionRange = [number, number];
@@ -116,20 +115,13 @@ export interface NearNetworkFilter {
 
 export type NearDatasource = NearRuntimeDatasource | NearCustomDatasource; // | NearBuiltinDataSource;
 
-export interface FileReference {
-  file: string;
-}
-
 export type CustomDataSourceAsset = FileReference;
-
-export type Processor<O = any> = FileReference & {options?: O};
 
 export interface NearCustomDatasource<
   K extends string = string,
-  T extends NearNetworkFilter = NearNetworkFilter,
   M extends NearMapping = NearMapping<NearCustomHandler>,
   O = any
-> extends INearDatasource<M, T> {
+> extends INearDatasource<M> {
   kind: K;
   assets: Map<string, CustomDataSourceAsset>;
   processor: Processor<O>;
@@ -152,7 +144,7 @@ export interface HandlerInputTransformer_0_0_0<
 
 export interface HandlerInputTransformer_1_0_0<
   T extends NearHandlerKind,
-  F,
+  F extends Record<string, unknown>,
   E,
   DS extends NearCustomDatasource = NearCustomDatasource
 > {
@@ -167,9 +159,9 @@ export interface HandlerInputTransformer_1_0_0<
 
 type SecondLayerHandlerProcessorArray<
   K extends string,
-  F extends NearNetworkFilter,
+  F extends Record<string, unknown>,
   T,
-  DS extends NearCustomDatasource<K, F> = NearCustomDatasource<K, F>
+  DS extends NearCustomDatasource<K> = NearCustomDatasource<K>
 > =
   | SecondLayerHandlerProcessor<NearHandlerKind.Block, F, T, DS>
   | SecondLayerHandlerProcessor<NearHandlerKind.Transaction, F, T, DS>
@@ -178,8 +170,8 @@ type SecondLayerHandlerProcessorArray<
 
 export interface NearDatasourceProcessor<
   K extends string,
-  F extends NearNetworkFilter,
-  DS extends NearCustomDatasource<K, F> = NearCustomDatasource<K, F>,
+  F extends Record<string, unknown>,
+  DS extends NearCustomDatasource<K> = NearCustomDatasource<K>,
   P extends Record<string, SecondLayerHandlerProcessorArray<K, F, any, DS>> = Record<
     string,
     SecondLayerHandlerProcessorArray<K, F, any, DS>
@@ -191,20 +183,9 @@ export interface NearDatasourceProcessor<
   handlerProcessors: P;
 }
 
-export interface DictionaryQueryCondition {
-  field: string;
-  value: string | string[];
-  matcher?: string; // defaults to "equalTo", use "contains" for JSON
-}
-
-export interface DictionaryQueryEntry {
-  entity: string;
-  conditions: DictionaryQueryCondition[];
-}
-
 interface SecondLayerHandlerProcessorBase<
   K extends NearHandlerKind,
-  F,
+  F extends Record<string, unknown>,
   DS extends NearCustomDatasource = NearCustomDatasource
 > {
   baseHandlerKind: K;
@@ -216,7 +197,7 @@ interface SecondLayerHandlerProcessorBase<
 // only allow one custom handler for each baseHandler kind
 export interface SecondLayerHandlerProcessor_0_0_0<
   K extends NearHandlerKind,
-  F,
+  F extends Record<string, unknown>,
   E,
   DS extends NearCustomDatasource = NearCustomDatasource
 > extends SecondLayerHandlerProcessorBase<K, F, DS> {
@@ -227,7 +208,7 @@ export interface SecondLayerHandlerProcessor_0_0_0<
 
 export interface SecondLayerHandlerProcessor_1_0_0<
   K extends NearHandlerKind,
-  F,
+  F extends Record<string, unknown>,
   E,
   DS extends NearCustomDatasource = NearCustomDatasource
 > extends SecondLayerHandlerProcessorBase<K, F, DS> {
@@ -238,7 +219,13 @@ export interface SecondLayerHandlerProcessor_1_0_0<
 
 export type SecondLayerHandlerProcessor<
   K extends NearHandlerKind,
-  F,
+  F extends Record<string, unknown>,
   E,
   DS extends NearCustomDatasource = NearCustomDatasource
 > = SecondLayerHandlerProcessor_0_0_0<K, F, E, DS> | SecondLayerHandlerProcessor_1_0_0<K, F, E, DS>;
+
+export type NearProject<DS extends NearDatasource = NearRuntimeDatasource> = CommonSubqueryProject<
+  IProjectNetworkConfig,
+  NearRuntimeDatasource | DS,
+  BaseTemplateDataSource<NearRuntimeDatasource> | BaseTemplateDataSource<DS>
+>;

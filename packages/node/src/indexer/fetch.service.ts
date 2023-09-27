@@ -25,6 +25,8 @@ import {
 import {
   DictionaryQueryCondition,
   DictionaryQueryEntry,
+} from '@subql/types-core';
+import {
   NearCustomHandler,
   NearDatasource,
   NearReceiptFilter,
