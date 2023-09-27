@@ -121,5 +121,13 @@ describe('Near api', () => {
 
       expect(actions.length).toBe(1);
     });
+
+    it('Can filter SignedDelegate actions', async () => {
+      const [delegateBlock] = await fetchBlocksBatches(nearApi, [100051916]);
+      const actions = filterActions(delegateBlock.actions, {
+        type: 'Delegate',
+      });
+      expect(actions.length).toBe(1);
+    });
   });
 });

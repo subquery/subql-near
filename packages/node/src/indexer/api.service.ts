@@ -1,6 +1,7 @@
 // Copyright 2020-2023 SubQuery Pte Ltd authors & contributors
 // SPDX-License-Identifier: GPL-3.0
 
+import { ConnectionInfo } from '@near-js/providers/lib/fetch_json';
 import { Inject, Injectable, OnApplicationShutdown } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import {
@@ -22,7 +23,6 @@ import {
   EpochValidatorInfo,
   GasPrice,
 } from 'near-api-js/lib/providers/provider';
-import { ConnectionInfo } from 'near-api-js/lib/utils/web';
 
 import { SubqueryProject } from '../configure/SubqueryProject';
 import * as NearUtil from '../utils/near';

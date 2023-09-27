@@ -23,6 +23,7 @@ import {
   IArgs,
   NearTransactionReceipt,
   NearReceiptFilter,
+  SignedDelegate,
 } from '@subql/types-near';
 import { get, range } from 'lodash';
 import { providers } from 'near-api-js';
@@ -64,7 +65,7 @@ export class Args extends String implements IArgs {
 
 export const mappingFilterAction: Record<
   ActionType,
-  Record<string, `action.${string}`>
+  Record<string, `action.${string}` | Record<any, any>>
 > = {
   [ActionType.FunctionCall]: {
     methodName: 'action.method_name',
@@ -86,6 +87,9 @@ export const mappingFilterAction: Record<
   [ActionType.CreateAccount]: {},
   [ActionType.DeployContract]: {},
   [ActionType.Transfer]: {},
+  [ActionType.SignedDelegate]: {
+    // TODO Filter by nested Delegate actions
+  },
 };
 
 export async function wrapBlock(
@@ -232,8 +236,12 @@ function parseNearAction(type: ActionType, action: any): Action {
       return action as DeleteKey;
     case ActionType.DeleteAccount:
       return action as DeleteAccount;
+    case ActionType.SignedDelegate:
+      return action as SignedDelegate;
     default:
-      throw new Error('Invalid type string for NearAction');
+      throw new Error(
+        `Invalid type string for NearAction: ${type} action: ${action}`,
+      );
   }
 }
 
