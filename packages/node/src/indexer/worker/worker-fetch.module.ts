@@ -5,32 +5,27 @@ import { isMainThread } from 'worker_threads';
 import { Module } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import {
-  StoreService,
-  PoiService,
   ConnectionPoolService,
-  StoreCacheService,
   WorkerDynamicDsService,
   WorkerConnectionPoolStateManager,
   ConnectionPoolStateManager,
   NodeConfig,
 } from '@subql/node-core';
-import { SubqueryProject } from '../configure/SubqueryProject';
-import { ApiService } from './api.service';
-import { DsProcessorService } from './ds-processor.service';
-import { DynamicDsService } from './dynamic-ds.service';
-import { IndexerManager } from './indexer.manager';
-import { NearApiConnection } from './nearApi.connection';
-import { ProjectService } from './project.service';
-import { SandboxService } from './sandbox.service';
-import { UnfinalizedBlocksService } from './unfinalizedBlocks.service';
-import { WorkerService } from './worker/worker.service';
-import { WorkerUnfinalizedBlocksService } from './worker/worker.unfinalizedBlocks.service';
+import { SubqueryProject } from '../../configure/SubqueryProject';
+import { ApiService } from '../api.service';
+import { DsProcessorService } from '../ds-processor.service';
+import { DynamicDsService } from '../dynamic-ds.service';
+import { IndexerManager } from '../indexer.manager';
+import { NearApiConnection } from '../nearApi.connection';
+import { ProjectService } from '../project.service';
+import { SandboxService } from '../sandbox.service';
+import { UnfinalizedBlocksService } from '../unfinalizedBlocks.service';
+import { WorkerService } from '../worker/worker.service';
+import { WorkerUnfinalizedBlocksService } from '../worker/worker.unfinalizedBlocks.service';
 
 @Module({
   providers: [
     IndexerManager,
-    StoreCacheService,
-    StoreService,
     ConnectionPoolService,
     {
       provide: ConnectionPoolStateManager,
@@ -77,7 +72,6 @@ import { WorkerUnfinalizedBlocksService } from './worker/worker.unfinalizedBlock
         return new WorkerDynamicDsService((global as any).host);
       },
     },
-    PoiService,
     {
       provide: 'IProjectService',
       useClass: ProjectService,
@@ -93,6 +87,6 @@ import { WorkerUnfinalizedBlocksService } from './worker/worker.unfinalizedBlock
       },
     },
   ],
-  exports: [StoreService],
+  exports: [],
 })
-export class IndexerModule {}
+export class WorkerFetchModule {}
