@@ -54,3 +54,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [2.0.0]: https://github.com/subquery/subql-near/compare/common-near/1.1.0...common-near/2.0.0
 [1.1.0]: https://github.com/subquery/subql-near/compare/common-near/1.0.0...common-near/1.1.0
 [1.0.0]: https://github.com/subquery/subql-near/tags/1.0.0
+
