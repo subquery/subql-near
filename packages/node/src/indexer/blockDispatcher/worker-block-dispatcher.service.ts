@@ -26,7 +26,7 @@ import {
   dynamicDsHostFunctions,
   HostUnfinalizedBlocks,
 } from '@subql/node-core';
-import { Store } from '@subql/types';
+import { Store } from '@subql/types-core';
 import { NearDatasource } from '@subql/types-near';
 import {
   NearProjectDs,
@@ -48,6 +48,7 @@ async function createIndexerWorker(
   unfinalizedBlocksService: IUnfinalizedBlocksService<BlockContent>,
   connectionPoolState: ConnectionPoolStateManager<NearApiConnection>,
   root: string,
+  startHeight: number,
 ): Promise<IndexerWorker> {
   const indexerWorker = Worker.create<
     IInitIndexerWorker,
@@ -70,7 +71,7 @@ async function createIndexerWorker(
     root,
   );
 
-  await indexerWorker.initWorker();
+  await indexerWorker.initWorker(startHeight);
 
   return indexerWorker;
 }
@@ -113,6 +114,7 @@ export class WorkerBlockDispatcherService
           unfinalizedBlocksSevice,
           connectionPoolState,
           project.root,
+          projectService.startHeight,
         ),
     );
   }

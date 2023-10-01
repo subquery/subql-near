@@ -15,23 +15,12 @@ import {BaseMapping, NodeSpec, ParentProject, QuerySpec, RunnerSpecs} from '@sub
 import {
   CustomDatasourceTemplate,
   NearCustomDatasource,
-  NearNetworkFilter,
   NearProjectManifestV1_0_0,
   NearRuntimeDatasource,
   RuntimeDatasourceTemplate,
 } from '@subql/types-near';
 import {plainToClass, Transform, TransformFnParams, Type} from 'class-transformer';
-import {
-  Equals,
-  IsArray,
-  IsNotEmpty,
-  IsObject,
-  IsOptional,
-  IsString,
-  Validate,
-  ValidateNested,
-  validateSync,
-} from 'class-validator';
+import {Equals, IsArray, IsNotEmpty, IsObject, IsOptional, IsString, ValidateNested} from 'class-validator';
 import {CustomDataSourceBase, RuntimeDataSourceBase} from '../../models';
 
 const NEAR_NODE_NAME = `@subql/node-near`;

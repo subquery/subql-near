@@ -10,7 +10,6 @@ import {
   StoreService,
   NodeConfig,
   IProjectUpgradeService,
-  mainThreadOnly,
 } from '@subql/node-core';
 import { Sequelize } from '@subql/x-sequelize';
 import { NearProjectDs, SubqueryProject } from '../configure/SubqueryProject';
@@ -65,7 +64,6 @@ export class ProjectService extends BaseProjectService<
     return new Date(block.header.timestamp / 1_000_000);
   }
 
-  @mainThreadOnly()
   protected onProjectChange(project: SubqueryProject): void | Promise<void> {
     // TODO update this when implementing skipBlock feature for Eth
     // this.apiService.updateBlockFetching();

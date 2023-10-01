@@ -1,7 +1,7 @@
 // Copyright 2020-2023 SubQuery Pte Ltd authors & contributors
 // SPDX-License-Identifier: GPL-3.0
 
-import {ProcessorImpl} from '@subql/common';
+import {BlockFilterImpl, ProcessorImpl} from '@subql/common';
 import {BaseMapping, FileReference, Processor} from '@subql/types-core';
 import {
   CustomDataSourceAsset as NearCustomDataSourceAsset,
@@ -23,12 +23,9 @@ import {
   NearReceiptHandler,
   NearReceiptFilter,
 } from '@subql/types-near';
-import BN from 'bn.js';
 import {plainToClass, Transform, Type} from 'class-transformer';
 import {
-  ArrayMaxSize,
   IsArray,
-  IsBoolean,
   IsEnum,
   IsInt,
   IsOptional,
@@ -42,18 +39,7 @@ import {
   ValidateIf,
 } from 'class-validator';
 
-export class BlockFilter implements NearBlockFilter {
-  @IsOptional()
-  @IsArray()
-  @ArrayMaxSize(2)
-  specVersion?: [number, number];
-  @IsOptional()
-  @IsInt()
-  modulo?: number;
-  @IsOptional()
-  @IsString()
-  timestamp?: string;
-}
+export class BlockFilter extends BlockFilterImpl implements NearBlockFilter {}
 
 export class TransactionFilter extends BlockFilter implements NearTransactionFilter {
   @IsOptional()
