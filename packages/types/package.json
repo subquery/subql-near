@@ -16,7 +16,7 @@
     "/dist"
   ],
   "dependencies": {
-    "@subql/types-core": "^0.0.1",
+    "@subql/types-core": "dev",
     "bn.js": "5.2.1",
     "near-api-js": "^1.1.0"
   },

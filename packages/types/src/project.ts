@@ -7,12 +7,11 @@ import {
   CommonSubqueryProject,
   DictionaryQueryEntry,
   FileReference,
-  Processor,
   ProjectManifestV1_0_0,
   BlockFilter,
-  BaseHandler,
   BaseDataSource,
   BaseCustomDataSource,
+  BaseHandler,
 } from '@subql/types-core';
 import {providers} from 'near-api-js';
 import {NearBlock, NearTransaction, NearAction, NearTransactionReceipt, ActionType} from './interfaces';
@@ -168,10 +167,7 @@ export type NearReceiptHandler = NearCustomHandler<NearHandlerKind.Receipt, Near
  * @template K - The kind of the handler (default: string).
  * @template F - The filter type for the handler (default: Record<string, unknown>).
  */
-export interface NearCustomHandler<
-  K extends string = string,
-  F = Record<string, unknown>
-> /* extends BaseHandler<F, K>*/ {
+export interface NearCustomHandler<K extends string = string, F = Record<string, unknown>> extends BaseHandler<F, K> {
   /**
    * The kind of handler. For `near/Runtime` datasources this is either `Block`, `Transaction`, `Action` or `Receipt` kinds.
    * The value of this will determine the filter options as well as the data provided to your handler function
@@ -180,7 +176,6 @@ export interface NearCustomHandler<
    * kind: NearHandlerKind.Block // Defined with an enum, this is used for runtime datasources
    */
   kind: K;
-  handler: string;
   filter?: F;
 }
 
@@ -214,15 +209,7 @@ export interface NearMapping<T extends NearHandler = NearHandler> extends FileRe
  * @interface
  * @template M - The mapping type for the datasource.
  */
-// type INearDatasource<M extends NearMapping> = BaseDataSource<NearHandler, M>;
-// TODO replace with Base type
-interface INearDatasource<M extends NearMapping, F extends NearNetworkFilter = NearNetworkFilter> {
-  name?: string;
-  kind: string;
-  filter?: F;
-  startBlock?: number;
-  mapping: M;
-}
+type INearDatasource<M extends NearMapping> = BaseDataSource<NearHandler, M>;
 
 /**
  * Represents a runtime datasource for Near.
@@ -238,11 +225,6 @@ export interface NearRuntimeDatasource<M extends NearMapping<NearRuntimeHandler>
   kind: NearDatasourceKind.Runtime;
 }
 
-// TODO remove
-export interface NearNetworkFilter {
-  specName?: string;
-}
-
 /**
  * Represents a Near datasource, which can be either runtime or custom.
  * @type {NearDatasource}
@@ -256,21 +238,14 @@ export type CustomDataSourceAsset = FileReference;
  * @interface
  * @template K - The kind of the datasource (default: string).
  * @template M - The mapping type for the datasource (default: NearMapping<NearCustomHandler>).
- * @template O - The processor options (default: any).
  */
-export interface NearCustomDatasource<
-  K extends string = string,
-  M extends NearMapping = NearMapping<NearCustomHandler>,
-  O = any
-> extends BaseCustomDataSource<any, NearHandler, M> {
+export interface NearCustomDatasource<K extends string = string, M extends NearMapping = NearMapping<NearCustomHandler>>
+  extends BaseCustomDataSource<NearHandler, M> {
   /**
    * The kind of the custom datasource. This should follow the pattern `near/*`.
    * @type {K}
    */
   kind: K;
-  // TODO remove below properties once updated types core
-  assets: Map<string, CustomDataSourceAsset>;
-  processor: Processor<O>;
 }
 
 export interface HandlerInputTransformer_0_0_0<
