@@ -167,7 +167,7 @@ export class CustomHandler implements NearCustomHandler {
   filter?: Record<string, unknown>;
 }
 
-export class RuntimeMapping implements BaseMapping<NearRuntimeHandlerFilter, NearRuntimeHandler> {
+export class RuntimeMapping implements BaseMapping<NearRuntimeHandler> {
   @Transform((params) => {
     const handlers: NearRuntimeHandler[] = params.value;
     return handlers.map((handler) => {
@@ -192,7 +192,7 @@ export class RuntimeMapping implements BaseMapping<NearRuntimeHandlerFilter, Nea
   file: string;
 }
 
-export class CustomMapping implements BaseMapping<Record<string, unknown>, NearCustomHandler> {
+export class CustomMapping implements BaseMapping<NearCustomHandler> {
   @IsArray()
   @Type(() => CustomHandler)
   @ValidateNested()

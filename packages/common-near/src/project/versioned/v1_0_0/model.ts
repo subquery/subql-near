@@ -36,10 +36,7 @@ export class NearRuntimeDataSourceImpl extends RuntimeDataSourceBase implements 
   }
 }
 
-export class NearCustomDataSourceImpl<
-    K extends string = string,
-    M extends BaseMapping<any, any> = BaseMapping<Record<string, unknown>, any>
-  >
+export class NearCustomDataSourceImpl<K extends string = string, M extends BaseMapping<any> = BaseMapping<any>>
   extends CustomDataSourceBase<K, M>
   implements NearCustomDatasource<K, M>
 {
