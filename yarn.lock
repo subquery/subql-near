@@ -3099,7 +3099,6 @@ __metadata:
   resolution: "@subql/common-near@workspace:packages/common-near"
   dependencies:
     "@subql/common": ^3.1.0
-    "@subql/types-core": 0.0.0-2
     "@subql/types-near": "workspace:*"
     "@types/bn.js": 4.11.6
     "@types/js-yaml": ^4.0.4
@@ -3127,24 +3126,6 @@ __metadata:
     semver: ^7.5.2
     update-notifier: 5.1.0
   checksum: 43c7207acbc943cf1196c6ea0ecc6187b5a0a08a1f358861da5c2fa2db1b1a94ad6232850ef85e0c1a49274fd96d5c39204d860aa18d0e655fcad0b402df0220
-  languageName: node
-  linkType: hard
-
-"@subql/common@npm:^3.0.1":
-  version: 3.0.1
-  resolution: "@subql/common@npm:3.0.1"
-  dependencies:
-    "@subql/types-core": 0.0.1
-    axios: ^0.27.2
-    class-transformer: ^0.5.1
-    class-validator: ^0.14.0
-    fs-extra: ^10.1.0
-    ipfs-http-client: 56
-    js-yaml: ^4.1.0
-    reflect-metadata: ^0.1.13
-    semver: ^7.5.2
-    update-notifier: 5.1.0
-  checksum: 05cd5cdb0e22e7458bbe5c56adc04f5d9d57ae86be7b3efdccd0673a0630290f321d2bb742f9503ab001ccd048125553b75bbe38e82adc6af774f019e41c1e30
   languageName: node
   linkType: hard
 
@@ -3227,24 +3208,6 @@ __metadata:
   dependencies:
     "@subql/types-core": ^0.0.0-1
   checksum: ded64670e266309115f1f8003dbf0cef1219ceff7fa30c2f1389588d1e659685b74e44e70d3f3389654a0e2ba2d04dddb239b19253d35af494cc8a93548955b5
-  languageName: node
-  linkType: hard
-
-"@subql/types-core@npm:0.0.0-2":
-  version: 0.0.0-2
-  resolution: "@subql/types-core@npm:0.0.0-2"
-  dependencies:
-    package-json-type: ^1.0.3
-  checksum: 3cd6a90391a8d206d0140bc84fff3b019a54488b711ce4f3d8c59f5b326dba9fc8b76d233add90b6a8dc953b09a7d3057f5132ec04a4b46e18c1aac49e8c685f
-  languageName: node
-  linkType: hard
-
-"@subql/types-core@npm:0.0.1":
-  version: 0.0.1
-  resolution: "@subql/types-core@npm:0.0.1"
-  dependencies:
-    package-json-type: ^1.0.3
-  checksum: 2324d331f94562c0fecd6af92b22340ac361e6ad14f28bb05b686c42ebfa3847c890d397c87e33c4a6d47b82adf537b7336fdd392881c7727a2e585ad20937bb
   languageName: node
   linkType: hard
 
@@ -11108,7 +11071,6 @@ __metadata:
     "@actions/core": ^1.10.0
     "@babel/preset-env": ^7.16.11
     "@octokit/request": ^5.6.3
-    "@subql/common": ^3.0.1
     "@types/cron-converter": ^1
     "@types/node": ^18.16.10
     "@types/node-fetch": 2.6.2
