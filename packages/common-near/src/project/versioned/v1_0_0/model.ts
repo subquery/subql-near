@@ -73,7 +73,7 @@ export class ProjectNetworkDeploymentV1_0_0 {
   chainId: string;
   @IsOptional()
   @IsArray()
-  bypassBlocks?: (number | string)[];
+  bypassBlocks?: (number | `${number}-${number}`)[];
 }
 
 export class ProjectNetworkV1_0_0 extends CommonProjectNetworkV1_0_0<FileType> {
