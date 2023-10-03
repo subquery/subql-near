@@ -14,7 +14,6 @@ import {
   NearTransactionFilter,
   NearActionHandler,
   NearHandlerKind,
-  NearNetworkFilter,
   NearRuntimeDatasource,
   NearRuntimeHandler,
   NearRuntimeHandlerFilter,
@@ -202,12 +201,6 @@ export class CustomMapping implements BaseMapping<Record<string, unknown>, NearC
   file: string;
 }
 
-export class SubqlNetworkFilterImpl implements NearNetworkFilter {
-  @IsString()
-  @IsOptional()
-  specName?: string;
-}
-
 export class RuntimeDataSourceBase implements NearRuntimeDatasource {
   @IsEnum(NearDatasourceKind, {groups: [NearDatasourceKind.Runtime]})
   kind: NearDatasourceKind.Runtime;
@@ -219,10 +212,6 @@ export class RuntimeDataSourceBase implements NearRuntimeDatasource {
   @IsOptional()
   @IsInt()
   startBlock?: number;
-  @IsOptional()
-  @ValidateNested()
-  @Type(() => SubqlNetworkFilterImpl)
-  filter?: NearNetworkFilter;
 }
 
 export class FileReferenceImpl implements FileReference {
@@ -231,7 +220,7 @@ export class FileReferenceImpl implements FileReference {
 }
 
 export class CustomDataSourceBase<K extends string, M extends CustomMapping, O = any>
-  implements NearCustomDatasource<K, M, O>
+  implements NearCustomDatasource<K, M>
 {
   @IsString()
   kind: K;

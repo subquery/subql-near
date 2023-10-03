@@ -16,7 +16,6 @@ export {
   NearTransactionFilter,
   NearActionFilter,
   NearDatasourceProcessor,
-  NearNetworkFilter,
   NearRuntimeHandlerFilter,
   NearDatasourceKind,
   RuntimeHandlerInputMap as NearRuntimeHandlerInputMap,
