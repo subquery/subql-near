@@ -6,8 +6,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.0.0] - 2023-10-04
+### Changed
+- Update `@subql/node-core` and sync with main SDK.
+
+### Fixed
+- Fix dictionary metadata validation failed
+- Improve get finalized block error logging
+- Fix reindex also start index service (#155)
+- Fix warning for filter address (#154)
+- Fetching logs via block height resulting in invalid results. Block hash is now used to ensure
+  correct results. (#156)
+- Node runner options being overwritten by yargs defaults (#148)
+- Fix yargs default override runner nodeOptions (#166)
+
 ## [2.10.2] - 2023-09-27
-### Update
+### Changed
 - Update `subql/common` (#64)
 
 ## [2.10.1] - 2023-09-27
@@ -118,7 +132,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add `toJson` method to function args (#9)
 
 ## 1.18.0 - 2023-01-26
-[Unreleased]: https://github.com/subquery/subql-near/compare/node-near/2.10.2...HEAD
+[Unreleased]: https://github.com/subquery/subql-near/compare/node-near/3.0.0...HEAD
+[3.0.0]: https://github.com/subquery/subql-near/compare/node-near/2.10.2...node-near/3.0.0
 [2.10.2]: https://github.com/subquery/subql-near/compare/node-near/2.10.1...node-near/2.10.2
 [2.10.1]: https://github.com/subquery/subql-near/compare/node-near/2.10.0...node-near/2.10.1
 [2.10.0]: https://github.com/subquery/subql-near/compare/node-near/2.8.0...node-near/2.10.0
@@ -130,4 +145,3 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [2.5.0]: https://github.com/subquery/subql-near/compare/node-near/2.3.1...node-near/2.5.0
 [2.3.1]: https://github.com/subquery/subql-near/compare/node-near/2.3.0...node-near/2.3.1
 [2.3.0]: https://github.com/subquery/subql-near/compare/node-near/2.1.1...node-near/2.3.0
-

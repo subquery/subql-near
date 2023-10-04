@@ -6,6 +6,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.0.0] - 2023-10-04
+### Changed
+- Use `@subql/types-core`
+
 ## [2.1.3] - 2023-09-27
 ### Added
 - Support for `signedDelegate` actions (#62)
@@ -15,9 +19,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - update license (#56)
 
 ## [2.1.1] - 2023-05-17
+### Fixed
+- Rerelease of 2.1.0
 
 ## [2.1.0] - 2023-05-17
-### Updated
+### Changed
 - Sync with main SDK
 
 ## [2.0.0] - 2023-05-01
@@ -37,10 +43,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Args type for funciton calls (#9)
 
 ## [1.0.0] - 2023-01-26
-
-Initial Release
-
-[Unreleased]: https://github.com/subquery/subql-near/compare/types-near/v2.1.3...HEAD
+[Unreleased]: https://github.com/subquery/subql-near/compare/types-near/3.0.0...HEAD
+[3.0.0]: https://github.com/subquery/subql-near/compare/types-near/2.1.3...types-near/3.0.0
 [2.1.3]: https://github.com/subquery/subql-near/compare/types-near/v2.1.2...types-near/v2.1.3
 [2.1.2]: https://github.com/subquery/subql-near/compare/types-near/v2.1.1...types-near/v2.1.2
 [2.1.1]: https://github.com/subquery/subql-near/compare/types-near/v2.1.0...types-near/v2.1.1
