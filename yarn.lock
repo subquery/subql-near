@@ -3211,7 +3211,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@subql/types-core@npm:0.1.1":
+"@subql/types-core@npm:0.1.1, @subql/types-core@npm:^0.1.1":
   version: 0.1.1
   resolution: "@subql/types-core@npm:0.1.1"
   dependencies:
@@ -3229,20 +3229,11 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@subql/types-core@npm:^0.1.0":
-  version: 0.1.0
-  resolution: "@subql/types-core@npm:0.1.0"
-  dependencies:
-    package-json-type: ^1.0.3
-  checksum: fd86c2cf5148a4ad3af5c3a4fa7f0180f7a4d90fd3f6d96bc0e48eab6d73767220c859c751b21bbe08565d31eac5e8d0cee0148dee7ee7e0e273ff46182d3131
-  languageName: node
-  linkType: hard
-
 "@subql/types-near@workspace:*, @subql/types-near@workspace:packages/types":
   version: 0.0.0-use.local
   resolution: "@subql/types-near@workspace:packages/types"
   dependencies:
-    "@subql/types-core": ^0.1.0
+    "@subql/types-core": ^0.1.1
     "@types/app-module-path": ^2.2.0
     bn.js: 5.2.1
     near-api-js: ^1.1.0
