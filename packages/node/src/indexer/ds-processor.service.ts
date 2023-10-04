@@ -1,15 +1,12 @@
 // Copyright 2020-2023 SubQuery Pte Ltd authors & contributors
 // SPDX-License-Identifier: GPL-3.0
 
-import fs from 'fs';
-import path from 'path';
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import {
   isCustomDs,
   NearCustomDataSource,
   NearDataSource,
   NearDatasourceProcessor,
-  NearNetworkFilter,
 } from '@subql/common-near';
 import { BaseDsProcessorService } from '@subql/node-core';
 import {
@@ -17,11 +14,13 @@ import {
   SecondLayerHandlerProcessor_1_0_0,
   NearCustomDatasource,
   NearHandlerKind,
+  NearMapping,
+  NearCustomHandler,
 } from '@subql/types-near';
 
 export function isSecondLayerHandlerProcessor_0_0_0<
   K extends NearHandlerKind,
-  F,
+  F extends Record<string, unknown>,
   E,
   DS extends NearCustomDatasource = NearCustomDatasource,
 >(
@@ -35,7 +34,7 @@ export function isSecondLayerHandlerProcessor_0_0_0<
 
 export function isSecondLayerHandlerProcessor_1_0_0<
   K extends NearHandlerKind,
-  F,
+  F extends Record<string, unknown>,
   E,
   DS extends NearCustomDatasource = NearCustomDatasource,
 >(
@@ -48,7 +47,7 @@ export function isSecondLayerHandlerProcessor_1_0_0<
 
 export function asSecondLayerHandlerProcessor_1_0_0<
   K extends NearHandlerKind,
-  F,
+  F extends Record<string, unknown>,
   E,
   DS extends NearCustomDatasource = NearCustomDatasource,
 >(
@@ -79,8 +78,8 @@ export function asSecondLayerHandlerProcessor_1_0_0<
 @Injectable()
 export class DsProcessorService extends BaseDsProcessorService<
   NearDataSource,
-  NearCustomDataSource<string, NearNetworkFilter>,
-  NearDatasourceProcessor<string, NearNetworkFilter>
+  NearCustomDataSource<string, NearMapping<NearCustomHandler>>,
+  NearDatasourceProcessor<string, Record<string, unknown>>
 > {
   protected isCustomDs = isCustomDs;
 }

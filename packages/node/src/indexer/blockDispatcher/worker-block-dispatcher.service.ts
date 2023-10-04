@@ -20,11 +20,16 @@ import {
   HostConnectionPoolState,
   ConnectionPoolStateManager,
   connectionPoolStateHostFunctions,
+  IProjectUpgradeService,
+  baseWorkerFunctions,
+  storeHostFunctions,
+  dynamicDsHostFunctions,
+  HostUnfinalizedBlocks,
 } from '@subql/node-core';
-import { Store } from '@subql/types';
+import { Store } from '@subql/types-core';
 import { NearDatasource } from '@subql/types-near';
 import {
-  SubqlProjectDs,
+  NearProjectDs,
   SubqueryProject,
 } from '../../configure/SubqueryProject';
 import { DynamicDsService } from '../dynamic-ds.service';
@@ -32,7 +37,6 @@ import { NearApiConnection } from '../nearApi.connection';
 import { BlockContent } from '../types';
 import { UnfinalizedBlocksService } from '../unfinalizedBlocks.service';
 import { IIndexerWorker, IInitIndexerWorker } from '../worker/worker';
-import { HostUnfinalizedBlocks } from '../worker/worker.unfinalizedBlocks.service';
 
 type IndexerWorker = IIndexerWorker & {
   terminate: () => Promise<number>;
@@ -44,38 +48,20 @@ async function createIndexerWorker(
   unfinalizedBlocksService: IUnfinalizedBlocksService<BlockContent>,
   connectionPoolState: ConnectionPoolStateManager<NearApiConnection>,
   root: string,
+  startHeight: number,
 ): Promise<IndexerWorker> {
   const indexerWorker = Worker.create<
     IInitIndexerWorker,
-    HostDynamicDS<SubqlProjectDs> &
+    HostDynamicDS<NearDatasource> &
       HostStore &
       HostUnfinalizedBlocks &
       HostConnectionPoolState<NearApiConnection>
   >(
     path.resolve(__dirname, '../../../dist/indexer/worker/worker.js'),
-    [
-      'initWorker',
-      'processBlock',
-      'fetchBlock',
-      'numFetchedBlocks',
-      'numFetchingBlocks',
-      'getStatus',
-      'getMemoryLeft',
-      'waitForWorkerBatchSize',
-    ],
+    [...baseWorkerFunctions, 'initWorker'],
     {
-      storeGet: store.get.bind(store),
-      storeGetByField: store.getByField.bind(store),
-      storeGetOneByField: store.getOneByField.bind(store),
-      storeSet: store.set.bind(store),
-      storeBulkCreate: store.bulkCreate.bind(store),
-      storeBulkUpdate: store.bulkUpdate.bind(store),
-      storeRemove: store.remove.bind(store),
-      storeBulkRemove: store.bulkRemove.bind(store),
-      dynamicDsCreateDynamicDatasource:
-        dynamicDsService.createDynamicDatasource.bind(dynamicDsService),
-      dynamicDsGetDynamicDatasources:
-        dynamicDsService.getDynamicDatasources.bind(dynamicDsService),
+      ...storeHostFunctions(store),
+      ...dynamicDsHostFunctions(dynamicDsService),
       unfinalizedBlocksProcess:
         unfinalizedBlocksService.processUnfinalizedBlockHeader.bind(
           unfinalizedBlocksService,
@@ -85,7 +71,7 @@ async function createIndexerWorker(
     root,
   );
 
-  await indexerWorker.initWorker();
+  await indexerWorker.initWorker(startHeight);
 
   return indexerWorker;
 }
@@ -98,7 +84,9 @@ export class WorkerBlockDispatcherService
   constructor(
     nodeConfig: NodeConfig,
     eventEmitter: EventEmitter2,
-    @Inject('IProjectService') projectService: IProjectService<SubqlProjectDs>,
+    @Inject('IProjectService') projectService: IProjectService<NearProjectDs>,
+    @Inject('IProjectUpgradeService')
+    projectUpgradeService: IProjectUpgradeService,
     smartBatchService: SmartBatchService,
     storeService: StoreService,
     storeCacheService: StoreCacheService,
@@ -112,6 +100,7 @@ export class WorkerBlockDispatcherService
       nodeConfig,
       eventEmitter,
       projectService,
+      projectUpgradeService,
       smartBatchService,
       storeService,
       storeCacheService,
@@ -125,6 +114,7 @@ export class WorkerBlockDispatcherService
           unfinalizedBlocksSevice,
           connectionPoolState,
           project.root,
+          projectService.startHeight,
         ),
     );
   }
@@ -140,7 +130,7 @@ export class WorkerBlockDispatcherService
     height: number,
   ): Promise<void> {
     // const start = new Date();
-    await worker.fetchBlock(height);
+    await worker.fetchBlock(height, null);
     // const end = new Date();
 
     // const waitTime = end.getTime() - start.getTime();

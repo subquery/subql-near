@@ -5,16 +5,13 @@ import { Inject, Injectable } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import {
   NodeConfig,
-  StoreService,
   TestingService as BaseTestingService,
   NestLogger,
   TestRunner,
 } from '@subql/node-core';
-import { Sequelize } from '@subql/x-sequelize';
 import { JsonRpcProvider } from 'near-api-js/lib/providers';
-import { SubqlProjectDs, SubqueryProject } from '../configure/SubqueryProject';
+import { NearProjectDs, SubqueryProject } from '../configure/SubqueryProject';
 import { ApiService, SafeJsonRpcProvider } from '../indexer/api.service';
-import { IndexerManager } from '../indexer/indexer.manager';
 import { ProjectService } from '../indexer/project.service';
 import { BlockContent } from '../indexer/types';
 import { TestingModule } from './testing.module';
@@ -24,7 +21,7 @@ export class TestingService extends BaseTestingService<
   JsonRpcProvider,
   SafeJsonRpcProvider,
   BlockContent,
-  SubqlProjectDs
+  NearProjectDs
 > {
   constructor(
     nodeConfig: NodeConfig,
@@ -34,12 +31,15 @@ export class TestingService extends BaseTestingService<
   }
 
   async getTestRunner(): Promise<
-    TestRunner<
-      JsonRpcProvider,
-      SafeJsonRpcProvider,
-      BlockContent,
-      SubqlProjectDs
-    >
+    [
+      close: () => Promise<void>,
+      runner: TestRunner<
+        JsonRpcProvider,
+        SafeJsonRpcProvider,
+        BlockContent,
+        NearProjectDs
+      >,
+    ]
   > {
     const testContext = await NestFactory.createApplicationContext(
       TestingModule,
@@ -57,6 +57,6 @@ export class TestingService extends BaseTestingService<
     await apiService.init();
     await projectService.init();
 
-    return testContext.get(TestRunner);
+    return [testContext.close.bind(testContext), testContext.get(TestRunner)];
   }
 }

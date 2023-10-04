@@ -3,7 +3,6 @@
 
 import { Inject, Injectable, OnApplicationShutdown } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
-import { NearDataSource } from '@subql/common-near';
 import {
   NodeConfig,
   SmartBatchService,
@@ -13,9 +12,10 @@ import {
   PoiService,
   BlockDispatcher,
   ProcessBlockResponse,
+  IProjectUpgradeService,
 } from '@subql/node-core';
 import {
-  SubqlProjectDs,
+  NearProjectDs,
   SubqueryProject,
 } from '../../configure/SubqueryProject';
 import { ApiService } from '../api.service';
@@ -28,7 +28,7 @@ import { BlockContent } from '../types';
  */
 @Injectable()
 export class BlockDispatcherService
-  extends BlockDispatcher<BlockContent, NearDataSource>
+  extends BlockDispatcher<BlockContent, NearProjectDs>
   implements OnApplicationShutdown
 {
   constructor(
@@ -36,7 +36,9 @@ export class BlockDispatcherService
     nodeConfig: NodeConfig,
     private indexerManager: IndexerManager,
     eventEmitter: EventEmitter2,
-    @Inject('IProjectService') projectService: IProjectService<NearDataSource>,
+    @Inject('IProjectService') projectService: IProjectService<NearProjectDs>,
+    @Inject('IProjectUpgradeService')
+    projectUpgradeService: IProjectUpgradeService,
     smartBatchService: SmartBatchService,
     storeService: StoreService,
     storeCacheService: StoreCacheService,
@@ -48,6 +50,7 @@ export class BlockDispatcherService
       nodeConfig,
       eventEmitter,
       projectService,
+      projectUpgradeService,
       smartBatchService,
       storeService,
       storeCacheService,
@@ -78,7 +81,7 @@ export class BlockDispatcherService
   ): Promise<ProcessBlockResponse> {
     return this.indexerManager.indexBlock(
       block,
-      await this.projectService.getAllDataSources(this.getBlockHeight(block)),
+      await this.projectService.getDataSources(this.getBlockHeight(block)),
     );
   }
 }

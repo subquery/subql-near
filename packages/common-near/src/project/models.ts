@@ -1,7 +1,8 @@
 // Copyright 2020-2023 SubQuery Pte Ltd authors & contributors
 // SPDX-License-Identifier: GPL-3.0
 
-import {BaseMapping, FileReference} from '@subql/common';
+import {BlockFilterImpl, ProcessorImpl} from '@subql/common';
+import {BaseMapping, FileReference, Processor} from '@subql/types-core';
 import {
   CustomDataSourceAsset as NearCustomDataSourceAsset,
   NearBlockFilter,
@@ -13,7 +14,6 @@ import {
   NearTransactionFilter,
   NearActionHandler,
   NearHandlerKind,
-  NearNetworkFilter,
   NearRuntimeDatasource,
   NearRuntimeHandler,
   NearRuntimeHandlerFilter,
@@ -22,12 +22,9 @@ import {
   NearReceiptHandler,
   NearReceiptFilter,
 } from '@subql/types-near';
-import BN from 'bn.js';
 import {plainToClass, Transform, Type} from 'class-transformer';
 import {
-  ArrayMaxSize,
   IsArray,
-  IsBoolean,
   IsEnum,
   IsInt,
   IsOptional,
@@ -41,18 +38,7 @@ import {
   ValidateIf,
 } from 'class-validator';
 
-export class BlockFilter implements NearBlockFilter {
-  @IsOptional()
-  @IsArray()
-  @ArrayMaxSize(2)
-  specVersion?: [number, number];
-  @IsOptional()
-  @IsInt()
-  modulo?: number;
-  @IsOptional()
-  @IsString()
-  timestamp?: string;
-}
+export class BlockFilter extends BlockFilterImpl implements NearBlockFilter {}
 
 export class TransactionFilter extends BlockFilter implements NearTransactionFilter {
   @IsOptional()
@@ -181,7 +167,7 @@ export class CustomHandler implements NearCustomHandler {
   filter?: Record<string, unknown>;
 }
 
-export class RuntimeMapping implements BaseMapping<NearRuntimeHandlerFilter, NearRuntimeHandler> {
+export class RuntimeMapping implements BaseMapping<NearRuntimeHandler> {
   @Transform((params) => {
     const handlers: NearRuntimeHandler[] = params.value;
     return handlers.map((handler) => {
@@ -206,19 +192,13 @@ export class RuntimeMapping implements BaseMapping<NearRuntimeHandlerFilter, Nea
   file: string;
 }
 
-export class CustomMapping implements BaseMapping<Record<string, unknown>, NearCustomHandler> {
+export class CustomMapping implements BaseMapping<NearCustomHandler> {
   @IsArray()
   @Type(() => CustomHandler)
   @ValidateNested()
   handlers: CustomHandler[];
   @IsString()
   file: string;
-}
-
-export class SubqlNetworkFilterImpl implements NearNetworkFilter {
-  @IsString()
-  @IsOptional()
-  specName?: string;
 }
 
 export class RuntimeDataSourceBase implements NearRuntimeDatasource {
@@ -232,10 +212,6 @@ export class RuntimeDataSourceBase implements NearRuntimeDatasource {
   @IsOptional()
   @IsInt()
   startBlock?: number;
-  @IsOptional()
-  @ValidateNested()
-  @Type(() => SubqlNetworkFilterImpl)
-  filter?: NearNetworkFilter;
 }
 
 export class FileReferenceImpl implements FileReference {
@@ -243,8 +219,8 @@ export class FileReferenceImpl implements FileReference {
   file: string;
 }
 
-export class CustomDataSourceBase<K extends string, T extends NearNetworkFilter, M extends CustomMapping, O = any>
-  implements NearCustomDatasource<K, T, M, O>
+export class CustomDataSourceBase<K extends string, M extends CustomMapping, O = any>
+  implements NearCustomDatasource<K, M>
 {
   @IsString()
   kind: K;
@@ -257,10 +233,7 @@ export class CustomDataSourceBase<K extends string, T extends NearNetworkFilter,
   @Type(() => FileReferenceImpl)
   @ValidateNested({each: true})
   assets: Map<string, NearCustomDataSourceAsset>;
-  @Type(() => FileReferenceImpl)
+  @Type(() => ProcessorImpl)
   @IsObject()
-  processor: FileReference;
-  @IsOptional()
-  @IsObject()
-  filter?: T;
+  processor: Processor;
 }
