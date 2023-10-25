@@ -13,6 +13,7 @@ import {
   BlockDispatcher,
   ProcessBlockResponse,
   IProjectUpgradeService,
+  PoiSyncService,
 } from '@subql/node-core';
 import {
   NearProjectDs,
@@ -43,6 +44,7 @@ export class BlockDispatcherService
     storeService: StoreService,
     storeCacheService: StoreCacheService,
     poiService: PoiService,
+    poiSyncService: PoiSyncService,
     @Inject('ISubqueryProject') project: SubqueryProject,
     dynamicDsService: DynamicDsService,
   ) {
@@ -55,6 +57,7 @@ export class BlockDispatcherService
       storeService,
       storeCacheService,
       poiService,
+      poiSyncService,
       project,
       dynamicDsService,
       async (blockNums: number[]): Promise<BlockContent[]> => {

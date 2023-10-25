@@ -25,6 +25,7 @@ import {
   storeHostFunctions,
   dynamicDsHostFunctions,
   HostUnfinalizedBlocks,
+  PoiSyncService,
 } from '@subql/node-core';
 import { Store } from '@subql/types-core';
 import { NearDatasource } from '@subql/types-near';
@@ -91,6 +92,7 @@ export class WorkerBlockDispatcherService
     storeService: StoreService,
     storeCacheService: StoreCacheService,
     poiService: PoiService,
+    poiSyncService: PoiSyncService,
     @Inject('ISubqueryProject') project: SubqueryProject,
     dynamicDsService: DynamicDsService,
     unfinalizedBlocksSevice: UnfinalizedBlocksService,
@@ -105,6 +107,7 @@ export class WorkerBlockDispatcherService
       storeService,
       storeCacheService,
       poiService,
+      poiSyncService,
       project,
       dynamicDsService,
       () =>

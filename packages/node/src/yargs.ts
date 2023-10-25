@@ -13,7 +13,7 @@ export const yargsOptions = yargs(hideBin(process.argv))
     builder: {},
     handler: (argv) => {
       initLogger(
-        argv.debug as boolean,
+        argv.debug as string,
         argv.outputFmt as 'json' | 'colored',
         argv.logLevel as string | undefined,
       );
@@ -30,7 +30,7 @@ export const yargsOptions = yargs(hideBin(process.argv))
     builder: {},
     handler: (argv) => {
       initLogger(
-        argv.debug as boolean,
+        argv.debug as string,
         argv.outputFmt as 'json' | 'colored',
         argv.logLevel as string | undefined,
       );
@@ -53,7 +53,7 @@ export const yargsOptions = yargs(hideBin(process.argv))
       }),
     handler: (argv) => {
       initLogger(
-        argv.debug as boolean,
+        argv.debug as string,
         argv.outputFmt as 'json' | 'colored',
         argv.logLevel as string | undefined,
       );
@@ -61,81 +61,6 @@ export const yargsOptions = yargs(hideBin(process.argv))
       // eslint-disable-next-line @typescript-eslint/no-var-requires
       const { reindexInit } = require('./subcommands/reindex.init');
       return reindexInit(argv.targetHeight);
-    },
-  })
-  .command({
-    command: 'mmr-regen',
-    describe:
-      'Re-generate mmr between Filebased/Postgres mmr and Proof of index',
-    builder: (yargs) =>
-      yargs.options({
-        probe: {
-          type: 'boolean',
-          description:
-            'Fetch latest mmr height information from file based/postgres DB and Poi table',
-          demandOption: false,
-          default: false,
-        },
-        resetOnly: {
-          type: 'boolean',
-          description:
-            'Only reset the mmr value in both POI and file based/postgres DB to target height',
-          demandOption: false,
-          default: false,
-        },
-        targetHeight: {
-          type: 'number',
-          description: 'Re-genrate mmr value from this block height',
-          demandOption: false,
-        },
-        unsafe: {
-          type: 'boolean',
-          description: 'Allow sync mmr from Poi table to file or a postgres DB',
-          demandOption: false,
-          default: false,
-        },
-      }),
-    handler: (argv) => {
-      initLogger(
-        argv.debug as boolean,
-        argv.outputFmt as 'json' | 'colored',
-        argv.logLevel as string | undefined,
-      );
-
-      // lazy import to make sure logger is instantiated before all other services
-      // eslint-disable-next-line @typescript-eslint/no-var-requires
-      const { mmrRegenerateInit } = require('./subcommands/mmrRegenerate.init');
-      return mmrRegenerateInit(
-        argv.probe,
-        argv.resetOnly,
-        argv.unsafe,
-        argv.targetHeight,
-      );
-    },
-  })
-  .command({
-    command: 'mmr-migrate',
-    describe: 'Migrate MMR data from storage file to postgres DB',
-    builder: (yargs) =>
-      yargs.options({
-        direction: {
-          type: 'string',
-          description: 'set direction of migration (file -> DB or DB -> file)',
-          demandOption: false,
-          choices: ['dbToFile', 'fileToDb'],
-          default: 'dbToFile',
-        },
-      }),
-    handler: (argv) => {
-      initLogger(
-        argv.debug as boolean,
-        argv.outputFmt as 'json' | 'colored',
-        argv.logLevel as string | undefined,
-      );
-      // lazy import to make sure logger is instantiated before all other services
-      // eslint-disable-next-line @typescript-eslint/no-var-requires
-      const { mmrMigrateInit } = require('./subcommands/mmrMigrate.init');
-      return mmrMigrateInit(argv.direction);
     },
   })
   // Note we must have default command $0 at last to avoid override
@@ -311,10 +236,8 @@ export const yargsOptions = yargs(hideBin(process.argv))
     },
     debug: {
       demandOption: false,
-      describe:
-        'Show debug information to console output. will forcefully set log level to debug',
-      type: 'boolean',
-      default: false,
+      describe: `Enable debug logging for specific scopes, this will override log-level. "*" will enable debug everywhere, or comma separated strings for specific scopes. e.g. "SQL,dictionary"`,
+      type: 'string',
     },
     ipfs: {
       demandOption: false,
