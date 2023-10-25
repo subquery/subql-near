@@ -44,7 +44,7 @@ export class TestingService extends BaseTestingService<
     const testContext = await NestFactory.createApplicationContext(
       TestingModule,
       {
-        logger: new NestLogger(),
+        logger: new NestLogger(!!this.nodeConfig.debug),
       },
     );
 
