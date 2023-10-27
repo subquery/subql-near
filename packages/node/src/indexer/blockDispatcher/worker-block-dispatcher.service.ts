@@ -26,8 +26,10 @@ import {
   dynamicDsHostFunctions,
   HostUnfinalizedBlocks,
   PoiSyncService,
+  cacheHostFunctions,
+  InMemoryCacheService,
 } from '@subql/node-core';
-import { Store } from '@subql/types-core';
+import { Store, Cache } from '@subql/types-core';
 import { NearDatasource } from '@subql/types-near';
 import {
   NearProjectDs,
@@ -45,6 +47,7 @@ type IndexerWorker = IIndexerWorker & {
 
 async function createIndexerWorker(
   store: Store,
+  cache: Cache,
   dynamicDsService: IDynamicDsService<NearDatasource>,
   unfinalizedBlocksService: IUnfinalizedBlocksService<BlockContent>,
   connectionPoolState: ConnectionPoolStateManager<NearApiConnection>,
@@ -62,6 +65,7 @@ async function createIndexerWorker(
     [...baseWorkerFunctions, 'initWorker'],
     {
       ...storeHostFunctions(store),
+      ...cacheHostFunctions(cache),
       ...dynamicDsHostFunctions(dynamicDsService),
       unfinalizedBlocksProcess:
         unfinalizedBlocksService.processUnfinalizedBlockHeader.bind(
@@ -89,6 +93,7 @@ export class WorkerBlockDispatcherService
     @Inject('IProjectUpgradeService')
     projectUpgradeService: IProjectUpgradeService,
     smartBatchService: SmartBatchService,
+    cacheService: InMemoryCacheService,
     storeService: StoreService,
     storeCacheService: StoreCacheService,
     poiService: PoiService,
@@ -113,6 +118,7 @@ export class WorkerBlockDispatcherService
       () =>
         createIndexerWorker(
           storeService.getStore(),
+          cacheService.getCache(),
           dynamicDsService,
           unfinalizedBlocksSevice,
           connectionPoolState,
