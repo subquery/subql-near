@@ -5,6 +5,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+
+## [3.1.0] - 2023-11-01
 ### Changed
 - Import `@subql/types-core` global into global so its no longer needed to update tsconfig in projects (#74)
 
@@ -49,7 +51,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Args type for funciton calls (#9)
 
 ## [1.0.0] - 2023-01-26
-[Unreleased]: https://github.com/subquery/subql-near/compare/types-near/3.0.1...HEAD
+[Unreleased]: https://github.com/subquery/subql-near/compare/types-near/3.1.0...HEAD
+[3.1.0]: https://github.com/subquery/subql-near/compare/types-near/3.0.1...types-near/3.1.0
 [3.0.1]: https://github.com/subquery/subql-near/compare/types-near/3.0.0...types-near/3.0.1
 [3.0.0]: https://github.com/subquery/subql-near/compare/types-near/2.1.3...types-near/3.0.0
 [2.1.3]: https://github.com/subquery/subql-near/compare/types-near/v2.1.2...types-near/v2.1.3
