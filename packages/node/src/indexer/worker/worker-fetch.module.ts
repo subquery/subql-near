@@ -10,6 +10,7 @@ import {
   ConnectionPoolStateManager,
   NodeConfig,
   InMemoryCacheService,
+  WorkerInMemoryCacheService,
 } from '@subql/node-core';
 import { SubqueryProject } from '../../configure/SubqueryProject';
 import { ApiService } from '../api.service';
@@ -22,7 +23,6 @@ import { SandboxService } from '../sandbox.service';
 import { UnfinalizedBlocksService } from '../unfinalizedBlocks.service';
 import { WorkerService } from '../worker/worker.service';
 import { WorkerUnfinalizedBlocksService } from '../worker/worker.unfinalizedBlocks.service';
-import { WorkerInMemoryCacheService } from './worker.cache.service';
 
 @Module({
   providers: [

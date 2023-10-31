@@ -6,30 +6,18 @@ import { Inject, Injectable, OnApplicationShutdown } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import {
   NodeConfig,
-  Worker,
   SmartBatchService,
   StoreService,
   PoiService,
   StoreCacheService,
   IProjectService,
-  IDynamicDsService,
-  HostStore,
-  HostDynamicDS,
   WorkerBlockDispatcher,
-  IUnfinalizedBlocksService,
-  HostConnectionPoolState,
   ConnectionPoolStateManager,
-  connectionPoolStateHostFunctions,
   IProjectUpgradeService,
-  baseWorkerFunctions,
-  storeHostFunctions,
-  dynamicDsHostFunctions,
-  HostUnfinalizedBlocks,
   PoiSyncService,
-  cacheHostFunctions,
   InMemoryCacheService,
+  createIndexerWorker,
 } from '@subql/node-core';
-import { Store, Cache } from '@subql/types-core';
 import { NearDatasource } from '@subql/types-near';
 import {
   NearProjectDs,
@@ -39,47 +27,11 @@ import { DynamicDsService } from '../dynamic-ds.service';
 import { NearApiConnection } from '../nearApi.connection';
 import { BlockContent } from '../types';
 import { UnfinalizedBlocksService } from '../unfinalizedBlocks.service';
-import { IIndexerWorker, IInitIndexerWorker } from '../worker/worker';
+import { IIndexerWorker } from '../worker/worker';
 
 type IndexerWorker = IIndexerWorker & {
   terminate: () => Promise<number>;
 };
-
-async function createIndexerWorker(
-  store: Store,
-  cache: Cache,
-  dynamicDsService: IDynamicDsService<NearDatasource>,
-  unfinalizedBlocksService: IUnfinalizedBlocksService<BlockContent>,
-  connectionPoolState: ConnectionPoolStateManager<NearApiConnection>,
-  root: string,
-  startHeight: number,
-): Promise<IndexerWorker> {
-  const indexerWorker = Worker.create<
-    IInitIndexerWorker,
-    HostDynamicDS<NearDatasource> &
-      HostStore &
-      HostUnfinalizedBlocks &
-      HostConnectionPoolState<NearApiConnection>
-  >(
-    path.resolve(__dirname, '../../../dist/indexer/worker/worker.js'),
-    [...baseWorkerFunctions, 'initWorker'],
-    {
-      ...storeHostFunctions(store),
-      ...cacheHostFunctions(cache),
-      ...dynamicDsHostFunctions(dynamicDsService),
-      unfinalizedBlocksProcess:
-        unfinalizedBlocksService.processUnfinalizedBlockHeader.bind(
-          unfinalizedBlocksService,
-        ),
-      ...connectionPoolStateHostFunctions(connectionPoolState),
-    },
-    root,
-  );
-
-  await indexerWorker.initWorker(startHeight);
-
-  return indexerWorker;
-}
 
 @Injectable()
 export class WorkerBlockDispatcherService
@@ -116,7 +68,14 @@ export class WorkerBlockDispatcherService
       project,
       dynamicDsService,
       () =>
-        createIndexerWorker(
+        createIndexerWorker<
+          IIndexerWorker,
+          NearApiConnection,
+          BlockContent,
+          NearDatasource
+        >(
+          path.resolve(__dirname, '../../../dist/indexer/worker/worker.js'),
+          [],
           storeService.getStore(),
           cacheService.getCache(),
           dynamicDsService,
