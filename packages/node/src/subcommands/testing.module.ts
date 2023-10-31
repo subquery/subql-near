@@ -8,8 +8,11 @@ import {
   ConnectionPoolService,
   ConnectionPoolStateManager,
   DbModule,
+  InMemoryCacheService,
   NodeConfig,
   PoiService,
+  PoiSyncService,
+  StoreCacheService,
   StoreService,
   TestRunner,
 } from '@subql/node-core';
@@ -28,9 +31,12 @@ import { MetaModule } from '../meta/meta.module';
 
 @Module({
   providers: [
+    InMemoryCacheService,
     StoreService,
+    StoreCacheService,
     EventEmitter2,
     PoiService,
+    PoiSyncService,
     SandboxService,
     DsProcessorService,
     DynamicDsService,

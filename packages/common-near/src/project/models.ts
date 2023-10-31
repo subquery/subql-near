@@ -1,7 +1,7 @@
 // Copyright 2020-2023 SubQuery Pte Ltd authors & contributors
 // SPDX-License-Identifier: GPL-3.0
 
-import {BlockFilterImpl, ProcessorImpl} from '@subql/common';
+import {BaseDataSource, BlockFilterImpl, ProcessorImpl} from '@subql/common';
 import {BaseMapping, FileReference, Processor} from '@subql/types-core';
 import {
   CustomDataSourceAsset as NearCustomDataSourceAsset,
@@ -201,17 +201,12 @@ export class CustomMapping implements BaseMapping<NearCustomHandler> {
   file: string;
 }
 
-export class RuntimeDataSourceBase implements NearRuntimeDatasource {
+export class RuntimeDataSourceBase extends BaseDataSource implements NearRuntimeDatasource {
   @IsEnum(NearDatasourceKind, {groups: [NearDatasourceKind.Runtime]})
   kind: NearDatasourceKind.Runtime;
   @Type(() => RuntimeMapping)
   @ValidateNested()
   mapping: RuntimeMapping;
-  //must be greater than genesis block
-  @Min(9820210)
-  @IsOptional()
-  @IsInt()
-  startBlock?: number;
 }
 
 export class FileReferenceImpl implements FileReference {
@@ -220,6 +215,7 @@ export class FileReferenceImpl implements FileReference {
 }
 
 export class CustomDataSourceBase<K extends string, M extends CustomMapping, O = any>
+  extends BaseDataSource
   implements NearCustomDatasource<K, M>
 {
   @IsString()
@@ -227,9 +223,6 @@ export class CustomDataSourceBase<K extends string, M extends CustomMapping, O =
   @Type(() => CustomMapping)
   @ValidateNested()
   mapping: M;
-  @IsOptional()
-  @IsInt()
-  startBlock?: number;
   @Type(() => FileReferenceImpl)
   @ValidateNested({each: true})
   assets: Map<string, NearCustomDataSourceAsset>;
