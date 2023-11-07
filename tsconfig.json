@@ -21,7 +21,7 @@
       "@subql/common-near": ["packages/common-near/src"],
       "@subql/common-near/*": ["packages/common-near/src/*"],
       "@subql/types-near": ["packages/types/src"],
-      "@subql/types-near/*": ["packages/types/src/*"],
+      "@subql/types-near/*": ["packages/types/src/*"]
     },
     "skipLibCheck": true
   },
