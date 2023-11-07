@@ -21,14 +21,14 @@
       "@subql/common-near": ["packages/common-near/src"],
       "@subql/common-near/*": ["packages/common-near/src/*"],
       "@subql/types-near": ["packages/types/src"],
-      "@subql/types-near/*": ["packages/types/src/*"],
+      "@subql/types-near/*": ["packages/types/src/*"]
     },
     "skipLibCheck": true
   },
   "references": [
     {"path": "packages/common-near"},
     {"path": "packages/node"},
-    {"path": "packages/types"},
+    {"path": "packages/types"}
   ],
   "include": ["packages/**/*"],
   "exclude": ["**/node_modules/**"],
