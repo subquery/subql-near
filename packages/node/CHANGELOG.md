@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Updates to match changes in `@subql/node-core` (#83)
   - Dictionary service to use dictionary registry
   - Use yargs from node core
+### Fixed
+- Unable to skip unavailable blocks on workers (#82)
 
 ## [3.3.0] - 2023-11-06
 ### Added
