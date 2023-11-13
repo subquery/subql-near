@@ -8,20 +8,15 @@ import {
   ProcessBlockResponse,
   BaseWorkerService,
   IProjectUpgradeService,
+  BlockUnavailableError,
 } from '@subql/node-core';
+
 import { NearDatasource } from '@subql/types-near';
 import { ApiService } from '../api.service';
 import { IndexerManager } from '../indexer.manager';
 import { BlockContent } from '../types';
 
 export type FetchBlockResponse = { parentHash: string } | undefined;
-
-class BlockUnavailableError extends Error {
-  constructor(message: string) {
-    super(message);
-    this.name = 'BlockUnavailableError';
-  }
-}
 
 @Injectable()
 export class WorkerService extends BaseWorkerService<
@@ -49,9 +44,11 @@ export class WorkerService extends BaseWorkerService<
     const [block] = await this.apiService.fetchBlocks([heights]);
     return block;
   }
-  protected toBlockResponse(block: BlockContent): { parentHash: string } {
+  protected toBlockResponse(block: BlockContent): {
+    parentHash: string | undefined;
+  } {
     return {
-      parentHash: block.block.header.prev_hash,
+      parentHash: block?.block.header.prev_hash,
     };
   }
   protected async processFetchedBlock(
@@ -59,7 +56,7 @@ export class WorkerService extends BaseWorkerService<
     dataSources: NearDatasource[],
   ): Promise<ProcessBlockResponse> {
     if (block === null) {
-      throw new BlockUnavailableError(`Block is unavailable in the chain`);
+      throw new BlockUnavailableError();
     }
     return this.indexerManager.indexBlock(block, dataSources);
   }
