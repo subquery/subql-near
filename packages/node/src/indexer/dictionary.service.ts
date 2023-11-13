@@ -35,7 +35,7 @@ export class DictionaryService extends CoreDictionaryService {
     const url =
       project.network.dictionary ??
       (await CoreDictionaryService.resolveDictionary(
-        NETWORK_FAMILY.cosmos,
+        NETWORK_FAMILY.near,
         project.network.chainId,
         nodeConfig.dictionaryRegistry,
       ));
