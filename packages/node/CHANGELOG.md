@@ -164,7 +164,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add `toJson` method to function args (#9)
 
 ## 1.18.0 - 2023-01-26
-[Unreleased]: https://github.com/subquery/subql-near/compare/node-near/3.4.0...HEAD
+[Unreleased]: https://github.com/subquery/subql-near/compare/node-near/3.4.1...HEAD
+[3.4.1]: https://github.com/subquery/subql-near/compare/node-near/3.4.0...node-near/3.4.1
 [3.4.0]: https://github.com/subquery/subql-near/compare/node-near/3.3.0...node-near/3.4.0
 [3.3.0]: https://github.com/subquery/subql-near/compare/node-near/3.2.0...node-near/3.3.0
 [3.2.0]: https://github.com/subquery/subql-near/compare/node-near/3.1.1...node-near/3.2.0
