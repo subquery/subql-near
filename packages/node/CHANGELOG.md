@@ -6,6 +6,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.4.4] - 2023-11-28
+### Fixed
+- Fix ipfs deployment templates path failed to resolved, issue was introduced node-core 7.0.0
+- Update with node-core to fix network dictionary timeout but not fallback to config dictionary issue
+
 ## [3.4.3] - 2023-11-27
 ### Changed
 - Update `@subql/node-core` with minor fixes
@@ -172,7 +177,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add `toJson` method to function args (#9)
 
 ## 1.18.0 - 2023-01-26
-[Unreleased]: https://github.com/subquery/subql-near/compare/node-near/3.4.3...HEAD
+[Unreleased]: https://github.com/subquery/subql-near/compare/node-near/3.4.4...HEAD
+[3.4.4]: https://github.com/subquery/subql-near/compare/node-near/3.4.3...node-near/3.4.4
 [3.4.3]: https://github.com/subquery/subql-near/compare/node-near/3.4.2...node-near/3.4.3
 [3.4.2]: https://github.com/subquery/subql-near/compare/node-near/3.4.1...node-near/3.4.2
 [3.4.1]: https://github.com/subquery/subql-near/compare/node-near/3.4.0...node-near/3.4.1
