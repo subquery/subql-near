@@ -6,6 +6,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.4.5] - 2023-11-30
+### Fixed
+- Sync with `node-core` 7.0.2
+
 ## [3.4.4] - 2023-11-28
 ### Fixed
 - Fix ipfs deployment templates path failed to resolved, issue was introduced node-core 7.0.0
@@ -177,7 +181,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add `toJson` method to function args (#9)
 
 ## 1.18.0 - 2023-01-26
-[Unreleased]: https://github.com/subquery/subql-near/compare/node-near/3.4.4...HEAD
+[Unreleased]: https://github.com/subquery/subql-near/compare/node-near/3.4.5...HEAD
+[3.4.5]: https://github.com/subquery/subql-near/compare/node-near/3.4.4...node-near/3.4.5
 [3.4.4]: https://github.com/subquery/subql-near/compare/node-near/3.4.3...node-near/3.4.4
 [3.4.3]: https://github.com/subquery/subql-near/compare/node-near/3.4.2...node-near/3.4.3
 [3.4.2]: https://github.com/subquery/subql-near/compare/node-near/3.4.1...node-near/3.4.2
