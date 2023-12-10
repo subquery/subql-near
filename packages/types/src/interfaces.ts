@@ -99,7 +99,7 @@ export interface DeleteAccount {
 
 export interface SignedDelegate {
   delegate_action: DelegateAction;
-  signature: {signature: Uint8Array; public_key: string};
+  signature: string;
 }
 
 export interface DelegateAction {
