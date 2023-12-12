@@ -102,7 +102,7 @@ export interface SignedDelegate {
   signature: string;
 }
 
-export type NonDelegateAction = Exclude<Action, SignedDelegate>;
+export type NonDelegateAction = Record<Exclude<ActionType, 'SignedDelegate'>, Exclude<Action, SignedDelegate>>;
 
 export interface DelegateAction {
   /// Signer of the delegated actions
@@ -110,7 +110,7 @@ export interface DelegateAction {
   /// Receiver of the delegated actions.
   receiver_id: string;
   /// List of actions to be executed.
-  actions: NearAction<NonDelegateAction>[];
+  actions: NonDelegateAction[];
   /// Nonce to ensure that the same delegate action is not sent twice by a relayer and should match for given account's `public_key`.
   /// After this action is processed it will increment.
   nonce: BN;
