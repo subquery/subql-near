@@ -6,6 +6,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.4.6] - 2023-12-12
+### Changed
+- Update `@subql/types-near` (#90)
+
 ## [3.4.5] - 2023-11-30
 ### Fixed
 - Sync with `node-core` 7.0.2
@@ -181,7 +185,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add `toJson` method to function args (#9)
 
 ## 1.18.0 - 2023-01-26
-[Unreleased]: https://github.com/subquery/subql-near/compare/node-near/3.4.5...HEAD
+[Unreleased]: https://github.com/subquery/subql-near/compare/node-near/3.4.6...HEAD
+[3.4.6]: https://github.com/subquery/subql-near/compare/node-near/3.4.5...node-near/3.4.6
 [3.4.5]: https://github.com/subquery/subql-near/compare/node-near/3.4.4...node-near/3.4.5
 [3.4.4]: https://github.com/subquery/subql-near/compare/node-near/3.4.3...node-near/3.4.4
 [3.4.3]: https://github.com/subquery/subql-near/compare/node-near/3.4.2...node-near/3.4.3
