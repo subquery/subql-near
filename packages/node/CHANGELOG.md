@@ -6,6 +6,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.5.0] - 2024-01-25
+### Changed
+- Update @subql/node-core with
+  - a performance fix when using modulo filters with other datasources
+  - support for CSV exports
+  - support for schema migrations
 
 ## [3.4.6] - 2023-12-12
 ### Changed
@@ -34,7 +40,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [3.4.0] - 2023-11-14
 ### Changed
-- Updates to match changes in `@subql/node-core` (#83)
+- Updates to match changes in 
   - Dictionary service to use dictionary registry
   - Use yargs from node core
 
@@ -186,7 +192,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add `toJson` method to function args (#9)
 
 ## 1.18.0 - 2023-01-26
-[Unreleased]: https://github.com/subquery/subql-near/compare/node-near/3.4.6...HEAD
+[Unreleased]: https://github.com/subquery/subql-near/compare/node-near/3.5.0...HEAD
+[3.5.0]: https://github.com/subquery/subql-near/compare/node-near/3.4.6...node-near/3.5.0
 [3.4.6]: https://github.com/subquery/subql-near/compare/node-near/3.4.5...node-near/3.4.6
 [3.4.5]: https://github.com/subquery/subql-near/compare/node-near/3.4.4...node-near/3.4.5
 [3.4.4]: https://github.com/subquery/subql-near/compare/node-near/3.4.3...node-near/3.4.4
