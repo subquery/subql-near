@@ -6,6 +6,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.5.1] - 2024-02-07
+### Fixed
+- Critical bug introduced in 3.5.0 which broke historical indexing
+
 ## [3.5.0] - 2024-01-25
 ### Changed
 - Update @subql/node-core with
@@ -40,7 +44,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [3.4.0] - 2023-11-14
 ### Changed
-- Updates to match changes in `@subql/node-core` (#83)
+- Updates to match changes in
   - Dictionary service to use dictionary registry
   - Use yargs from node core
 
@@ -192,7 +196,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add `toJson` method to function args (#9)
 
 ## 1.18.0 - 2023-01-26
-[Unreleased]: https://github.com/subquery/subql-near/compare/node-near/3.5.0...HEAD
+[Unreleased]: https://github.com/subquery/subql-near/compare/node-near/3.5.1...HEAD
+[3.5.1]: https://github.com/subquery/subql-near/compare/node-near/3.5.0...node-near/3.5.1
 [3.5.0]: https://github.com/subquery/subql-near/compare/node-near/3.4.6...node-near/3.5.0
 [3.4.6]: https://github.com/subquery/subql-near/compare/node-near/3.4.5...node-near/3.4.6
 [3.4.5]: https://github.com/subquery/subql-near/compare/node-near/3.4.4...node-near/3.4.5
