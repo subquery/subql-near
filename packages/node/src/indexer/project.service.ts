@@ -11,6 +11,7 @@ import {
   NodeConfig,
   IProjectUpgradeService,
   PoiSyncService,
+  profiler,
 } from '@subql/node-core';
 import { Sequelize } from '@subql/x-sequelize';
 import { NearProjectDs, SubqueryProject } from '../configure/SubqueryProject';
@@ -60,6 +61,11 @@ export class ProjectService extends BaseProjectService<
       eventEmitter,
       unfinalizedBlockService,
     );
+  }
+
+  @profiler()
+  async init(startHeight?: number): Promise<void> {
+    return super.init(startHeight);
   }
 
   protected async getBlockTimestamp(height: number): Promise<Date> {
