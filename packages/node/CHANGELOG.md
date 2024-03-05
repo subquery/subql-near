@@ -6,6 +6,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.9.0] - 2024-03-06
+### Changed
+- Update `@subql/node-core` to 7.4.0
+
 ## [3.8.1] - 2024-03-01
 ### Fixed
 - Update `@subql/node-core` to fix Poi generation issue with negative integer, also drop subscription triggers and notifiy_functions
@@ -204,7 +208,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add `toJson` method to function args (#9)
 
 ## 1.18.0 - 2023-01-26
-[Unreleased]: https://github.com/subquery/subql-near/compare/node-near/3.8.1...HEAD
+[Unreleased]: https://github.com/subquery/subql-near/compare/node-near/3.9.0...HEAD
+[3.9.0]: https://github.com/subquery/subql-near/compare/node-near/3.8.1...node-near/3.9.0
 [3.8.1]: https://github.com/subquery/subql-near/compare/node-near/3.8.0...node-near/3.8.1
 [3.8.0]: https://github.com/subquery/subql-near/compare/node-near/3.5.1...node-near/3.8.0
 [3.5.1]: https://github.com/subquery/subql-near/compare/node-near/3.5.0...node-near/3.5.1
