@@ -6,6 +6,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.10.0] - 2024-04-08
+### Changed
+- Update `@subql/common` to 3.5.0, also allow user use array for dictionary
+
 ## [3.9.1] - 2024-03-14
 ### Changed
 - Update `@subql/node-core` to 4.7.2 with graphql comments escaping fix
@@ -212,7 +216,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add `toJson` method to function args (#9)
 
 ## 1.18.0 - 2023-01-26
-[Unreleased]: https://github.com/subquery/subql-near/compare/node-near/3.9.1...HEAD
+[Unreleased]: https://github.com/subquery/subql-near/compare/node-near/3.10.0...HEAD
+[3.10.0]: https://github.com/subquery/subql-near/compare/node-near/3.9.1...node-near/3.10.0
 [3.9.1]: https://github.com/subquery/subql-near/compare/node-near/3.9.0...node-near/3.9.1
 [3.9.0]: https://github.com/subquery/subql-near/compare/node-near/3.8.1...node-near/3.9.0
 [3.8.1]: https://github.com/subquery/subql-near/compare/node-near/3.8.0...node-near/3.8.1

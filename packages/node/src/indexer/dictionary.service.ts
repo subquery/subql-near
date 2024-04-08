@@ -18,13 +18,11 @@ export class DictionaryService extends CoreDictionaryService {
     eventEmitter: EventEmitter2,
     dictionaryUrl?: string,
   ) {
-    super(
-      dictionaryUrl ?? project.network.dictionary,
-      project.network.chainId,
-      nodeConfig,
-      eventEmitter,
-      ['lastProcessedHeight', 'genesisHash', 'chain'],
-    );
+    super(dictionaryUrl, project.network.chainId, nodeConfig, eventEmitter, [
+      'lastProcessedHeight',
+      'genesisHash',
+      'chain',
+    ]);
   }
 
   static async create(
@@ -32,14 +30,16 @@ export class DictionaryService extends CoreDictionaryService {
     nodeConfig: NodeConfig,
     eventEmitter: EventEmitter2,
   ): Promise<DictionaryService> {
-    const url =
+    let url =
       project.network.dictionary ??
       (await CoreDictionaryService.resolveDictionary(
         NETWORK_FAMILY.near,
         project.network.chainId,
         nodeConfig.dictionaryRegistry,
       ));
-
+    if (Array.isArray(url)) {
+      url = url[0];
+    }
     return new DictionaryService(project, nodeConfig, eventEmitter, url);
   }
 }
