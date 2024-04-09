@@ -1,7 +1,7 @@
 // Copyright 2020-2024 SubQuery Pte Ltd authors & contributors
 // SPDX-License-Identifier: GPL-3.0
 
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import {
   isBlockHandlerProcessor,
   isActionHandlerProcessor,
@@ -14,11 +14,11 @@ import {
 } from '@subql/common-near';
 import {
   NodeConfig,
-  getLogger,
   profiler,
   IndexerSandbox,
   ProcessBlockResponse,
   BaseIndexerManager,
+  IBlock,
 } from '@subql/node-core';
 import {
   NearBlock,
@@ -41,8 +41,6 @@ import { DynamicDsService } from './dynamic-ds.service';
 import { SandboxService } from './sandbox.service';
 import { BlockContent } from './types';
 import { UnfinalizedBlocksService } from './unfinalizedBlocks.service';
-
-const logger = getLogger('indexer');
 
 @Injectable()
 export class IndexerManager extends BaseIndexerManager<
@@ -82,11 +80,11 @@ export class IndexerManager extends BaseIndexerManager<
 
   @profiler()
   async indexBlock(
-    block: BlockContent,
+    block: IBlock<BlockContent>,
     dataSources: NearDatasource[],
   ): Promise<ProcessBlockResponse> {
     return super.internalIndexBlock(block, dataSources, () =>
-      this.getApi(block),
+      this.getApi(block.block),
     );
   }
 

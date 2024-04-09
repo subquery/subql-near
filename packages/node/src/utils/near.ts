@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: GPL-3.0
 
 import { BN } from '@polkadot/util';
-import { getLogger } from '@subql/node-core';
+import { getLogger, Header, IBlock } from '@subql/node-core';
 import {
   NearBlockFilter,
   NearTransactionFilter,
@@ -27,7 +27,11 @@ import {
 } from '@subql/types-near';
 import { get, range } from 'lodash';
 import { providers } from 'near-api-js';
-import { BlockResult, Transaction } from 'near-api-js/lib/providers/provider';
+import {
+  BlockHeader,
+  BlockResult,
+  Transaction,
+} from 'near-api-js/lib/providers/provider';
 import { SubqlProjectBlockFilter } from '../configure/SubqueryProject';
 import { BlockContent } from '../indexer/types';
 
@@ -486,21 +490,38 @@ export async function fetchBlocksArray(
   return results;
 }
 
+export function nearHeaderToHeader(header: BlockHeader): Header {
+  return {
+    blockHeight: header.height,
+    blockHash: header.hash,
+    parentHash: header.prev_hash,
+  };
+}
+
+export function formatBlockUtil<B extends BlockContent = BlockContent>(
+  block: B,
+): IBlock<B> {
+  return {
+    block,
+    getHeader: () => nearHeaderToHeader(block.block.header),
+  };
+}
+
 export async function fetchBlocksBatches(
   api: providers.JsonRpcProvider,
   blockArray: number[],
-): Promise<BlockContent[]> {
+): Promise<IBlock<BlockContent>[]> {
   const blocks = await fetchBlocksArray(api, blockArray);
 
   const blockContentPromises = blocks.map(async (blockResult) => {
     if (blockResult === null) return null; // unavailable blocks
     const block = await wrapBlock(api, blockResult);
-    return {
+    return formatBlockUtil({
       block,
       transactions: block.transactions,
       actions: block.actions,
       receipts: block.receipts,
-    };
+    });
   });
 
   return Promise.all(blockContentPromises);

@@ -9,6 +9,7 @@ import {
   BaseWorkerService,
   IProjectUpgradeService,
   BlockUnavailableError,
+  IBlock,
 } from '@subql/node-core';
 
 import { NearDatasource } from '@subql/types-near';
@@ -40,7 +41,7 @@ export class WorkerService extends BaseWorkerService<
   protected async fetchChainBlock(
     heights: number,
     extra: {},
-  ): Promise<BlockContent> {
+  ): Promise<IBlock<BlockContent>> {
     const [block] = await this.apiService.fetchBlocks([heights]);
     return block;
   }
@@ -52,7 +53,7 @@ export class WorkerService extends BaseWorkerService<
     };
   }
   protected async processFetchedBlock(
-    block: BlockContent,
+    block: IBlock<BlockContent>,
     dataSources: NearDatasource[],
   ): Promise<ProcessBlockResponse> {
     if (block === null) {

@@ -7,107 +7,30 @@ import { SchedulerRegistry } from '@nestjs/schedule';
 
 import {
   isCustomDs,
-  isRuntimeDs,
-  NearBlockFilter,
-  NearTransactionFilter,
   NearDataSource,
-  NearActionFilter,
-  NearHandler,
   NearHandlerKind,
-  NearRuntimeHandlerFilter,
 } from '@subql/common-near';
-import {
-  NodeConfig,
-  BaseFetchService,
-  IApi,
-  getModulos,
-} from '@subql/node-core';
-import {
-  DictionaryQueryCondition,
-  DictionaryQueryEntry,
-} from '@subql/types-core';
-import {
-  NearCustomHandler,
-  NearDatasource,
-  NearReceiptFilter,
-} from '@subql/types-near';
-import { sortBy, uniqBy } from 'lodash';
+import { NodeConfig, BaseFetchService, getModulos } from '@subql/node-core';
+import { NearBlock, NearDatasource } from '@subql/types-near';
 import { JsonRpcProvider } from 'near-api-js/lib/providers';
 import { SubqueryProject } from '../configure/SubqueryProject';
-import { calcInterval } from '../utils/near';
-import { isBaseHandler, isCustomHandler } from '../utils/project';
+import { calcInterval, nearHeaderToHeader } from '../utils/near';
 import { ApiService } from './api.service';
-import { INearBlockDispatcher } from './blockDispatcher/near-block-dispatcher';
-import { DictionaryService } from './dictionary.service';
+import { INearBlockDispatcher } from './blockDispatcher';
+import { NearDictionaryService } from './dictionary';
 import { DsProcessorService } from './ds-processor.service';
 import { DynamicDsService } from './dynamic-ds.service';
 import { ProjectService } from './project.service';
-import {
-  UnfinalizedBlocksService,
-  nearHeaderToHeader,
-} from './unfinalizedBlocks.service';
+import { UnfinalizedBlocksService } from './unfinalizedBlocks.service';
 
 const BLOCK_TIME_VARIANCE = 5000; //ms
-const DICTIONARY_MAX_QUERY_SIZE = 10000;
-const CHECK_MEMORY_INTERVAL = 60000;
 const INTERVAL_PERCENT = 0.9;
-
-function txFilterToQueryEntry(
-  filter: NearTransactionFilter,
-): DictionaryQueryEntry {
-  const conditions: DictionaryQueryCondition[] = Object.entries(filter).map(
-    ([field, value]) => ({
-      field,
-      value,
-      matcher: 'equalTo',
-    }),
-  );
-
-  return {
-    entity: 'transactions',
-    conditions: conditions,
-  };
-}
-
-function receiptFilterToQueryEntry(
-  filter: NearReceiptFilter,
-): DictionaryQueryEntry {
-  const conditions: DictionaryQueryCondition[] = Object.entries(filter).map(
-    ([field, value]) => ({
-      field,
-      value,
-      matcher: 'equalTo',
-    }),
-  );
-
-  return {
-    entity: 'receipts',
-    conditions: conditions,
-  };
-}
-
-function actionFilterToQueryEntry(
-  filter: NearActionFilter,
-): DictionaryQueryEntry {
-  const conditions: DictionaryQueryCondition[] = Object.entries(filter).map(
-    ([field, value]) => ({
-      field,
-      value,
-      matcher: 'equalTo',
-    }),
-  );
-
-  return {
-    entity: 'actions',
-    conditions: conditions,
-  };
-}
 
 @Injectable()
 export class FetchService extends BaseFetchService<
   NearDatasource,
   INearBlockDispatcher,
-  DictionaryService
+  NearBlock
 > {
   constructor(
     private apiService: ApiService,
@@ -116,7 +39,7 @@ export class FetchService extends BaseFetchService<
     @Inject('ISubqueryProject') project: SubqueryProject,
     @Inject('IBlockDispatcher')
     blockDispatcher: INearBlockDispatcher,
-    dictionaryService: DictionaryService,
+    dictionaryService: NearDictionaryService,
     private dsProcessorService: DsProcessorService,
     dynamicDsService: DynamicDsService,
     private unfinalizedBlocksService: UnfinalizedBlocksService,
@@ -129,7 +52,6 @@ export class FetchService extends BaseFetchService<
       project.network,
       blockDispatcher,
       dictionaryService,
-      dynamicDsService,
       eventEmitter,
       schedulerRegistry,
     );
@@ -137,106 +59,6 @@ export class FetchService extends BaseFetchService<
 
   get api(): JsonRpcProvider {
     return this.apiService.unsafeApi;
-  }
-
-  buildDictionaryQueryEntries(
-    dataSources: NearDatasource[],
-  ): DictionaryQueryEntry[] {
-    const queryEntries: DictionaryQueryEntry[] = [];
-
-    for (const ds of dataSources) {
-      const plugin = isCustomDs(ds)
-        ? this.dsProcessorService.getDsProcessor(ds)
-        : undefined;
-      for (const handler of ds.mapping.handlers) {
-        const baseHandlerKind = this.getBaseHandlerKind(ds, handler);
-        let filterList: NearRuntimeHandlerFilter[];
-        if (isCustomDs(ds)) {
-          const processor = plugin.handlerProcessors[handler.kind];
-          if (processor.dictionaryQuery) {
-            const queryEntry = processor.dictionaryQuery(
-              (handler as NearCustomHandler).filter,
-              ds,
-            );
-            if (queryEntry) {
-              queryEntries.push(queryEntry);
-              continue;
-            }
-          }
-          filterList = this.getBaseHandlerFilters<NearRuntimeHandlerFilter>(
-            ds,
-            handler.kind,
-          );
-        } else {
-          filterList = [handler.filter];
-        }
-        // Filter out any undefined
-        filterList = filterList.filter(Boolean);
-        if (!filterList.length) return [];
-        switch (baseHandlerKind) {
-          case NearHandlerKind.Block:
-            if (
-              (filterList as NearBlockFilter[]).some((filter) => !filter.modulo)
-            ) {
-              return [];
-            }
-            break;
-          case NearHandlerKind.Transaction: {
-            if (
-              (filterList as NearTransactionFilter[]).some(
-                (filter) => !(filter.sender || filter.receiver),
-              )
-            ) {
-              return [];
-            }
-            queryEntries.push(
-              ...(filterList as NearTransactionFilter[]).map(
-                txFilterToQueryEntry,
-              ),
-            );
-            break;
-          }
-          case NearHandlerKind.Receipt: {
-            if (
-              (filterList as NearReceiptFilter[]).some(
-                (filter) =>
-                  !(filter.sender || filter.receiver || filter.signer),
-              )
-            ) {
-              return [];
-            }
-            queryEntries.push(
-              ...(filterList as NearReceiptFilter[]).map(
-                receiptFilterToQueryEntry,
-              ),
-            );
-            break;
-          }
-          case NearHandlerKind.Action: {
-            if (
-              (filterList as NearActionFilter[]).some((filter) => !filter.type)
-            ) {
-              return [];
-            }
-            queryEntries.push(
-              ...(filterList as NearActionFilter[]).map(
-                actionFilterToQueryEntry,
-              ),
-            );
-            break;
-          }
-          default:
-        }
-      }
-    }
-
-    return uniqBy(
-      queryEntries,
-      (item) =>
-        `${item.entity}|${JSON.stringify(
-          sortBy(item.conditions, (c) => c.field),
-        )}`,
-    );
   }
 
   protected getGenesisHash(): string {
@@ -271,12 +93,8 @@ export class FetchService extends BaseFetchService<
     return (await this.api.status()).chain_id;
   }
 
-  protected getModulos(): number[] {
-    return getModulos(
-      this.projectService.getAllDataSources(),
-      isCustomDs,
-      NearHandlerKind.Block,
-    );
+  protected getModulos(dataSources: NearDataSource[]): number[] {
+    return getModulos(dataSources, isCustomDs, NearHandlerKind.Block);
   }
 
   protected async initBlockDispatcher(): Promise<void> {
@@ -285,39 +103,5 @@ export class FetchService extends BaseFetchService<
 
   protected async preLoopHook({ startHeight, valid }): Promise<void> {
     return Promise.resolve();
-  }
-
-  private getBaseHandlerKind(
-    ds: NearDataSource,
-    handler: NearHandler,
-  ): NearHandlerKind {
-    if (isRuntimeDs(ds) && isBaseHandler(handler)) {
-      return handler.kind;
-    } else if (isCustomDs(ds) && isCustomHandler(handler)) {
-      const plugin = this.dsProcessorService.getDsProcessor(ds);
-      const baseHandler =
-        plugin.handlerProcessors[handler.kind]?.baseHandlerKind;
-      if (!baseHandler) {
-        throw new Error(
-          `handler type ${handler.kind} not found in processor for ${ds.kind}`,
-        );
-      }
-      return baseHandler;
-    }
-  }
-
-  private getBaseHandlerFilters<T extends NearRuntimeHandlerFilter>(
-    ds: NearDataSource,
-    handlerKind: string,
-  ): T[] {
-    if (isCustomDs(ds)) {
-      const plugin = this.dsProcessorService.getDsProcessor(ds);
-      const processor = plugin.handlerProcessors[handlerKind];
-      return processor.baseFilter instanceof Array
-        ? (processor.baseFilter as T[])
-        : ([processor.baseFilter] as T[]);
-    } else {
-      throw new Error(`Expected a custom datasource here`);
-    }
   }
 }

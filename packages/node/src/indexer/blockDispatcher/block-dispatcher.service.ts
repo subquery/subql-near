@@ -13,6 +13,7 @@ import {
   ProcessBlockResponse,
   IProjectUpgradeService,
   PoiSyncService,
+  IBlock,
 } from '@subql/node-core';
 import {
   NearProjectDs,
@@ -57,12 +58,7 @@ export class BlockDispatcherService
       poiSyncService,
       project,
       dynamicDsService,
-      async (blockNums: number[]): Promise<BlockContent[]> => {
-        //filter out null values, they represent blocks that were not available in chain
-        return (await this.apiService.fetchBlocks(blockNums)).filter(
-          (block) => block !== null,
-        );
-      },
+      apiService.fetchBlocks.bind(apiService),
     );
   }
 
@@ -77,11 +73,11 @@ export class BlockDispatcherService
   }
 
   protected async indexBlock(
-    block: BlockContent,
+    block: IBlock<BlockContent>,
   ): Promise<ProcessBlockResponse> {
     return this.indexerManager.indexBlock(
       block,
-      await this.projectService.getDataSources(this.getBlockHeight(block)),
+      await this.projectService.getDataSources(block.getHeader().blockHeight),
     );
   }
 }

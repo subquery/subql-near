@@ -9,17 +9,9 @@ import {
   StoreCacheService,
   mainThreadOnly,
 } from '@subql/node-core';
-import { BlockHeader } from 'near-api-js/lib/providers/provider';
+import { nearHeaderToHeader } from '../utils/near';
 import { ApiService } from './api.service';
 import { BlockContent } from './types';
-
-export function nearHeaderToHeader(header: BlockHeader): Header {
-  return {
-    blockHeight: header.height,
-    blockHash: header.hash,
-    parentHash: header.prev_hash,
-  };
-}
 
 @Injectable()
 export class UnfinalizedBlocksService extends BaseUnfinalizedBlocksService<BlockContent> {
@@ -29,11 +21,6 @@ export class UnfinalizedBlocksService extends BaseUnfinalizedBlocksService<Block
     storeCache: StoreCacheService,
   ) {
     super(nodeConfig, storeCache);
-  }
-
-  @mainThreadOnly()
-  protected blockToHeader(block: BlockContent): Header {
-    return nearHeaderToHeader(block.block.header);
   }
 
   @mainThreadOnly()

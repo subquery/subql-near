@@ -23,7 +23,7 @@ import {
   BlockDispatcherService,
   WorkerBlockDispatcherService,
 } from './blockDispatcher';
-import { DictionaryService } from './dictionary.service';
+import { NearDictionaryService } from './dictionary';
 import { DsProcessorService } from './ds-processor.service';
 import { DynamicDsService } from './dynamic-ds.service';
 import { FetchService } from './fetch.service';
@@ -68,7 +68,7 @@ import { UnfinalizedBlocksService } from './unfinalizedBlocks.service';
         unfinalizedBlocks: UnfinalizedBlocksService,
         connectionPoolState: ConnectionPoolStateManager<NearApiConnection>,
       ) =>
-        nodeConfig.workers !== undefined
+        nodeConfig.workers
           ? new WorkerBlockDispatcherService(
               nodeConfig,
               eventEmitter,
@@ -120,22 +120,7 @@ import { UnfinalizedBlocksService } from './unfinalizedBlocks.service';
     ConnectionPoolService,
     IndexingBenchmarkService,
     PoiBenchmarkService,
-    {
-      provide: DictionaryService,
-      useFactory: async (
-        project: SubqueryProject,
-        nodeConfig: NodeConfig,
-        eventEmitter: EventEmitter2,
-      ) => {
-        const dictionaryService = await DictionaryService.create(
-          project,
-          nodeConfig,
-          eventEmitter,
-        );
-        return dictionaryService;
-      },
-      inject: ['ISubqueryProject', NodeConfig, EventEmitter2],
-    },
+    NearDictionaryService,
     SandboxService,
     DsProcessorService,
     DynamicDsService,

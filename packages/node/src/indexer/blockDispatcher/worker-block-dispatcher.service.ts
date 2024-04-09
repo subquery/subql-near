@@ -17,7 +17,7 @@ import {
   InMemoryCacheService,
   createIndexerWorker,
 } from '@subql/node-core';
-import { NearDatasource } from '@subql/types-near';
+import { NearBlock, NearDatasource } from '@subql/types-near';
 import {
   NearProjectDs,
   SubqueryProject,
@@ -34,7 +34,7 @@ type IndexerWorker = IIndexerWorker & {
 
 @Injectable()
 export class WorkerBlockDispatcherService
-  extends WorkerBlockDispatcher<NearDatasource, IndexerWorker>
+  extends WorkerBlockDispatcher<NearDatasource, IndexerWorker, NearBlock>
   implements OnApplicationShutdown
 {
   constructor(
