@@ -6,6 +6,7 @@ import {
   ApiConnectionError,
   ApiErrorType,
   IApiConnectionSpecific,
+  IBlock,
   NetworkMetadataPayload,
 } from '@subql/node-core';
 import * as Near from 'near-api-js';
@@ -17,7 +18,7 @@ const GENESIS_BLOCK = 9_820_210;
 type FetchFunc = (
   api: Near.providers.JsonRpcProvider,
   batch: number[],
-) => Promise<BlockContent[]>;
+) => Promise<IBlock<BlockContent>[]>;
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const { version: packageVersion } = require('../../package.json');
@@ -27,7 +28,7 @@ export class NearApiConnection
     IApiConnectionSpecific<
       Near.providers.JsonRpcProvider,
       SafeJsonRpcProvider,
-      BlockContent[]
+      IBlock<BlockContent>[]
     >
 {
   readonly networkMeta: NetworkMetadataPayload;
@@ -84,7 +85,7 @@ export class NearApiConnection
     return;
   }
 
-  async fetchBlocks(heights: number[]): Promise<BlockContent[]> {
+  async fetchBlocks(heights: number[]): Promise<IBlock<BlockContent>[]> {
     const blocks = await this.fetchBlocksBatches(this.unsafeApi, heights);
     return blocks;
   }
