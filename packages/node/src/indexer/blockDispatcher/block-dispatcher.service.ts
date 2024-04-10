@@ -58,7 +58,12 @@ export class BlockDispatcherService
       poiSyncService,
       project,
       dynamicDsService,
-      apiService.fetchBlocks.bind(apiService),
+      async (blockNums: number[]): Promise<IBlock<BlockContent>[]> => {
+        //filter out null values, they represent blocks that were not available in chain
+        return (await this.apiService.fetchBlocks(blockNums)).filter(
+          (block) => block !== null,
+        );
+      },
     );
   }
 
