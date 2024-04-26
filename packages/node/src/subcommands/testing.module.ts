@@ -15,6 +15,7 @@ import {
   StoreCacheService,
   StoreService,
   TestRunner,
+  SandboxService,
 } from '@subql/node-core';
 import { ConfigureModule } from '../configure/configure.module';
 import { SubqueryProject } from '../configure/SubqueryProject';
@@ -25,7 +26,6 @@ import { FetchModule } from '../indexer/fetch.module';
 import { IndexerManager } from '../indexer/indexer.manager';
 import { NearApiConnection } from '../indexer/nearApi.connection';
 import { ProjectService } from '../indexer/project.service';
-import { SandboxService } from '../indexer/sandbox.service';
 import { UnfinalizedBlocksService } from '../indexer/unfinalizedBlocks.service';
 import { MetaModule } from '../meta/meta.module';
 

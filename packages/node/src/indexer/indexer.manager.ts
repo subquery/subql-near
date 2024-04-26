@@ -19,6 +19,7 @@ import {
   ProcessBlockResponse,
   BaseIndexerManager,
   IBlock,
+  SandboxService,
 } from '@subql/node-core';
 import {
   NearBlock,
@@ -33,19 +34,15 @@ import { JsonRpcProvider } from 'near-api-js/lib/providers';
 import { NearProjectDs } from '../configure/SubqueryProject';
 import * as NearUtil from '../utils/near';
 import { ApiService, SafeJsonRpcProvider } from './api.service';
-import {
-  asSecondLayerHandlerProcessor_1_0_0,
-  DsProcessorService,
-} from './ds-processor.service';
+import { DsProcessorService } from './ds-processor.service';
 import { DynamicDsService } from './dynamic-ds.service';
-import { SandboxService } from './sandbox.service';
 import { BlockContent } from './types';
 import { UnfinalizedBlocksService } from './unfinalizedBlocks.service';
 
 @Injectable()
 export class IndexerManager extends BaseIndexerManager<
-  SafeJsonRpcProvider,
   JsonRpcProvider,
+  SafeJsonRpcProvider,
   BlockContent,
   ApiService,
   NearDatasource,
@@ -56,12 +53,11 @@ export class IndexerManager extends BaseIndexerManager<
 > {
   protected isRuntimeDs = isRuntimeDs;
   protected isCustomDs = isCustomDs;
-  protected updateCustomProcessor = asSecondLayerHandlerProcessor_1_0_0;
 
   constructor(
     apiService: ApiService,
     nodeConfig: NodeConfig,
-    sandboxService: SandboxService<SafeJsonRpcProvider>,
+    sandboxService: SandboxService<SafeJsonRpcProvider, JsonRpcProvider>,
     dsProcessorService: DsProcessorService,
     dynamicDsService: DynamicDsService,
     unfinalizedBlocksService: UnfinalizedBlocksService,
@@ -86,14 +82,6 @@ export class IndexerManager extends BaseIndexerManager<
     return super.internalIndexBlock(block, dataSources, () =>
       this.getApi(block.block),
     );
-  }
-
-  getBlockHeight(block: BlockContent): number {
-    return block.block.header.height;
-  }
-
-  getBlockHash(block: BlockContent): string {
-    return block.block.header.hash;
   }
 
   // eslint-disable-next-line @typescript-eslint/require-await

@@ -33,7 +33,7 @@ export class NearApiConnection
 {
   readonly networkMeta: NetworkMetadataPayload;
 
-  constructor(
+  private constructor(
     public unsafeApi: Near.providers.JsonRpcProvider,
     private fetchBlocksBatches: FetchFunc,
     chainId: string,

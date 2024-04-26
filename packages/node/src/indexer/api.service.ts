@@ -69,13 +69,8 @@ export class ApiService extends BaseApiService<
       );
     }
 
-    await this.createConnections(
-      network,
-      (endpoint) => NearApiConnection.create(endpoint, this.fetchBlocksBatches),
-      async (connection: NearApiConnection) => {
-        const api = connection.unsafeApi;
-        return (await api.status()).chain_id;
-      },
+    await this.createConnections(network, (endpoint) =>
+      NearApiConnection.create(endpoint, this.fetchBlocksBatches),
     );
 
     return this;
