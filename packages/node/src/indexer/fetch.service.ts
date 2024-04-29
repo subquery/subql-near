@@ -18,8 +18,6 @@ import { calcInterval, nearHeaderToHeader } from '../utils/near';
 import { ApiService } from './api.service';
 import { INearBlockDispatcher } from './blockDispatcher';
 import { NearDictionaryService } from './dictionary';
-import { DsProcessorService } from './ds-processor.service';
-import { DynamicDsService } from './dynamic-ds.service';
 import { ProjectService } from './project.service';
 import { UnfinalizedBlocksService } from './unfinalizedBlocks.service';
 
@@ -40,8 +38,6 @@ export class FetchService extends BaseFetchService<
     @Inject('IBlockDispatcher')
     blockDispatcher: INearBlockDispatcher,
     dictionaryService: NearDictionaryService,
-    private dsProcessorService: DsProcessorService,
-    dynamicDsService: DynamicDsService,
     private unfinalizedBlocksService: UnfinalizedBlocksService,
     eventEmitter: EventEmitter2,
     schedulerRegistry: SchedulerRegistry,
@@ -59,10 +55,6 @@ export class FetchService extends BaseFetchService<
 
   get api(): JsonRpcProvider {
     return this.apiService.unsafeApi;
-  }
-
-  protected getGenesisHash(): string {
-    return this.apiService.networkMeta.genesisHash;
   }
 
   protected async getFinalizedHeight(): Promise<number> {

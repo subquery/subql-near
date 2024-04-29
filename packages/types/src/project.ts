@@ -5,13 +5,15 @@ import {
   BaseTemplateDataSource,
   IProjectNetworkConfig,
   CommonSubqueryProject,
-  DictionaryQueryEntry,
   FileReference,
   ProjectManifestV1_0_0,
   BlockFilter,
   BaseDataSource,
   BaseCustomDataSource,
   BaseHandler,
+  SecondLayerHandlerProcessor_0_0_0,
+  SecondLayerHandlerProcessor_1_0_0,
+  DsProcessor,
 } from '@subql/types-core';
 import {providers} from 'near-api-js';
 import {NearBlock, NearTransaction, NearAction, NearTransactionReceipt, ActionType} from './interfaces';
@@ -60,13 +62,6 @@ export type RuntimeHandlerInputMap = {
   [NearHandlerKind.Transaction]: NearTransaction;
   [NearHandlerKind.Action]: NearAction;
   [NearHandlerKind.Receipt]: NearTransactionReceipt;
-};
-
-type RuntimeFilterMap = {
-  [NearHandlerKind.Block]: NearBlockFilter;
-  [NearHandlerKind.Transaction]: NearTransactionFilter;
-  [NearHandlerKind.Action]: NearActionFilter;
-  [NearHandlerKind.Receipt]: NearTransactionFilter;
 };
 
 /**
@@ -248,34 +243,6 @@ export interface NearCustomDatasource<K extends string = string, M extends NearM
   kind: K;
 }
 
-export interface HandlerInputTransformer_0_0_0<
-  T extends NearHandlerKind,
-  E,
-  DS extends NearCustomDatasource = NearCustomDatasource
-> {
-  (
-    input: RuntimeHandlerInputMap[T],
-    ds: DS,
-    api: providers.JsonRpcProvider,
-    assets?: Record<string, string>
-  ): Promise<E>; //  | NearBuiltinDataSource
-}
-
-export interface HandlerInputTransformer_1_0_0<
-  T extends NearHandlerKind,
-  F extends Record<string, unknown>,
-  E,
-  DS extends NearCustomDatasource = NearCustomDatasource
-> {
-  (params: {
-    input: RuntimeHandlerInputMap[T];
-    ds: DS;
-    filter?: F;
-    api: providers.JsonRpcProvider;
-    assets?: Record<string, string>;
-  }): Promise<E[]>; //  | NearBuiltinDataSource
-}
-
 type SecondLayerHandlerProcessorArray<
   K extends string,
   F extends Record<string, unknown>,
@@ -287,7 +254,7 @@ type SecondLayerHandlerProcessorArray<
   | SecondLayerHandlerProcessor<NearHandlerKind.Action, F, T, DS>
   | SecondLayerHandlerProcessor<NearHandlerKind.Receipt, F, T, DS>;
 
-export interface NearDatasourceProcessor<
+export type NearDatasourceProcessor<
   K extends string,
   F extends Record<string, unknown>,
   DS extends NearCustomDatasource<K> = NearCustomDatasource<K>,
@@ -295,53 +262,16 @@ export interface NearDatasourceProcessor<
     string,
     SecondLayerHandlerProcessorArray<K, F, any, DS>
   >
-> {
-  kind: K;
-  validate(ds: DS, assets: Record<string, string>): void;
-  dsFilterProcessor(ds: DS, api: providers.JsonRpcProvider): boolean;
-  handlerProcessors: P;
-}
-
-interface SecondLayerHandlerProcessorBase<
-  K extends NearHandlerKind,
-  F extends Record<string, unknown>,
-  DS extends NearCustomDatasource = NearCustomDatasource
-> {
-  baseHandlerKind: K;
-  baseFilter: RuntimeFilterMap[K] | RuntimeFilterMap[K][];
-  filterValidator: (filter?: F) => void;
-  dictionaryQuery?: (filter: F, ds: DS) => DictionaryQueryEntry | undefined;
-}
-
-// only allow one custom handler for each baseHandler kind
-export interface SecondLayerHandlerProcessor_0_0_0<
-  K extends NearHandlerKind,
-  F extends Record<string, unknown>,
-  E,
-  DS extends NearCustomDatasource = NearCustomDatasource
-> extends SecondLayerHandlerProcessorBase<K, F, DS> {
-  specVersion: undefined;
-  transformer: HandlerInputTransformer_0_0_0<K, E, DS>;
-  filterProcessor: (filter: F | undefined, input: RuntimeHandlerInputMap[K], ds: DS) => boolean;
-}
-
-export interface SecondLayerHandlerProcessor_1_0_0<
-  K extends NearHandlerKind,
-  F extends Record<string, unknown>,
-  E,
-  DS extends NearCustomDatasource = NearCustomDatasource
-> extends SecondLayerHandlerProcessorBase<K, F, DS> {
-  specVersion: '1.0.0';
-  transformer: HandlerInputTransformer_1_0_0<K, F, E, DS>;
-  filterProcessor: (params: {filter: F | undefined; input: RuntimeHandlerInputMap[K]; ds: DS}) => boolean;
-}
+> = DsProcessor<DS, P, providers.JsonRpcProvider>;
 
 export type SecondLayerHandlerProcessor<
   K extends NearHandlerKind,
   F extends Record<string, unknown>,
   E,
   DS extends NearCustomDatasource = NearCustomDatasource
-> = SecondLayerHandlerProcessor_0_0_0<K, F, E, DS> | SecondLayerHandlerProcessor_1_0_0<K, F, E, DS>;
+> =
+  | SecondLayerHandlerProcessor_0_0_0<RuntimeHandlerInputMap, K, F, E, DS, providers.JsonRpcProvider>
+  | SecondLayerHandlerProcessor_1_0_0<RuntimeHandlerInputMap, K, F, E, DS, providers.JsonRpcProvider>;
 
 export type NearProject<DS extends NearDatasource = NearRuntimeDatasource> = CommonSubqueryProject<
   IProjectNetworkConfig,
