@@ -7,12 +7,13 @@ import {
   DatasourceParams,
   DynamicDsService as BaseDynamicDsService,
 } from '@subql/node-core';
-import { NearProjectDs, SubqueryProject } from '../configure/SubqueryProject';
+import { NearDatasource } from '@subql/types-near';
+import { SubqueryProject } from '../configure/SubqueryProject';
 import { DsProcessorService } from './ds-processor.service';
 
 @Injectable()
 export class DynamicDsService extends BaseDynamicDsService<
-  NearProjectDs,
+  NearDatasource,
   SubqueryProject
 > {
   constructor(
@@ -24,8 +25,8 @@ export class DynamicDsService extends BaseDynamicDsService<
 
   protected async getDatasource(
     params: DatasourceParams,
-  ): Promise<NearProjectDs> {
-    const dsObj = this.getTemplate<NearProjectDs>(
+  ): Promise<NearDatasource> {
+    const dsObj = this.getTemplate<NearDatasource>(
       params.templateName,
       params.startBlock,
     );

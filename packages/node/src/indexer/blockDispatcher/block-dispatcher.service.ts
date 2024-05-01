@@ -14,10 +14,8 @@ import {
   PoiSyncService,
   IBlock,
 } from '@subql/node-core';
-import {
-  NearProjectDs,
-  SubqueryProject,
-} from '../../configure/SubqueryProject';
+import { NearDatasource } from '@subql/types-near';
+import { SubqueryProject } from '../../configure/SubqueryProject';
 import { ApiService } from '../api.service';
 import { IndexerManager } from '../indexer.manager';
 import { BlockContent } from '../types';
@@ -27,7 +25,7 @@ import { BlockContent } from '../types';
  */
 @Injectable()
 export class BlockDispatcherService
-  extends BlockDispatcher<BlockContent, NearProjectDs>
+  extends BlockDispatcher<BlockContent, NearDatasource>
   implements OnApplicationShutdown
 {
   constructor(
@@ -35,7 +33,7 @@ export class BlockDispatcherService
     nodeConfig: NodeConfig,
     private indexerManager: IndexerManager,
     eventEmitter: EventEmitter2,
-    @Inject('IProjectService') projectService: IProjectService<NearProjectDs>,
+    @Inject('IProjectService') projectService: IProjectService<NearDatasource>,
     @Inject('IProjectUpgradeService')
     projectUpgradeService: IProjectUpgradeService,
     storeService: StoreService,

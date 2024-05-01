@@ -13,8 +13,9 @@ import {
   PoiSyncService,
   profiler,
 } from '@subql/node-core';
+import { NearDatasource } from '@subql/types-near';
 import { Sequelize } from '@subql/x-sequelize';
-import { NearProjectDs, SubqueryProject } from '../configure/SubqueryProject';
+import { SubqueryProject } from '../configure/SubqueryProject';
 import { getBlockByHeight } from '../utils/near';
 import { ApiService } from './api.service';
 import { DsProcessorService } from './ds-processor.service';
@@ -27,7 +28,7 @@ const { version: packageVersion } = require('../../package.json');
 @Injectable()
 export class ProjectService extends BaseProjectService<
   ApiService,
-  NearProjectDs
+  NearDatasource
 > {
   protected packageVersion = packageVersion;
 
