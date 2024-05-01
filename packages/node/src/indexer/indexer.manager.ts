@@ -31,7 +31,6 @@ import {
   NearBlockFilter,
 } from '@subql/types-near';
 import { JsonRpcProvider } from 'near-api-js/lib/providers';
-import { NearProjectDs } from '../configure/SubqueryProject';
 import * as NearUtil from '../utils/near';
 import { ApiService, SafeJsonRpcProvider } from './api.service';
 import { DsProcessorService } from './ds-processor.service';
@@ -91,8 +90,8 @@ export class IndexerManager extends BaseIndexerManager<
 
   protected async indexBlockData(
     { actions, block, receipts, transactions }: BlockContent,
-    dataSources: NearProjectDs[],
-    getVM: (d: NearProjectDs) => Promise<IndexerSandbox>,
+    dataSources: NearDatasource[],
+    getVM: (d: NearDatasource) => Promise<IndexerSandbox>,
   ): Promise<void> {
     await this.indexBlockContent(block, dataSources, getVM);
 
@@ -122,8 +121,8 @@ export class IndexerManager extends BaseIndexerManager<
 
   private async indexBlockContent(
     block: NearBlock,
-    dataSources: NearProjectDs[],
-    getVM: (d: NearProjectDs) => Promise<IndexerSandbox>,
+    dataSources: NearDatasource[],
+    getVM: (d: NearDatasource) => Promise<IndexerSandbox>,
   ): Promise<void> {
     for (const ds of dataSources) {
       await this.indexData(NearHandlerKind.Block, block, ds, getVM);
@@ -132,8 +131,8 @@ export class IndexerManager extends BaseIndexerManager<
 
   private async indexTransaction(
     transaction: NearTransaction,
-    dataSources: NearProjectDs[],
-    getVM: (d: NearProjectDs) => Promise<IndexerSandbox>,
+    dataSources: NearDatasource[],
+    getVM: (d: NearDatasource) => Promise<IndexerSandbox>,
   ): Promise<void> {
     for (const ds of dataSources) {
       await this.indexData(NearHandlerKind.Transaction, transaction, ds, getVM);
@@ -142,8 +141,8 @@ export class IndexerManager extends BaseIndexerManager<
 
   private async indexAction(
     action: NearAction,
-    dataSources: NearProjectDs[],
-    getVM: (d: NearProjectDs) => Promise<IndexerSandbox>,
+    dataSources: NearDatasource[],
+    getVM: (d: NearDatasource) => Promise<IndexerSandbox>,
   ): Promise<void> {
     for (const ds of dataSources) {
       await this.indexData(NearHandlerKind.Action, action, ds, getVM);
@@ -152,8 +151,8 @@ export class IndexerManager extends BaseIndexerManager<
 
   private async indexReceipt(
     receipt: NearTransactionReceipt,
-    dataSources: NearProjectDs[],
-    getVM: (d: NearProjectDs) => Promise<IndexerSandbox>,
+    dataSources: NearDatasource[],
+    getVM: (d: NearDatasource) => Promise<IndexerSandbox>,
   ): Promise<void> {
     for (const ds of dataSources) {
       await this.indexData(NearHandlerKind.Receipt, receipt, ds, getVM);

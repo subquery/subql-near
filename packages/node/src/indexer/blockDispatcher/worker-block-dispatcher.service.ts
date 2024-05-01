@@ -17,10 +17,7 @@ import {
   createIndexerWorker,
 } from '@subql/node-core';
 import { NearBlock, NearDatasource } from '@subql/types-near';
-import {
-  NearProjectDs,
-  SubqueryProject,
-} from '../../configure/SubqueryProject';
+import { SubqueryProject } from '../../configure/SubqueryProject';
 import { DynamicDsService } from '../dynamic-ds.service';
 import { NearApiConnection } from '../nearApi.connection';
 import { BlockContent } from '../types';
@@ -39,7 +36,7 @@ export class WorkerBlockDispatcherService
   constructor(
     nodeConfig: NodeConfig,
     eventEmitter: EventEmitter2,
-    @Inject('IProjectService') projectService: IProjectService<NearProjectDs>,
+    @Inject('IProjectService') projectService: IProjectService<NearDatasource>,
     @Inject('IProjectUpgradeService')
     projectUpgradeService: IProjectUpgradeService,
     cacheService: InMemoryCacheService,

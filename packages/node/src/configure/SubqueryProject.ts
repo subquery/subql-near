@@ -7,7 +7,6 @@ import { validateSemver } from '@subql/common';
 import {
   NearProjectNetworkConfig,
   parseNearProjectManifest,
-  NearDataSource,
   ProjectManifestV1_0_0Impl,
   NearBlockFilter,
   isRuntimeDs,
@@ -17,11 +16,11 @@ import {
 import {
   insertBlockFiltersCronSchedules,
   loadProjectTemplates,
-  SubqlProjectDs,
   updateDataSourcesV1_0_0,
 } from '@subql/node-core';
 import { ParentProject, Reader, RunnerSpecs } from '@subql/types-core';
 import {
+  NearDatasource,
   CustomDatasourceTemplate,
   RuntimeDatasourceTemplate,
 } from '@subql/types-near';
@@ -31,8 +30,6 @@ import { GraphQLSchema } from 'graphql';
 
 const { version: packageVersion } = require('../../package.json');
 
-export type NearProjectDs = SubqlProjectDs<NearDataSource>;
-
 export type SubqlProjectBlockFilter = NearBlockFilter & {
   cronSchedule?: {
     schedule: Cron.Seeker;
@@ -41,8 +38,8 @@ export type SubqlProjectBlockFilter = NearBlockFilter & {
 };
 
 export type NearProjectDsTemplate =
-  | SubqlProjectDs<RuntimeDatasourceTemplate>
-  | SubqlProjectDs<CustomDatasourceTemplate>;
+  | RuntimeDatasourceTemplate
+  | CustomDatasourceTemplate;
 
 const NOT_SUPPORT = (name: string) => {
   throw new Error(`Manifest specVersion ${name} is not supported`);
@@ -53,13 +50,13 @@ type NetworkConfig = NearProjectNetworkConfig & { chainId: string };
 
 @Injectable()
 export class SubqueryProject {
-  #dataSources: NearProjectDs[];
+  #dataSources: NearDatasource[];
 
   constructor(
     readonly id: string,
     readonly root: string,
     readonly network: NetworkConfig,
-    dataSources: NearProjectDs[],
+    dataSources: NearDatasource[],
     readonly schema: GraphQLSchema,
     readonly templates: NearProjectDsTemplate[],
     readonly runner?: RunnerSpecs,
@@ -68,7 +65,7 @@ export class SubqueryProject {
     this.#dataSources = dataSources;
   }
 
-  get dataSources(): NearProjectDs[] {
+  get dataSources(): NearDatasource[] {
     return this.#dataSources;
   }
 

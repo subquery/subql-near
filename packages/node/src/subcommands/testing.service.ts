@@ -9,8 +9,9 @@ import {
   NestLogger,
   TestRunner,
 } from '@subql/node-core';
+import { NearDatasource } from '@subql/types-near';
 import { JsonRpcProvider } from 'near-api-js/lib/providers';
-import { NearProjectDs, SubqueryProject } from '../configure/SubqueryProject';
+import { SubqueryProject } from '../configure/SubqueryProject';
 import { ApiService, SafeJsonRpcProvider } from '../indexer/api.service';
 import { ProjectService } from '../indexer/project.service';
 import { BlockContent } from '../indexer/types';
@@ -21,7 +22,7 @@ export class TestingService extends BaseTestingService<
   JsonRpcProvider,
   SafeJsonRpcProvider,
   BlockContent,
-  NearProjectDs
+  NearDatasource
 > {
   constructor(
     nodeConfig: NodeConfig,
@@ -37,7 +38,7 @@ export class TestingService extends BaseTestingService<
         JsonRpcProvider,
         SafeJsonRpcProvider,
         BlockContent,
-        NearProjectDs
+        NearDatasource
       >,
     ]
   > {
