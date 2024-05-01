@@ -2,7 +2,12 @@
 // SPDX-License-Identifier: GPL-3.0
 
 import { BN } from '@polkadot/util';
-import { getLogger, Header, IBlock } from '@subql/node-core';
+import {
+  getLogger,
+  Header,
+  IBlock,
+  filterBlockTimestamp,
+} from '@subql/node-core';
 import {
   NearBlockFilter,
   NearTransactionFilter,
@@ -277,10 +282,13 @@ export function filterBlock(
 ): NearBlock | undefined {
   if (!filter) return block;
   if (!filterBlockModulo(block, filter)) return;
-  if (filter.timestamp) {
-    if (!filterBlockTimestamp(block, filter as SubqlProjectBlockFilter)) {
-      return;
-    }
+  if (
+    !filterBlockTimestamp(
+      block.header.timestamp,
+      filter as SubqlProjectBlockFilter,
+    )
+  ) {
+    return;
   }
 
   return block;
@@ -293,30 +301,6 @@ export function filterBlockModulo(
   const { modulo } = filter;
   if (!modulo) return true;
   return block.header.height % modulo === 0;
-}
-
-export function filterBlockTimestamp(
-  block: NearBlock,
-  filter: SubqlProjectBlockFilter,
-): boolean {
-  const unixTimestamp = block.header.timestamp;
-  if (unixTimestamp > filter.cronSchedule.next) {
-    logger.info(
-      `Block with timestamp ${new Date(
-        unixTimestamp,
-      ).toString()} is about to be indexed`,
-    );
-    logger.info(
-      `Next block will be indexed at ${new Date(
-        filter.cronSchedule.next,
-      ).toString()}`,
-    );
-    filter.cronSchedule.schedule.prev();
-    return true;
-  } else {
-    filter.cronSchedule.schedule.prev();
-    return false;
-  }
 }
 
 export function filterTransaction(
