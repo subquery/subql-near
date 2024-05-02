@@ -1,6 +1,6 @@
 {
   "name": "@subql/node-near",
-  "version": "3.11.0",
+  "version": "3.11.1",
   "description": "",
   "author": "Ian He",
   "license": "GPL-3.0",
@@ -26,7 +26,7 @@
     "@nestjs/schedule": "^3.0.1",
     "@subql/common": "^3.5.1",
     "@subql/common-near": "workspace:*",
-    "@subql/node-core": "^10.1.0",
+    "@subql/node-core": "^10.1.1",
     "@subql/types-near": "workspace:*",
     "lodash": "^4.17.21",
     "near-api-js": "^2.1.4",
