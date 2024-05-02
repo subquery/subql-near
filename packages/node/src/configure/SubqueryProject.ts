@@ -14,6 +14,7 @@ import {
   isCustomDs,
 } from '@subql/common-near';
 import {
+  CronFilter,
   insertBlockFiltersCronSchedules,
   loadProjectTemplates,
   updateDataSourcesV1_0_0,
@@ -25,17 +26,11 @@ import {
   RuntimeDatasourceTemplate,
 } from '@subql/types-near';
 import { buildSchemaFromString } from '@subql/utils';
-import Cron from 'cron-converter';
 import { GraphQLSchema } from 'graphql';
 
 const { version: packageVersion } = require('../../package.json');
 
-export type SubqlProjectBlockFilter = NearBlockFilter & {
-  cronSchedule?: {
-    schedule: Cron.Seeker;
-    next: number;
-  };
-};
+export type SubqlProjectBlockFilter = NearBlockFilter & CronFilter;
 
 export type NearProjectDsTemplate =
   | RuntimeDatasourceTemplate
