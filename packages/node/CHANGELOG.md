@@ -6,6 +6,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- Bump version with `@subql/common-algorand`,`@subql/node-core`
+
 ## [3.11.1] - 2024-05-02
 ### Fixed
 - Sandbox Uint8Array and missing pg dep issue

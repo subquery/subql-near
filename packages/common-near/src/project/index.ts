@@ -6,3 +6,6 @@ export * from './models';
 export * from './types';
 export * from './utils';
 export * from './versioned';
+
+import {parseNearProjectManifest} from './load';
+export {parseNearProjectManifest as parseProjectManifest};
