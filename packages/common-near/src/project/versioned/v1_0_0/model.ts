@@ -27,7 +27,7 @@ const NEAR_NODE_NAME = `@subql/node-near`;
 
 export class NearRunnerNodeImpl extends RunnerNodeImpl {
   @Equals(NEAR_NODE_NAME, {message: `Runner Near node name incorrect, suppose be '${NEAR_NODE_NAME}'`})
-  name: string;
+  name: string = NEAR_NODE_NAME;
 }
 
 export class NearRuntimeDataSourceImpl extends RuntimeDataSourceBase implements NearRuntimeDatasource {
@@ -80,7 +80,7 @@ export class ProjectNetworkV1_0_0 extends CommonProjectNetworkV1_0_0<FileType> {
   @ValidateNested()
   @Type(() => FileType)
   @IsOptional()
-  chaintypes?: FileType;
+  chaintypes?: FileType = undefined;
 }
 
 export class DeploymentV1_0_0 extends BaseDeploymentV1_0_0 {
@@ -131,7 +131,7 @@ export class ProjectManifestV1_0_0Impl
   }
 
   @Equals('1.0.0')
-  specVersion: string;
+  specVersion = '1.0.0';
   @Type(() => NearCustomDataSourceImpl, {
     discriminator: {
       property: 'kind',

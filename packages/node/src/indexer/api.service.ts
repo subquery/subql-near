@@ -12,6 +12,7 @@ import {
   ConnectionPoolService,
   ApiService as BaseApiService,
   IBlock,
+  exitWithError,
 } from '@subql/node-core';
 import * as Near from 'near-api-js';
 import {
@@ -57,8 +58,7 @@ export class ApiService extends BaseApiService<
     try {
       network = this.project.network;
     } catch (e) {
-      logger.error(e);
-      process.exit(1);
+      exitWithError(new Error(`Failed to init api`, { cause: e }), logger);
     }
 
     if (this.nodeConfig?.profiler) {

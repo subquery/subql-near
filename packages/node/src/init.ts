@@ -2,7 +2,12 @@
 // SPDX-License-Identifier: GPL-3.0
 
 import { NestFactory } from '@nestjs/core';
-import { getLogger, getValidPort, NestLogger } from '@subql/node-core';
+import {
+  exitWithError,
+  getLogger,
+  getValidPort,
+  NestLogger,
+} from '@subql/node-core';
 import { AppModule } from './app.module';
 import { ApiService } from './indexer/api.service';
 import { FetchService } from './indexer/fetch.service';
@@ -45,7 +50,6 @@ export async function bootstrap(): Promise<void> {
 
     logger.info(`Node started on port: ${port}`);
   } catch (e) {
-    logger.error(e, 'Node failed to start');
-    process.exit(1);
+    exitWithError(new Error('Node failed to start', { cause: e }), logger);
   }
 }
