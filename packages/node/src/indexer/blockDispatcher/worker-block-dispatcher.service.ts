@@ -15,6 +15,7 @@ import {
   PoiSyncService,
   InMemoryCacheService,
   createIndexerWorker,
+  MonitorServiceInterface,
 } from '@subql/node-core';
 import { NearBlock, NearDatasource } from '@subql/types-near';
 import { SubqueryProject } from '../../configure/SubqueryProject';
@@ -47,6 +48,7 @@ export class WorkerBlockDispatcherService
     dynamicDsService: DynamicDsService,
     unfinalizedBlocksSevice: UnfinalizedBlocksService,
     connectionPoolState: ConnectionPoolStateManager<NearApiConnection>,
+    monitorService?: MonitorServiceInterface,
   ) {
     super(
       nodeConfig,
@@ -73,7 +75,9 @@ export class WorkerBlockDispatcherService
           connectionPoolState,
           project.root,
           projectService.startHeight,
+          monitorService,
         ),
+      monitorService,
     );
   }
 
