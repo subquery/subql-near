@@ -6,6 +6,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.12.0] - 2024-07-03
 ### Changed
 - Bump version with `@subql/common-near`, sync with `@subql/node-core`, add admin module
 
@@ -235,7 +236,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add `toJson` method to function args (#9)
 
 ## 1.18.0 - 2023-01-26
-[Unreleased]: https://github.com/subquery/subql-near/compare/node-near/3.11.1...HEAD
+[Unreleased]: https://github.com/subquery/subql-near/compare/node-near/3.12.0...HEAD
+[3.12.0]: https://github.com/subquery/subql-near/compare/node-near/3.11.1...node-near/3.12.0
 [3.11.1]: https://github.com/subquery/subql-near/compare/node-near/3.11.0...node-near/3.11.1
 [3.11.0]: https://github.com/subquery/subql-near/compare/node-near/3.10.0...node-near/3.11.0
 [3.10.0]: https://github.com/subquery/subql-near/compare/node-near/3.9.1...node-near/3.10.0
