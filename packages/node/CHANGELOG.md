@@ -5,6 +5,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+
+## [4.0.0] - 2024-08-30
 ### Added
 - Support for network endpoint config providing the ability to set headers (#119)
 
@@ -247,7 +249,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add `toJson` method to function args (#9)
 
 ## 1.18.0 - 2023-01-26
-[Unreleased]: https://github.com/subquery/subql-near/compare/node-near/3.12.0...HEAD
+[Unreleased]: https://github.com/subquery/subql-near/compare/node-near/4.0.0...HEAD
+[4.0.0]: https://github.com/subquery/subql-near/compare/node-near/3.12.0...node-near/4.0.0
 [3.12.0]: https://github.com/subquery/subql-near/compare/node-near/3.11.1...node-near/3.12.0
 [3.11.1]: https://github.com/subquery/subql-near/compare/node-near/3.11.0...node-near/3.11.1
 [3.11.0]: https://github.com/subquery/subql-near/compare/node-near/3.10.0...node-near/3.11.0
