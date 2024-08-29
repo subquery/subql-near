@@ -47,30 +47,30 @@ export class NearCustomDataSourceImpl<K extends string = string, M extends BaseM
 
 export class RuntimeDatasourceTemplateImpl extends NearRuntimeDataSourceImpl implements RuntimeDatasourceTemplate {
   @IsString()
-  name: string;
+  name!: string;
 }
 
 export class CustomDatasourceTemplateImpl extends NearCustomDataSourceImpl implements CustomDatasourceTemplate {
   @IsString()
-  name: string;
+  name!: string;
 }
 
 export class NearRunnerSpecsImpl implements RunnerSpecs {
   @IsObject()
   @ValidateNested()
   @Type(() => NearRunnerNodeImpl)
-  node: NodeSpec;
+  node!: NodeSpec;
   @IsObject()
   @ValidateNested()
   @Type(() => RunnerQueryBaseModel)
-  query: QuerySpec;
+  query!: QuerySpec;
 }
 
 export class ProjectNetworkDeploymentV1_0_0 {
   @IsNotEmpty()
   @Transform(({value}: TransformFnParams) => value.trim())
   @IsString()
-  chainId: string;
+  chainId!: string;
   @IsOptional()
   @IsArray()
   bypassBlocks?: (number | `${number}-${number}`)[];
@@ -92,12 +92,12 @@ export class DeploymentV1_0_0 extends BaseDeploymentV1_0_0 {
   })
   @ValidateNested()
   @Type(() => ProjectNetworkDeploymentV1_0_0)
-  network: ProjectNetworkDeploymentV1_0_0;
+  network!: ProjectNetworkDeploymentV1_0_0;
 
   @IsObject()
   @ValidateNested()
   @Type(() => NearRunnerSpecsImpl)
-  runner: RunnerSpecs;
+  runner!: RunnerSpecs;
 
   @IsArray()
   @ValidateNested()
@@ -108,7 +108,7 @@ export class DeploymentV1_0_0 extends BaseDeploymentV1_0_0 {
     },
     keepDiscriminatorProperty: true,
   })
-  dataSources: (NearRuntimeDatasource | NearCustomDatasource)[];
+  dataSources!: (NearRuntimeDatasource | NearCustomDatasource)[];
   @IsOptional()
   @IsArray()
   @ValidateNested()
@@ -139,16 +139,16 @@ export class ProjectManifestV1_0_0Impl
     },
     keepDiscriminatorProperty: true,
   })
-  dataSources: (NearRuntimeDatasource | NearCustomDatasource)[];
+  dataSources!: (NearRuntimeDatasource | NearCustomDatasource)[];
   @Type(() => ProjectNetworkV1_0_0)
-  network: ProjectNetworkV1_0_0;
+  network!: ProjectNetworkV1_0_0;
   @IsString()
-  name: string;
+  name!: string;
   @IsString()
-  version: string;
+  version!: string;
   @ValidateNested()
   @Type(() => FileType)
-  schema: FileType;
+  schema!: FileType;
   @IsOptional()
   @IsArray()
   @ValidateNested()
@@ -163,7 +163,7 @@ export class ProjectManifestV1_0_0Impl
   @IsObject()
   @ValidateNested()
   @Type(() => NearRunnerSpecsImpl)
-  runner: RunnerSpecs;
+  runner!: RunnerSpecs;
 
   @IsOptional()
   @IsObject()

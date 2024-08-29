@@ -9,6 +9,7 @@ import {
   IBlock,
   NetworkMetadataPayload,
 } from '@subql/node-core';
+import { IEndpointConfig } from '@subql/types-core';
 import * as Near from 'near-api-js';
 import { SafeJsonRpcProvider } from './api.service';
 import { BlockContent } from './types';
@@ -51,9 +52,11 @@ export class NearApiConnection
   static async create(
     endpoint: string,
     fetchBlockBatches: FetchFunc,
+    config?: IEndpointConfig,
   ): Promise<NearApiConnection> {
     const headers = {
       'User-Agent': `SubQuery-Node ${packageVersion}`,
+      ...config?.headers,
     };
 
     const connectionInfo: ConnectionInfo = {

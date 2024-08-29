@@ -65,9 +65,4 @@ export class NearDictionaryService extends DictionaryService<
   ) {
     super(project.network.chainId, nodeConfig, eventEmitter);
   }
-
-  private getV1Dictionary(): NearDictionaryV1 | undefined {
-    // TODO this needs to be removed once Near supports V2 dictionaries
-    return this._dictionaries[this._currentDictionaryIndex] as NearDictionaryV1;
-  }
 }

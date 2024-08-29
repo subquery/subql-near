@@ -45,13 +45,13 @@ export class WorkerService extends BaseWorkerService<
     const [block] = await this.apiService.fetchBlocks([heights]);
     return block;
   }
-  protected toBlockResponse(block: BlockContent): {
-    parentHash: string | undefined;
-  } {
+
+  protected toBlockResponse(block: BlockContent): FetchBlockResponse {
     return {
       parentHash: block?.block.header.prev_hash,
     };
   }
+
   protected async processFetchedBlock(
     block: IBlock<BlockContent>,
     dataSources: NearDatasource[],

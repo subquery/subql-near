@@ -147,7 +147,10 @@ export async function wrapBlock(
       if (receipt.Action) {
         for (const action of receipt.Action.actions) {
           action.receipt = receipt;
-          action.receipt.Action.actions = null;
+          if (action.receipt.Action) {
+            // TODO understand this better
+            (action.receipt.Action.actions as any) = null;
+          }
           nearBlock.actions.push(action);
         }
       }
@@ -315,23 +318,6 @@ export function filterTransaction(
   return true;
 }
 
-export function filterTransactions(
-  transactions: NearTransaction[],
-  filterOrFilters: NearTransactionFilter | NearTransactionFilter[] | undefined,
-): NearTransaction[] {
-  if (
-    !filterOrFilters ||
-    (filterOrFilters instanceof Array && filterOrFilters.length === 0)
-  ) {
-    return transactions;
-  }
-  const filters =
-    filterOrFilters instanceof Array ? filterOrFilters : [filterOrFilters];
-  return transactions.filter((transaction) =>
-    filters.find((filter) => filterTransaction(transaction, filter)),
-  );
-}
-
 export function filterReceipt(
   receipt: NearTransactionReceipt,
   filter?: NearReceiptFilter,
@@ -350,23 +336,6 @@ export function filterReceipt(
   return true;
 }
 
-export function filterReceipts(
-  receipts: NearTransactionReceipt[],
-  filterOrFilters?: NearReceiptFilter | NearReceiptFilter[] | undefined,
-): NearTransactionReceipt[] {
-  if (
-    !filterOrFilters ||
-    (filterOrFilters instanceof Array && filterOrFilters.length === 0)
-  ) {
-    return receipts;
-  }
-  const filters =
-    filterOrFilters instanceof Array ? filterOrFilters : [filterOrFilters];
-  return receipts.filter((receipt) =>
-    filters.find((filter) => filterReceipt(receipt, filter)),
-  );
-}
-
 export function filterAction(
   action: NearAction,
   filter?: NearActionFilter,
@@ -383,39 +352,22 @@ export function filterAction(
     return false;
   }
 
+  // Extract sender, receiver as they are filtered by transaction/receipt
   const { receiver, sender, type, ...filterByKey } = filter;
 
-  if (type && action.type !== type) {
+  if (action.type && action.type !== type) {
     return false;
   }
 
   for (const key in filterByKey) {
-    if (
-      mappingFilterAction[action.type] &&
-      filterByKey[key] !== get(action, mappingFilterAction[action.type][key])
-    ) {
+    const value = filterByKey[key];
+    const actionKey = mappingFilterAction[action.type]?.[key];
+    if (actionKey && value && value !== get(action, actionKey)) {
       return false;
     }
   }
 
   return true;
-}
-
-export function filterActions(
-  actions: NearAction[],
-  filterOrFilters?: NearActionFilter | NearActionFilter[] | undefined,
-): NearAction[] {
-  if (
-    !filterOrFilters ||
-    (filterOrFilters instanceof Array && filterOrFilters.length === 0)
-  ) {
-    return actions;
-  }
-  const filters =
-    filterOrFilters instanceof Array ? filterOrFilters : [filterOrFilters];
-  return actions.filter((action) =>
-    filters.find((filter) => filterAction(action, filter)),
-  );
 }
 
 /**
@@ -451,12 +403,12 @@ export async function fetchBlocksRange(
 export async function fetchBlocksArray(
   api: providers.JsonRpcProvider,
   blockArray: number[],
-): Promise<BlockResult[]> {
+): Promise<(BlockResult | null)[]> {
   const results = await Promise.all(
     blockArray.map(async (height) => {
       try {
         return await getBlockByHeight(api, height);
-      } catch (error) {
+      } catch (error: any) {
         if (
           error.message ===
           `[-32000] Server error: DB Not Found Error: BLOCK HEIGHT: ${height} \n Cause: Unknown`
@@ -494,7 +446,7 @@ export function formatBlockUtil<B extends BlockContent = BlockContent>(
 export async function fetchBlocksBatches(
   api: providers.JsonRpcProvider,
   blockArray: number[],
-): Promise<IBlock<BlockContent>[]> {
+): Promise<(IBlock<BlockContent> | null)[]> {
   const blocks = await fetchBlocksArray(api, blockArray);
 
   const blockContentPromises = blocks.map(async (blockResult) => {

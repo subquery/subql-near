@@ -24,18 +24,18 @@ describe('ProjectService', () => {
     const apiService = mockApiService();
 
     projectService = new ProjectService(
-      null,
+      null as any, // DsProcessorService
       apiService,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      {} as any,
-      null,
-      null,
-      null,
+      null as any, // PoiService
+      null as any, // PoiSyncService
+      null as any, // Sequelize
+      null as any, // SubqueryProject
+      null as any, // ProjectUpgradeService
+      null as any, // StoreService
+      {} as any, // NodeConfig
+      null as any, // DynamicDsService
+      null as any, // EventEmitter
+      null as any, // UnfinalizedBlocks
     );
   });
 

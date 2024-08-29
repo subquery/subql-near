@@ -12,7 +12,7 @@ import {
 import { NearDatasource } from '@subql/types-near';
 import { JsonRpcProvider } from 'near-api-js/lib/providers';
 import { SubqueryProject } from '../configure/SubqueryProject';
-import { ApiService, SafeJsonRpcProvider } from '../indexer/api.service';
+import { SafeJsonRpcProvider } from '../indexer/api.service';
 import { ProjectService } from '../indexer/project.service';
 import { BlockContent } from '../indexer/types';
 import { TestingModule } from './testing.module';
@@ -52,10 +52,8 @@ export class TestingService extends BaseTestingService<
     await testContext.init();
 
     const projectService: ProjectService = testContext.get(ProjectService);
-    const apiService = testContext.get(ApiService);
 
     // Initialise async services, we do this here rather than in factories, so we can capture one off events
-    await apiService.init();
     await projectService.init();
 
     return [testContext.close.bind(testContext), testContext.get(TestRunner)];

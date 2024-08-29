@@ -64,6 +64,13 @@ export type RuntimeHandlerInputMap = {
   [NearHandlerKind.Receipt]: NearTransactionReceipt;
 };
 
+export type RuntimeHandlerFilterMap = {
+  [NearHandlerKind.Block]: NearBlockFilter;
+  [NearHandlerKind.Transaction]: NearTransactionFilter;
+  [NearHandlerKind.Action]: NearActionFilter;
+  [NearHandlerKind.Receipt]: NearReceiptFilter;
+};
+
 /**
  * Represents a filter for Near blocks.
  */
@@ -243,7 +250,7 @@ export interface NearCustomDatasource<K extends string = string, M extends NearM
   kind: K;
 }
 
-type SecondLayerHandlerProcessorArray<
+export type SecondLayerHandlerProcessorArray<
   K extends string,
   F extends Record<string, unknown>,
   T,
@@ -270,8 +277,24 @@ export type SecondLayerHandlerProcessor<
   E,
   DS extends NearCustomDatasource = NearCustomDatasource
 > =
-  | SecondLayerHandlerProcessor_0_0_0<RuntimeHandlerInputMap, K, F, E, DS, providers.JsonRpcProvider>
-  | SecondLayerHandlerProcessor_1_0_0<RuntimeHandlerInputMap, K, F, E, DS, providers.JsonRpcProvider>;
+  | SecondLayerHandlerProcessor_0_0_0<
+      K,
+      RuntimeHandlerInputMap,
+      RuntimeHandlerFilterMap,
+      F,
+      E,
+      DS,
+      providers.JsonRpcProvider
+    >
+  | SecondLayerHandlerProcessor_1_0_0<
+      K,
+      RuntimeHandlerInputMap,
+      RuntimeHandlerFilterMap,
+      F,
+      E,
+      DS,
+      providers.JsonRpcProvider
+    >;
 
 export type NearProject<DS extends NearDatasource = NearRuntimeDatasource> = CommonSubqueryProject<
   IProjectNetworkConfig,

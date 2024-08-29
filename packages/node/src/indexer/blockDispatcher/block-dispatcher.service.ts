@@ -59,12 +59,6 @@ export class BlockDispatcherService
     );
   }
 
-  async init(
-    onDynamicDsCreated: (height: number) => Promise<void>,
-  ): Promise<void> {
-    await super.init(onDynamicDsCreated);
-  }
-
   protected getBlockHeight(block: BlockContent): number {
     return block.block.header.height;
   }
