@@ -12,59 +12,38 @@ import {
   NodeConfig,
   PoiService,
   PoiSyncService,
-  StoreCacheService,
   StoreService,
   TestRunner,
   SandboxService,
 } from '@subql/node-core';
 import { ConfigureModule } from '../configure/configure.module';
-import { SubqueryProject } from '../configure/SubqueryProject';
 import { ApiService } from '../indexer/api.service';
 import { DsProcessorService } from '../indexer/ds-processor.service';
 import { DynamicDsService } from '../indexer/dynamic-ds.service';
-import { FetchModule } from '../indexer/fetch.module';
 import { IndexerManager } from '../indexer/indexer.manager';
-import { NearApiConnection } from '../indexer/nearApi.connection';
 import { ProjectService } from '../indexer/project.service';
 import { UnfinalizedBlocksService } from '../indexer/unfinalizedBlocks.service';
-import { MetaModule } from '../meta/meta.module';
 
 @Module({
   providers: [
     InMemoryCacheService,
     StoreService,
-    StoreCacheService,
     EventEmitter2,
     PoiService,
     PoiSyncService,
     SandboxService,
     DsProcessorService,
     DynamicDsService,
-    ProjectService,
     UnfinalizedBlocksService,
-    ConnectionPoolStateManager,
     ConnectionPoolService,
+    ConnectionPoolStateManager,
     {
       provide: 'IProjectService',
       useClass: ProjectService,
     },
     {
       provide: ApiService,
-      useFactory: async (
-        project: SubqueryProject,
-        connectionPoolService: ConnectionPoolService<NearApiConnection>,
-        eventEmitter: EventEmitter2,
-        config: NodeConfig,
-      ) => {
-        const apiService = new ApiService(
-          project,
-          connectionPoolService,
-          eventEmitter,
-          config,
-        );
-        await apiService.init();
-        return apiService;
-      },
+      useFactory: ApiService.create.bind(ApiService),
       inject: [
         'ISubqueryProject',
         ConnectionPoolService,
@@ -76,15 +55,13 @@ import { MetaModule } from '../meta/meta.module';
     TestRunner,
     {
       provide: 'IApi',
-      useClass: ApiService,
+      useExisting: ApiService,
     },
     {
       provide: 'IIndexerManager',
       useClass: IndexerManager,
     },
   ],
-
-  imports: [MetaModule, FetchModule],
   controllers: [],
   exports: [TestRunner],
 })

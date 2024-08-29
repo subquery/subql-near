@@ -2,8 +2,9 @@
 // SPDX-License-Identifier: GPL-3.0
 
 import { ConnectionInfo } from '@near-js/providers/lib/fetch_json';
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
+import { NearProjectNetworkConfig } from '@subql/common-near';
 
 import {
   getLogger,
@@ -32,19 +33,25 @@ import { BlockContent } from './types';
 
 const logger = getLogger('api');
 
+// Force this here as Near can skip blocks and node-core doesn't support null for blocks
+// TODO improve types and follow to where the check to filter out null blocks is
+type ForceFetchBatchFunc = (
+  api: Near.providers.JsonRpcProvider,
+  batch: number[],
+) => Promise<IBlock<BlockContent>[]>;
+
 @Injectable()
 export class ApiService extends BaseApiService<
   Near.providers.JsonRpcProvider,
   SafeJsonRpcProvider,
   IBlock<BlockContent>[]
 > {
-  private fetchBlocksBatches = NearUtil.fetchBlocksBatches;
+  private fetchBlocksBatches =
+    NearUtil.fetchBlocksBatches as ForceFetchBatchFunc;
 
-  constructor(
-    @Inject('ISubqueryProject') private project: SubqueryProject,
+  private constructor(
     connectionPoolService: ConnectionPoolService<NearApiConnection>,
     eventEmitter: EventEmitter2,
-    private nodeConfig: NodeConfig,
   ) {
     super(connectionPoolService, eventEmitter);
   }
@@ -53,27 +60,34 @@ export class ApiService extends BaseApiService<
     await this.connectionPoolService.onApplicationShutdown();
   }
 
-  async init(): Promise<ApiService> {
+  static async create(
+    project: SubqueryProject,
+    connectionPoolService: ConnectionPoolService<NearApiConnection>,
+    eventEmitter: EventEmitter2,
+    nodeConfig: NodeConfig,
+  ): Promise<ApiService> {
     let network;
     try {
-      network = this.project.network;
+      network = project.network;
     } catch (e) {
       exitWithError(new Error(`Failed to init api`, { cause: e }), logger);
     }
 
-    if (this.nodeConfig?.profiler) {
-      this.fetchBlocksBatches = profilerWrap(
+    const apiService = new ApiService(connectionPoolService, eventEmitter);
+
+    if (nodeConfig?.profiler) {
+      apiService.fetchBlocksBatches = profilerWrap(
         NearUtil.fetchBlocksBatches,
         'NearUtil',
         'fetchBlocksBatches',
-      );
+      ) as ForceFetchBatchFunc;
     }
 
-    await this.createConnections(network, (endpoint) =>
-      NearApiConnection.create(endpoint, this.fetchBlocksBatches),
+    await apiService.createConnections(network, (endpoint, config) =>
+      NearApiConnection.create(endpoint, apiService.fetchBlocksBatches, config),
     );
 
-    return this;
+    return apiService;
   }
 
   get api(): Near.providers.JsonRpcProvider {

@@ -1,6 +1,7 @@
 // Copyright 2020-2024 SubQuery Pte Ltd authors & contributors
 // SPDX-License-Identifier: GPL-3.0
 
+import assert from 'assert';
 import {
   isCustomDs,
   NearHandlerKind,
@@ -16,7 +17,6 @@ import { NodeConfig, DictionaryV1 } from '@subql/node-core';
 import {
   DictionaryQueryCondition,
   DictionaryQueryEntry as DictionaryV1QueryEntry,
-  DsProcessor,
 } from '@subql/types-core';
 import {
   NearBlockFilter,
@@ -26,6 +26,9 @@ import {
 import { sortBy, uniqBy } from 'lodash';
 import { SubqueryProject } from '../../../configure/SubqueryProject';
 import { isBaseHandler, isCustomHandler } from '../../../utils/project';
+import { DsProcessorService } from '../../ds-processor.service';
+
+type GetDsProcessor = DsProcessorService['getDsProcessor'];
 
 function txFilterToQueryEntry(
   filter: NearTransactionFilter,
@@ -78,13 +81,11 @@ function actionFilterToQueryEntry(
   };
 }
 
-function getBaseHandlerKind<
-  P extends DsProcessor<NearDatasource> = DsProcessor<NearDatasource>,
->(
+function getBaseHandlerKind(
   ds: NearDataSource,
   handler: NearHandler,
-  getDsProcessor: (ds: NearDatasource) => P,
-): NearHandlerKind {
+  getDsProcessor: GetDsProcessor,
+): NearHandlerKind | undefined {
   if (isRuntimeDs(ds) && isBaseHandler(handler)) {
     return handler.kind;
   } else if (isCustomDs(ds) && isCustomHandler(handler)) {
@@ -99,13 +100,10 @@ function getBaseHandlerKind<
   }
 }
 
-function getBaseHandlerFilters<
-  T extends NearRuntimeHandlerFilter,
-  P extends DsProcessor<NearDatasource> = DsProcessor<NearDatasource>,
->(
+function getBaseHandlerFilters<T extends NearRuntimeHandlerFilter>(
   ds: NearDataSource,
   handlerKind: string,
-  getDsProcessor: (ds: NearDatasource) => P,
+  getDsProcessor: GetDsProcessor,
 ): T[] {
   if (isCustomDs(ds)) {
     const plugin = getDsProcessor(ds);
@@ -119,11 +117,9 @@ function getBaseHandlerFilters<
 }
 
 // eslint-disable-next-line complexity
-function buildDictionaryV1QueryEntries<
-  P extends DsProcessor<NearDatasource> = DsProcessor<NearDatasource>,
->(
+function buildDictionaryV1QueryEntries(
   dataSources: NearDatasource[],
-  getDsProcessor: (ds: NearDatasource) => P,
+  getDsProcessor: GetDsProcessor,
 ): DictionaryV1QueryEntry[] {
   const queryEntries: DictionaryV1QueryEntry[] = [];
 
@@ -131,14 +127,13 @@ function buildDictionaryV1QueryEntries<
     const plugin = isCustomDs(ds) ? getDsProcessor(ds) : undefined;
     for (const handler of ds.mapping.handlers) {
       const baseHandlerKind = getBaseHandlerKind(ds, handler, getDsProcessor);
-      let filterList: NearRuntimeHandlerFilter[];
+      let filterList: NearRuntimeHandlerFilter[] = [];
       if (isCustomDs(ds)) {
+        assert(plugin, 'plugin should be defined');
         const processor = plugin.handlerProcessors[handler.kind];
-        if (processor.dictionaryQuery) {
-          const queryEntry = processor.dictionaryQuery(
-            (handler as NearCustomHandler).filter,
-            ds,
-          );
+        const filter = (handler as NearCustomHandler).filter;
+        if (processor.dictionaryQuery && filter) {
+          const queryEntry = processor.dictionaryQuery(filter, ds);
           if (queryEntry) {
             queryEntries.push(queryEntry);
             continue;
@@ -149,11 +144,11 @@ function buildDictionaryV1QueryEntries<
           handler.kind,
           getDsProcessor,
         );
-      } else {
+      } else if (handler.filter) {
         filterList = [handler.filter];
       }
       // Filter out any undefined
-      filterList = filterList.filter(Boolean);
+      filterList = filterList.filter((f) => f);
       if (!filterList.length) return [];
       switch (baseHandlerKind) {
         case NearHandlerKind.Block:
@@ -222,10 +217,8 @@ export class NearDictionaryV1 extends DictionaryV1<NearDatasource> {
   constructor(
     project: SubqueryProject,
     nodeConfig: NodeConfig,
-    protected getDsProcessor: (
-      ds: NearDatasource,
-    ) => DsProcessor<NearDatasource>,
-    dictionaryUrl?: string,
+    protected getDsProcessor: GetDsProcessor,
+    dictionaryUrl: string,
     chainId?: string,
   ) {
     super(dictionaryUrl, chainId ?? project.network.chainId, nodeConfig);
@@ -234,8 +227,8 @@ export class NearDictionaryV1 extends DictionaryV1<NearDatasource> {
   static async create(
     project: SubqueryProject,
     nodeConfig: NodeConfig,
-    getDsProcessor: (ds: NearDatasource) => DsProcessor<NearDatasource>,
-    dictionaryUrl?: string,
+    getDsProcessor: GetDsProcessor,
+    dictionaryUrl: string,
     chainId?: string,
   ): Promise<NearDictionaryV1> {
     const dictionary = new NearDictionaryV1(

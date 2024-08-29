@@ -5,5 +5,7 @@ import { IBlockDispatcher } from '@subql/node-core';
 import { NearBlock } from '@subql/types-near';
 
 export interface INearBlockDispatcher extends IBlockDispatcher<NearBlock> {
-  init(onDynamicDsCreated: (height: number) => Promise<void>): Promise<void>;
+  init(
+    onDynamicDsCreated: (height: number) => void | Promise<void>,
+  ): Promise<void>;
 }

@@ -10,7 +10,13 @@ import {
   NearDataSource,
   NearHandlerKind,
 } from '@subql/common-near';
-import { NodeConfig, BaseFetchService, getModulos } from '@subql/node-core';
+import {
+  NodeConfig,
+  BaseFetchService,
+  getModulos,
+  StoreCacheService,
+  Header,
+} from '@subql/node-core';
 import { NearBlock, NearDatasource } from '@subql/types-near';
 import { JsonRpcProvider } from 'near-api-js/lib/providers';
 import { SubqueryProject } from '../configure/SubqueryProject';
@@ -38,9 +44,10 @@ export class FetchService extends BaseFetchService<
     @Inject('IBlockDispatcher')
     blockDispatcher: INearBlockDispatcher,
     dictionaryService: NearDictionaryService,
-    private unfinalizedBlocksService: UnfinalizedBlocksService,
+    unfinalizedBlocksService: UnfinalizedBlocksService,
     eventEmitter: EventEmitter2,
     schedulerRegistry: SchedulerRegistry,
+    storeCacheService: StoreCacheService,
   ) {
     super(
       nodeConfig,
@@ -50,6 +57,8 @@ export class FetchService extends BaseFetchService<
       dictionaryService,
       eventEmitter,
       schedulerRegistry,
+      unfinalizedBlocksService,
+      storeCacheService,
     );
   }
 
@@ -57,13 +66,10 @@ export class FetchService extends BaseFetchService<
     return this.apiService.unsafeApi;
   }
 
-  protected async getFinalizedHeight(): Promise<number> {
+  protected async getFinalizedHeader(): Promise<Header> {
     const finalizedHeader = (await this.api.block({ finality: 'final' }))
       .header;
-    this.unfinalizedBlocksService.registerFinalizedBlock(
-      nearHeaderToHeader(finalizedHeader),
-    );
-    return finalizedHeader.height;
+    return nearHeaderToHeader(finalizedHeader);
   }
 
   protected async getBestHeight(): Promise<number> {

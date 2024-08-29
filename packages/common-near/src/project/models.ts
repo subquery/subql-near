@@ -16,7 +16,6 @@ import {
   NearHandlerKind,
   NearRuntimeDatasource,
   NearRuntimeHandler,
-  NearRuntimeHandlerFilter,
   NearCustomDatasource,
   ActionType,
   NearReceiptHandler,
@@ -26,7 +25,6 @@ import {plainToClass, Transform, Type} from 'class-transformer';
 import {
   IsArray,
   IsEnum,
-  IsInt,
   IsOptional,
   IsString,
   IsObject,
@@ -34,7 +32,6 @@ import {
   registerDecorator,
   ValidationArguments,
   ValidationOptions,
-  Min,
   ValidateIf,
 } from 'class-validator';
 
@@ -75,7 +72,7 @@ export class ReceiptFilter extends TransactionFilter implements NearReceiptFilte
 export class ActionFilter extends ReceiptFilter implements NearActionFilter {
   @IsString()
   @IsActionType()
-  type: ActionType;
+  type!: ActionType;
 
   @IsString()
   @IsOptional()
@@ -119,9 +116,9 @@ export class BlockHandler implements NearBlockHandler {
   @Type(() => BlockFilter)
   filter?: NearBlockFilter;
   @IsEnum(NearHandlerKind, {groups: [NearHandlerKind.Block]})
-  kind: NearHandlerKind.Block;
+  kind!: NearHandlerKind.Block;
   @IsString()
-  handler: string;
+  handler!: string;
 }
 
 export class TransactionHandler implements NearTransactionHandler {
@@ -130,9 +127,9 @@ export class TransactionHandler implements NearTransactionHandler {
   @Type(() => TransactionFilter)
   filter?: NearTransactionFilter;
   @IsEnum(NearHandlerKind, {groups: [NearHandlerKind.Transaction]})
-  kind: NearHandlerKind.Transaction;
+  kind!: NearHandlerKind.Transaction;
   @IsString()
-  handler: string;
+  handler!: string;
 }
 
 export class ActionHandler implements NearActionHandler {
@@ -141,9 +138,9 @@ export class ActionHandler implements NearActionHandler {
   @Type(() => ActionFilter)
   filter?: NearActionFilter;
   @IsEnum(NearHandlerKind, {groups: [NearHandlerKind.Action]})
-  kind: NearHandlerKind.Action;
+  kind!: NearHandlerKind.Action;
   @IsString()
-  handler: string;
+  handler!: string;
 }
 
 export class ReceiptHandler implements NearReceiptHandler {
@@ -152,16 +149,16 @@ export class ReceiptHandler implements NearReceiptHandler {
   @Type(() => ReceiptFilter)
   filter?: NearReceiptFilter;
   @IsEnum(NearHandlerKind, {groups: [NearHandlerKind.Receipt]})
-  kind: NearHandlerKind.Receipt;
+  kind!: NearHandlerKind.Receipt;
   @IsString()
-  handler: string;
+  handler!: string;
 }
 
 export class CustomHandler implements NearCustomHandler {
   @IsString()
-  kind: string;
+  kind!: string;
   @IsString()
-  handler: string;
+  handler!: string;
   @IsObject()
   @IsOptional()
   filter?: Record<string, unknown>;
@@ -187,31 +184,31 @@ export class RuntimeMapping implements BaseMapping<NearRuntimeHandler> {
   })
   @IsArray()
   @ValidateNested()
-  handlers: NearRuntimeHandler[];
+  handlers!: NearRuntimeHandler[];
   @IsString()
-  file: string;
+  file!: string;
 }
 
 export class CustomMapping implements BaseMapping<NearCustomHandler> {
   @IsArray()
   @Type(() => CustomHandler)
   @ValidateNested()
-  handlers: CustomHandler[];
+  handlers!: CustomHandler[];
   @IsString()
-  file: string;
+  file!: string;
 }
 
 export class RuntimeDataSourceBase extends BaseDataSource implements NearRuntimeDatasource {
   @IsEnum(NearDatasourceKind, {groups: [NearDatasourceKind.Runtime]})
-  kind: NearDatasourceKind.Runtime;
+  kind!: NearDatasourceKind.Runtime;
   @Type(() => RuntimeMapping)
   @ValidateNested()
-  mapping: RuntimeMapping;
+  mapping!: RuntimeMapping;
 }
 
 export class FileReferenceImpl implements FileReference {
   @IsString()
-  file: string;
+  file!: string;
 }
 
 export class CustomDataSourceBase<K extends string, M extends CustomMapping, O = any>
@@ -219,14 +216,14 @@ export class CustomDataSourceBase<K extends string, M extends CustomMapping, O =
   implements NearCustomDatasource<K, M>
 {
   @IsString()
-  kind: K;
+  kind!: K;
   @Type(() => CustomMapping)
   @ValidateNested()
-  mapping: M;
+  mapping!: M;
   @Type(() => FileReferenceImpl)
   @ValidateNested({each: true})
-  assets: Map<string, NearCustomDataSourceAsset>;
+  assets!: Map<string, NearCustomDataSourceAsset>;
   @Type(() => ProcessorImpl)
   @IsObject()
-  processor: Processor;
+  processor!: Processor;
 }

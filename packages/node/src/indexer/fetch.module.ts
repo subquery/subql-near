@@ -4,19 +4,16 @@
 import { Module } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import {
-  PoiBenchmarkService,
-  IndexingBenchmarkService,
   StoreService,
-  PoiService,
   NodeConfig,
-  ConnectionPoolService,
   StoreCacheService,
   ConnectionPoolStateManager,
   IProjectUpgradeService,
   PoiSyncService,
   InMemoryCacheService,
-  SandboxService,
   MonitorService,
+  CoreModule,
+  ConnectionPoolService,
 } from '@subql/node-core';
 import { SubqueryProject } from '../configure/SubqueryProject';
 import { ApiService } from './api.service';
@@ -34,14 +31,19 @@ import { ProjectService } from './project.service';
 import { UnfinalizedBlocksService } from './unfinalizedBlocks.service';
 
 @Module({
+  imports: [CoreModule],
   providers: [
-    InMemoryCacheService,
-    StoreService,
-    StoreCacheService,
-    ApiService,
+    {
+      provide: ApiService,
+      useFactory: ApiService.create.bind(ApiService),
+      inject: [
+        'ISubqueryProject',
+        ConnectionPoolService,
+        EventEmitter2,
+        NodeConfig,
+      ],
+    },
     IndexerManager,
-    ConnectionPoolService,
-    ConnectionPoolStateManager,
     {
       provide: 'IBlockDispatcher',
       useFactory: (
@@ -108,15 +110,9 @@ import { UnfinalizedBlocksService } from './unfinalizedBlocks.service';
       ],
     },
     FetchService,
-    ConnectionPoolService,
-    IndexingBenchmarkService,
-    PoiBenchmarkService,
     NearDictionaryService,
-    SandboxService,
     DsProcessorService,
     DynamicDsService,
-    PoiService,
-    PoiSyncService,
     {
       useClass: ProjectService,
       provide: 'IProjectService',
@@ -124,6 +120,5 @@ import { UnfinalizedBlocksService } from './unfinalizedBlocks.service';
     UnfinalizedBlocksService,
     MonitorService,
   ],
-  exports: [StoreService, StoreCacheService, MonitorService, PoiService],
 })
 export class FetchModule {}

@@ -2,11 +2,32 @@
 // SPDX-License-Identifier: GPL-3.0
 
 import { IBlock } from '@subql/node-core';
+import {
+  NearAction,
+  NearActionFilter,
+  NearReceiptFilter,
+  NearTransactionReceipt,
+} from '@subql/types-near';
 import * as Near from 'near-api-js';
 import { BlockContent } from '../indexer/types';
-import { filterActions, fetchBlocksBatches, filterReceipts } from './near';
+import { fetchBlocksBatches, filterAction, filterReceipt } from './near';
 
 jest.setTimeout(30000);
+
+// These are needed because the order doesn't seem to be deterministic
+function filterReceipts(
+  receipts: NearTransactionReceipt[],
+  filter: NearReceiptFilter,
+): NearTransactionReceipt[] {
+  return receipts.filter((r) => filterReceipt(r, filter));
+}
+
+function filterActions(
+  actions: NearAction[],
+  filter: NearActionFilter,
+): NearAction[] {
+  return actions.filter((a) => filterAction(a, filter));
+}
 
 describe('Near api', () => {
   let nearApi: Near.providers.JsonRpcProvider;
@@ -21,7 +42,9 @@ describe('Near api', () => {
     let block: IBlock<BlockContent>;
 
     beforeAll(async () => {
-      [block] = await fetchBlocksBatches(nearApi, [85686945]);
+      const [b] = await fetchBlocksBatches(nearApi, [85686945]);
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      block = b!;
     });
 
     it('Can filter receipts with sender, receiver and signer', () => {
@@ -52,10 +75,17 @@ describe('Near api', () => {
       block83788766: IBlock<BlockContent>,
       block85686945: IBlock<BlockContent>;
     beforeAll(async () => {
-      [block50838341, block83788766, block85686945] = await fetchBlocksBatches(
+      const [b1, b2, b3] = await fetchBlocksBatches(
         nearApi,
         [50838341, 83788766, 85686945],
       );
+
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      block50838341 = b1!;
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      block83788766 = b2!;
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      block85686945 = b3!;
     });
 
     it('Can filter FunctionCall actions', () => {
@@ -110,7 +140,8 @@ describe('Near api', () => {
     it.skip('Can filter DeleteAccount actions', async () => {
       const [block] = await fetchBlocksBatches(nearApi, [50838341]);
 
-      const actions = filterActions(block.block.actions, {
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      const actions = filterActions(block!.block.actions, {
         type: 'DeleteAccount',
         beneficiaryId: '',
       });
@@ -120,7 +151,8 @@ describe('Near api', () => {
 
     it('Can filter SignedDelegate actions', async () => {
       const [delegateBlock] = await fetchBlocksBatches(nearApi, [100051916]);
-      const actions = filterActions(delegateBlock.block.actions, {
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      const actions = filterActions(delegateBlock!.block.actions, {
         type: 'Delegate',
       });
       expect(actions.length).toBe(1);

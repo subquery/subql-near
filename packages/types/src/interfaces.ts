@@ -149,7 +149,7 @@ export interface NearAction<T = Action | any> {
   id: number;
   type: ActionType;
   action: T;
-  transaction: NearTransaction;
+  transaction?: NearTransaction;
   receipt?: NearTransactionReceipt;
 }
 

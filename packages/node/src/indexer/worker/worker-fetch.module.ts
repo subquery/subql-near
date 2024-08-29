@@ -6,53 +6,27 @@ import { EventEmitter2 } from '@nestjs/event-emitter';
 import {
   ConnectionPoolService,
   WorkerDynamicDsService,
-  WorkerConnectionPoolStateManager,
-  ConnectionPoolStateManager,
   NodeConfig,
-  InMemoryCacheService,
-  WorkerInMemoryCacheService,
   SandboxService,
   WorkerUnfinalizedBlocksService,
-  MonitorService,
-  WorkerMonitorService,
+  WorkerCoreModule,
 } from '@subql/node-core';
-import { SubqueryProject } from '../../configure/SubqueryProject';
 import { ApiService } from '../api.service';
 import { DsProcessorService } from '../ds-processor.service';
 import { DynamicDsService } from '../dynamic-ds.service';
 import { IndexerManager } from '../indexer.manager';
-import { NearApiConnection } from '../nearApi.connection';
 import { ProjectService } from '../project.service';
 import { UnfinalizedBlocksService } from '../unfinalizedBlocks.service';
 import { WorkerService } from '../worker/worker.service';
 
 @Module({
+  imports: [WorkerCoreModule],
   providers: [
     IndexerManager,
     ConnectionPoolService,
     {
-      provide: ConnectionPoolStateManager,
-      useFactory: () =>
-        new WorkerConnectionPoolStateManager((global as any).host),
-    },
-    ConnectionPoolService,
-    {
       provide: ApiService,
-      useFactory: async (
-        project: SubqueryProject,
-        connectionPoolService: ConnectionPoolService<NearApiConnection>,
-        eventEmitter: EventEmitter2,
-        nodeConfig: NodeConfig,
-      ) => {
-        const apiService = new ApiService(
-          project,
-          connectionPoolService,
-          eventEmitter,
-          nodeConfig,
-        );
-        await apiService.init();
-        return apiService;
-      },
+      useFactory: ApiService.create.bind(ApiService),
       inject: [
         'ISubqueryProject',
         ConnectionPoolService,
@@ -72,19 +46,10 @@ import { WorkerService } from '../worker/worker.service';
     },
     WorkerService,
     {
-      provide: MonitorService,
-      useFactory: () => new WorkerMonitorService((global as any).host),
-    },
-    {
       provide: UnfinalizedBlocksService,
       useFactory: () =>
         new WorkerUnfinalizedBlocksService((global as any).host),
     },
-    {
-      provide: InMemoryCacheService,
-      useFactory: () => new WorkerInMemoryCacheService((global as any).host),
-    },
   ],
-  exports: [],
 })
 export class WorkerFetchModule {}

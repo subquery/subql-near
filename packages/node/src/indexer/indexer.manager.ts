@@ -101,7 +101,7 @@ export class IndexerManager extends BaseIndexerManager<
         (action) =>
           //check if action is not produced by receipts
           action.receipt === undefined &&
-          action.transaction.result.id === transaction.result.id,
+          action.transaction?.result.id === transaction.result.id,
       );
       for (const action of actions) {
         await this.indexAction(action, dataSources, getVM);

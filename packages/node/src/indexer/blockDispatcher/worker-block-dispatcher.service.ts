@@ -81,29 +81,10 @@ export class WorkerBlockDispatcherService
     );
   }
 
-  async init(
-    onDynamicDsCreated: (height: number) => Promise<void>,
-  ): Promise<void> {
-    await super.init(onDynamicDsCreated);
-  }
-
   protected async fetchBlock(
     worker: IndexerWorker,
     height: number,
   ): Promise<void> {
-    // const start = new Date();
-    await worker.fetchBlock(height, null);
-    // const end = new Date();
-
-    // const waitTime = end.getTime() - start.getTime();
-    // if (waitTime > 1000) {
-    //   logger.info(
-    //     `Waiting to fetch block ${height}: ${chalk.red(`${waitTime}ms`)}`,
-    //   );
-    // } else if (waitTime > 200) {
-    //   logger.info(
-    //     `Waiting to fetch block ${height}: ${chalk.yellow(`${waitTime}ms`)}`,
-    //   );
-    // }
+    await worker.fetchBlock(height, 0 /* Not used*/);
   }
 }
