@@ -5,6 +5,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+### Added
+- Support for network endpoint config providing the ability to set headers (#119)
+
+### Changed
+- Enable strict TS (#119)
+- Breaking change: Update to latest `@subql/node-core`, require indexing environment timezone set to UTC (#119)
+- Use more code from node core (#119)
+
+### Fixed
+- Actions filter issue (#119)
+- Various issues causing poi inconsistency (#119)
 
 ## [3.12.0] - 2024-07-03
 ### Changed
