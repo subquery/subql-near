@@ -23,7 +23,6 @@ import { WorkerService } from '../worker/worker.service';
   imports: [WorkerCoreModule],
   providers: [
     IndexerManager,
-    ConnectionPoolService,
     {
       provide: ApiService,
       useFactory: ApiService.create.bind(ApiService),

@@ -6,6 +6,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [4.0.1] - 2024-09-04
+### Fixed
+- Workers dependencies causing crash (#122)
+
 ## [4.0.0] - 2024-08-30
 ### Added
 - Support for network endpoint config providing the ability to set headers (#119)
@@ -249,7 +253,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add `toJson` method to function args (#9)
 
 ## 1.18.0 - 2023-01-26
-[Unreleased]: https://github.com/subquery/subql-near/compare/node-near/4.0.0...HEAD
+[Unreleased]: https://github.com/subquery/subql-near/compare/node-near/4.0.1...HEAD
+[4.0.1]: https://github.com/subquery/subql-near/compare/node-near/4.0.0...node-near/4.0.1
 [4.0.0]: https://github.com/subquery/subql-near/compare/node-near/3.12.0...node-near/4.0.0
 [3.12.0]: https://github.com/subquery/subql-near/compare/node-near/3.11.1...node-near/3.12.0
 [3.11.1]: https://github.com/subquery/subql-near/compare/node-near/3.11.0...node-near/3.11.1
