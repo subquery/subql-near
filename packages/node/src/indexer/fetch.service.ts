@@ -19,7 +19,6 @@ import {
 } from '@subql/node-core';
 import { NearBlock, NearDatasource } from '@subql/types-near';
 import { JsonRpcProvider } from 'near-api-js/lib/providers';
-import { SubqueryProject } from '../configure/SubqueryProject';
 import { calcInterval, nearHeaderToHeader } from '../utils/near';
 import { ApiService } from './api.service';
 import { INearBlockDispatcher } from './blockDispatcher';
