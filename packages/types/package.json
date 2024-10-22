@@ -1,6 +1,6 @@
 {
   "name": "@subql/types-near",
-  "version": "4.0.0",
+  "version": "4.0.1-0",
   "description": "",
   "homepage": "https://github.com/subquery/subql",
   "repository": "github:subquery/subql",
@@ -23,5 +23,6 @@
   },
   "devDependencies": {
     "@types/app-module-path": "^2.2.0"
-  }
+  },
+  "stableVersion": "4.0.0"
 }
