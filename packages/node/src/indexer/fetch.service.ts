@@ -19,7 +19,6 @@ import {
 } from '@subql/node-core';
 import { NearBlock, NearDatasource } from '@subql/types-near';
 import { JsonRpcProvider } from 'near-api-js/lib/providers';
-import { SubqueryProject } from '../configure/SubqueryProject';
 import { calcInterval, nearHeaderToHeader } from '../utils/near';
 import { ApiService } from './api.service';
 import { INearBlockDispatcher } from './blockDispatcher';
@@ -40,7 +39,6 @@ export class FetchService extends BaseFetchService<
     private apiService: ApiService,
     nodeConfig: NodeConfig,
     @Inject('IProjectService') projectService: ProjectService,
-    @Inject('ISubqueryProject') project: SubqueryProject,
     @Inject('IBlockDispatcher')
     blockDispatcher: INearBlockDispatcher,
     dictionaryService: NearDictionaryService,
@@ -52,7 +50,6 @@ export class FetchService extends BaseFetchService<
     super(
       nodeConfig,
       projectService,
-      project.network,
       blockDispatcher,
       dictionaryService,
       eventEmitter,

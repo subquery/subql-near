@@ -6,6 +6,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- Bump `@subql/types-core` dependency (#123)
+
 ## [3.5.0] - 2024-08-30
 ### Added
 - Support for network endpoint config (#119)
