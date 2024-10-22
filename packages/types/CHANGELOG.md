@@ -6,6 +6,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [4.0.0] - 2024-10-22
 ### Changed
 - Bump `@subql/types-core` dependency (#123)
 
@@ -86,7 +87,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Args type for funciton calls (#9)
 
 ## [1.0.0] - 2023-01-26
-[Unreleased]: https://github.com/subquery/subql-near/compare/types-near/3.5.0...HEAD
+[Unreleased]: https://github.com/subquery/subql-near/compare/types-near/4.0.0...HEAD
+[4.0.0]: https://github.com/subquery/subql-near/compare/types-near/3.5.0...types-near/4.0.0
 [3.5.0]: https://github.com/subquery/subql-near/compare/types-near/3.4.0...types-near/3.5.0
 [3.4.0]: https://github.com/subquery/subql-near/compare/types-near/3.3.0...types-near/3.4.0
 [3.3.0]: https://github.com/subquery/subql-near/compare/types-near/3.2.0...types-near/3.3.0
