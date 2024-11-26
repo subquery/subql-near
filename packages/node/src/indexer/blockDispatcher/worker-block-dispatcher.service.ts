@@ -7,7 +7,7 @@ import { EventEmitter2 } from '@nestjs/event-emitter';
 import {
   NodeConfig,
   StoreService,
-  StoreCacheService,
+  IStoreModelProvider,
   IProjectService,
   WorkerBlockDispatcher,
   ConnectionPoolStateManager,
@@ -24,6 +24,7 @@ import { NearApiConnection } from '../nearApi.connection';
 import { BlockContent } from '../types';
 import { UnfinalizedBlocksService } from '../unfinalizedBlocks.service';
 import { IIndexerWorker } from '../worker/worker';
+import { FetchBlockResponse } from '../worker/worker.service';
 
 type IndexerWorker = IIndexerWorker & {
   terminate: () => Promise<number>;
@@ -42,7 +43,7 @@ export class WorkerBlockDispatcherService
     projectUpgradeService: IProjectUpgradeService,
     cacheService: InMemoryCacheService,
     storeService: StoreService,
-    storeCacheService: StoreCacheService,
+    storeModelProvider: IStoreModelProvider,
     poiSyncService: PoiSyncService,
     @Inject('ISubqueryProject') project: SubqueryProject,
     dynamicDsService: DynamicDsService,
@@ -56,7 +57,7 @@ export class WorkerBlockDispatcherService
       projectService,
       projectUpgradeService,
       storeService,
-      storeCacheService,
+      storeModelProvider,
       poiSyncService,
       project,
       () =>
@@ -81,10 +82,10 @@ export class WorkerBlockDispatcherService
     );
   }
 
-  protected async fetchBlock(
+  async fetchBlock(
     worker: IndexerWorker,
     height: number,
-  ): Promise<void> {
-    await worker.fetchBlock(height, 0 /* Not used*/);
+  ): Promise<FetchBlockResponse> {
+    return worker.fetchBlock(height, 0 /* Not used*/);
   }
 }

@@ -14,7 +14,7 @@ import {
   NodeConfig,
   BaseFetchService,
   getModulos,
-  StoreCacheService,
+  IStoreModelProvider,
   Header,
 } from '@subql/node-core';
 import { NearBlock, NearDatasource } from '@subql/types-near';
@@ -45,7 +45,7 @@ export class FetchService extends BaseFetchService<
     unfinalizedBlocksService: UnfinalizedBlocksService,
     eventEmitter: EventEmitter2,
     schedulerRegistry: SchedulerRegistry,
-    storeCacheService: StoreCacheService,
+    storeModelProvider: IStoreModelProvider,
   ) {
     super(
       nodeConfig,
@@ -55,7 +55,7 @@ export class FetchService extends BaseFetchService<
       eventEmitter,
       schedulerRegistry,
       unfinalizedBlocksService,
-      storeCacheService,
+      storeModelProvider,
     );
   }
 
