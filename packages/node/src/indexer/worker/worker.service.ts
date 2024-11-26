@@ -10,14 +10,16 @@ import {
   IProjectUpgradeService,
   BlockUnavailableError,
   IBlock,
+  Header,
 } from '@subql/node-core';
 
 import { NearDatasource } from '@subql/types-near';
+import { nearHeaderToHeader } from '../../utils/near';
 import { ApiService } from '../api.service';
 import { IndexerManager } from '../indexer.manager';
 import { BlockContent } from '../types';
 
-export type FetchBlockResponse = { parentHash: string } | undefined;
+export type FetchBlockResponse = Header;
 
 @Injectable()
 export class WorkerService extends BaseWorkerService<
@@ -47,9 +49,7 @@ export class WorkerService extends BaseWorkerService<
   }
 
   protected toBlockResponse(block: BlockContent): FetchBlockResponse {
-    return {
-      parentHash: block?.block.header.prev_hash,
-    };
+    return nearHeaderToHeader(block.block.header);
   }
 
   protected async processFetchedBlock(
