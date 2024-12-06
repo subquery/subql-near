@@ -12,6 +12,8 @@ import {
   StoreService,
   storeModelFactory,
   NodeConfig,
+  ConnectionPoolService,
+  ConnectionPoolStateManager,
 } from '@subql/node-core';
 import { Sequelize } from '@subql/x-sequelize';
 import { ConfigureModule } from '../configure/configure.module';
@@ -34,10 +36,17 @@ import { UnfinalizedBlocksService } from '../indexer/unfinalizedBlocks.service';
     UnfinalizedBlocksService,
     DynamicDsService,
     DsProcessorService,
+    ConnectionPoolService,
+    ConnectionPoolStateManager,
     {
-      // Used to work with DI for unfinalizedBlocksService but not used with reindex
       provide: ApiService,
-      useFactory: () => undefined,
+      useFactory: ApiService.create.bind(ApiService),
+      inject: [
+        'ISubqueryProject',
+        ConnectionPoolService,
+        EventEmitter2,
+        NodeConfig,
+      ],
     },
     SchedulerRegistry,
   ],
