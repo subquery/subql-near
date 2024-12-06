@@ -6,6 +6,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [4.1.1] - 2024-12-06
 ### Fixed
 - Missing API dependency when using reindex
 
@@ -269,7 +270,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add `toJson` method to function args (#9)
 
 ## 1.18.0 - 2023-01-26
-[Unreleased]: https://github.com/subquery/subql-near/compare/node-near/4.1.0...HEAD
+[Unreleased]: https://github.com/subquery/subql-near/compare/node-near/4.1.1...HEAD
+[4.1.1]: https://github.com/subquery/subql-near/compare/node-near/4.1.0...node-near/4.1.1
 [4.1.0]: https://github.com/subquery/subql-near/compare/node-near/4.0.5...node-near/4.1.0
 [4.0.5]: https://github.com/subquery/subql-near/compare/node-near/4.0.4...node-near/4.0.5
 [4.0.4]: https://github.com/subquery/subql-near/compare/node-near/4.0.1...node-near/4.0.4
