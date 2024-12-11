@@ -17,7 +17,7 @@ import { NearDatasource } from '@subql/types-near';
 import { nearHeaderToHeader } from '../../utils/near';
 import { ApiService } from '../api.service';
 import { IndexerManager } from '../indexer.manager';
-import { BlockContent } from '../types';
+import { BlockContent, getBlockSize } from '../types';
 
 export type FetchBlockResponse = Header;
 
@@ -60,5 +60,9 @@ export class WorkerService extends BaseWorkerService<
       throw new BlockUnavailableError();
     }
     return this.indexerManager.indexBlock(block, dataSources);
+  }
+
+  getBlockSize(block: IBlock<BlockContent>): number {
+    return getBlockSize(block.block);
   }
 }

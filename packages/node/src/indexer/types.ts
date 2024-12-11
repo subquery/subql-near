@@ -17,3 +17,7 @@ export interface BlockContent {
 }
 
 export type BestBlocks = Record<number, HexString>;
+
+export function getBlockSize(block: BlockContent): number {
+  return block.block.chunks.reduce((acc, c) => acc + c.encoded_length, 0);
+}
