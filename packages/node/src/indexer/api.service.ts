@@ -4,7 +4,6 @@
 import { ConnectionInfo } from '@near-js/providers/lib/fetch_json';
 import { Injectable } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
-import { NearProjectNetworkConfig } from '@subql/common-near';
 
 import {
   getLogger,
