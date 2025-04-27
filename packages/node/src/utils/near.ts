@@ -1,4 +1,4 @@
-// Copyright 2020-2024 SubQuery Pte Ltd authors & contributors
+// Copyright 2020-2025 SubQuery Pte Ltd authors & contributors
 // SPDX-License-Identifier: GPL-3.0
 
 import { BN } from '@polkadot/util';
@@ -378,6 +378,7 @@ export function filterAction(
  * @param overallSpecVer exists if all blocks in the range have same parant specVersion
  */
 
+// eslint-disable-next-line @typescript-eslint/require-await
 export async function getBlockByHeight(
   api: providers.JsonRpcProvider,
   height: number,
