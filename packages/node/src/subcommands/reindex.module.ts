@@ -1,4 +1,4 @@
-// Copyright 2020-2024 SubQuery Pte Ltd authors & contributors
+// Copyright 2020-2025 SubQuery Pte Ltd authors & contributors
 // SPDX-License-Identifier: GPL-3.0
 
 import { Module } from '@nestjs/common';
@@ -14,13 +14,13 @@ import {
   NodeConfig,
   ConnectionPoolService,
   ConnectionPoolStateManager,
+  UnfinalizedBlocksService,
+  DynamicDsService,
+  DsProcessorService,
 } from '@subql/node-core';
 import { Sequelize } from '@subql/x-sequelize';
 import { ConfigureModule } from '../configure/configure.module';
 import { ApiService } from '../indexer/api.service';
-import { DsProcessorService } from '../indexer/ds-processor.service';
-import { DynamicDsService } from '../indexer/dynamic-ds.service';
-import { UnfinalizedBlocksService } from '../indexer/unfinalizedBlocks.service';
 
 @Module({
   providers: [
@@ -33,8 +33,14 @@ import { UnfinalizedBlocksService } from '../indexer/unfinalizedBlocks.service';
     ReindexService,
     ForceCleanService,
     PoiService,
-    UnfinalizedBlocksService,
-    DynamicDsService,
+    {
+      provide: 'UnfinalizedBlocksService',
+      useClass: UnfinalizedBlocksService,
+    },
+    {
+      provide: 'DynamicDsService',
+      useClass: DynamicDsService,
+    },
     DsProcessorService,
     ConnectionPoolService,
     ConnectionPoolStateManager,

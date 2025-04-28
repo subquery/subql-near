@@ -1,27 +1,24 @@
-// Copyright 2020-2024 SubQuery Pte Ltd authors & contributors
+// Copyright 2020-2025 SubQuery Pte Ltd authors & contributors
 // SPDX-License-Identifier: GPL-3.0
 
 import { Module } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import {
   ConnectionPoolService,
-  WorkerDynamicDsService,
+  DsProcessorService,
   NodeConfig,
-  SandboxService,
-  WorkerUnfinalizedBlocksService,
+  ProjectService,
   WorkerCoreModule,
 } from '@subql/node-core';
+import { BlockchainService } from '../../blockchain.service';
 import { ApiService } from '../api.service';
-import { DsProcessorService } from '../ds-processor.service';
-import { DynamicDsService } from '../dynamic-ds.service';
 import { IndexerManager } from '../indexer.manager';
-import { ProjectService } from '../project.service';
-import { UnfinalizedBlocksService } from '../unfinalizedBlocks.service';
 import { WorkerService } from '../worker/worker.service';
 
 @Module({
   imports: [WorkerCoreModule],
   providers: [
+    DsProcessorService,
     IndexerManager,
     {
       provide: ApiService,
@@ -33,22 +30,15 @@ import { WorkerService } from '../worker/worker.service';
         NodeConfig,
       ],
     },
-    SandboxService,
-    DsProcessorService,
-    {
-      provide: DynamicDsService,
-      useFactory: () => new WorkerDynamicDsService((global as any).host),
-    },
     {
       provide: 'IProjectService',
       useClass: ProjectService,
     },
-    WorkerService,
     {
-      provide: UnfinalizedBlocksService,
-      useFactory: () =>
-        new WorkerUnfinalizedBlocksService((global as any).host),
+      provide: 'IBlockchainService',
+      useClass: BlockchainService,
     },
+    WorkerService,
   ],
 })
 export class WorkerFetchModule {}

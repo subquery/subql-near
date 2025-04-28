@@ -1,4 +1,4 @@
-// Copyright 2020-2024 SubQuery Pte Ltd authors & contributors
+// Copyright 2020-2025 SubQuery Pte Ltd authors & contributors
 // SPDX-License-Identifier: GPL-3.0
 
 import { Inject, Injectable } from '@nestjs/common';
@@ -8,12 +8,12 @@ import {
   TestingService as BaseTestingService,
   NestLogger,
   TestRunner,
+  ProjectService,
 } from '@subql/node-core';
 import { NearDatasource } from '@subql/types-near';
 import { JsonRpcProvider } from 'near-api-js/lib/providers';
 import { SubqueryProject } from '../configure/SubqueryProject';
 import { SafeJsonRpcProvider } from '../indexer/api.service';
-import { ProjectService } from '../indexer/project.service';
 import { BlockContent } from '../indexer/types';
 import { TestingModule } from './testing.module';
 

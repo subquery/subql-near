@@ -1,10 +1,9 @@
-// Copyright 2020-2024 SubQuery Pte Ltd authors & contributors
+// Copyright 2020-2025 SubQuery Pte Ltd authors & contributors
 // SPDX-License-Identifier: GPL-3.0
 
 import { ConnectionInfo } from '@near-js/providers/lib/fetch_json';
 import { Injectable } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
-import { NearProjectNetworkConfig } from '@subql/common-near';
 
 import {
   getLogger,
@@ -108,22 +107,27 @@ export class SafeJsonRpcProvider extends Near.providers.JsonRpcProvider {
     super(connectionInfo);
   }
 
+  // eslint-disable-next-line @typescript-eslint/require-await
   async block(): Promise<BlockResult> {
     return super.block({ blockId: this.height });
   }
 
+  // eslint-disable-next-line @typescript-eslint/require-await
   async blockChanges(): Promise<BlockChangeResult> {
     return super.blockChanges({ blockId: this.height });
   }
 
+  // eslint-disable-next-line @typescript-eslint/require-await
   async validators(): Promise<EpochValidatorInfo> {
     return super.validators(this.height);
   }
 
+  // eslint-disable-next-line @typescript-eslint/require-await
   async accessKeyChanges(accountIdArray: string[]): Promise<ChangeResult> {
     return super.accessKeyChanges(accountIdArray, { blockId: this.height });
   }
 
+  // eslint-disable-next-line @typescript-eslint/require-await
   async singleAccessKeyChanges(
     accessKeyArray: AccessKeyWithPublicKey[],
   ): Promise<ChangeResult> {
@@ -132,10 +136,12 @@ export class SafeJsonRpcProvider extends Near.providers.JsonRpcProvider {
     });
   }
 
+  // eslint-disable-next-line @typescript-eslint/require-await
   async accountChanges(accountIdArray: string[]): Promise<ChangeResult> {
     return super.accountChanges(accountIdArray, { blockId: this.height });
   }
 
+  // eslint-disable-next-line @typescript-eslint/require-await
   async contractStateChanges(
     accountIdArray: string[],
     blockQuery: BlockReference = { blockId: this.height },
@@ -148,10 +154,12 @@ export class SafeJsonRpcProvider extends Near.providers.JsonRpcProvider {
     );
   }
 
+  // eslint-disable-next-line @typescript-eslint/require-await
   async contractCodeChanges(accountIdArray: string[]): Promise<ChangeResult> {
     return super.contractCodeChanges(accountIdArray, { blockId: this.height });
   }
 
+  // eslint-disable-next-line @typescript-eslint/require-await
   async gasPrice(): Promise<GasPrice> {
     return super.gasPrice(this.height);
   }
