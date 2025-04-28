@@ -432,6 +432,7 @@ export function nearHeaderToHeader(header: BlockHeader): Header {
     blockHeight: header.height,
     blockHash: header.hash,
     parentHash: header.prev_hash,
+    timestamp: new Date(header.timestamp),
   };
 }
 

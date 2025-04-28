@@ -13,7 +13,7 @@ import {
   NearCustomHandler,
   NearTransactionFilter,
 } from '@subql/common-near';
-import { NodeConfig, DictionaryV1 } from '@subql/node-core';
+import { NodeConfig, DictionaryV1, DsProcessorService } from '@subql/node-core';
 import {
   DictionaryQueryCondition,
   DictionaryQueryEntry as DictionaryV1QueryEntry,
@@ -26,7 +26,6 @@ import {
 import { sortBy, uniqBy } from 'lodash';
 import { SubqueryProject } from '../../../configure/SubqueryProject';
 import { isBaseHandler, isCustomHandler } from '../../../utils/project';
-import { DsProcessorService } from '../../ds-processor.service';
 
 type GetDsProcessor = DsProcessorService['getDsProcessor'];
 

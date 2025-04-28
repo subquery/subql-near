@@ -1,7 +1,7 @@
 // Copyright 2020-2025 SubQuery Pte Ltd authors & contributors
 // SPDX-License-Identifier: GPL-3.0
 
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import {
   isBlockHandlerProcessor,
   isActionHandlerProcessor,
@@ -20,6 +20,9 @@ import {
   BaseIndexerManager,
   IBlock,
   SandboxService,
+  DsProcessorService,
+  DynamicDsService,
+  UnfinalizedBlocksService,
 } from '@subql/node-core';
 import {
   NearBlock,
@@ -31,12 +34,10 @@ import {
   NearBlockFilter,
 } from '@subql/types-near';
 import { JsonRpcProvider } from 'near-api-js/lib/providers';
+import { BlockchainService } from '../blockchain.service';
 import * as NearUtil from '../utils/near';
 import { ApiService, SafeJsonRpcProvider } from './api.service';
-import { DsProcessorService } from './ds-processor.service';
-import { DynamicDsService } from './dynamic-ds.service';
 import { BlockContent } from './types';
-import { UnfinalizedBlocksService } from './unfinalizedBlocks.service';
 
 @Injectable()
 export class IndexerManager extends BaseIndexerManager<
@@ -54,12 +55,17 @@ export class IndexerManager extends BaseIndexerManager<
   protected isCustomDs = isCustomDs;
 
   constructor(
-    apiService: ApiService,
+    @Inject('APIService') apiService: ApiService,
     nodeConfig: NodeConfig,
     sandboxService: SandboxService<SafeJsonRpcProvider, JsonRpcProvider>,
-    dsProcessorService: DsProcessorService,
-    dynamicDsService: DynamicDsService,
+    dsProcessorService: DsProcessorService<
+      NearDatasource,
+      NearCustomDatasource
+    >,
+    dynamicDsService: DynamicDsService<NearDatasource>,
+    @Inject('IUnfinalizedBlocksService')
     unfinalizedBlocksService: UnfinalizedBlocksService,
+    @Inject('IBlockchainService') blockchainService: BlockchainService,
   ) {
     super(
       apiService,
@@ -70,6 +76,7 @@ export class IndexerManager extends BaseIndexerManager<
       unfinalizedBlocksService,
       FilterTypeMap,
       ProcessorTypeMap,
+      blockchainService,
     );
   }
 
