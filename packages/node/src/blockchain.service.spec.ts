@@ -10,9 +10,8 @@ const mockApiService = (): ApiService => {
     url: 'https://archival-rpc.mainnet.near.org',
   });
 
-  // await ethApi.init();
-
   return {
+    api,
     unsafeApi: api,
   } as any;
 };
