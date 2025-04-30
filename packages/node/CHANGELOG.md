@@ -6,6 +6,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [5.0.1] - 2025-05-01
+### Changed
+- Update `@subql/node-core` with workers performance fix
+
 ## [5.0.0] - 2025-04-28
 ### Changed
 - Implement blockchain service (#140)
@@ -285,7 +289,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add `toJson` method to function args (#9)
 
 ## 1.18.0 - 2023-01-26
-[Unreleased]: https://github.com/subquery/subql-near/compare/node-near/5.0.0...HEAD
+[Unreleased]: https://github.com/subquery/subql-near/compare/node-near/5.0.1...HEAD
+[5.0.1]: https://github.com/subquery/subql-near/compare/node-near/5.0.0...node-near/5.0.1
 [5.0.0]: https://github.com/subquery/subql-near/compare/node-near/4.3.0...node-near/5.0.0
 [4.3.0]: https://github.com/subquery/subql-near/compare/node-near/4.2.0...node-near/4.3.0
 [4.2.0]: https://github.com/subquery/subql-near/compare/node-near/4.1.1...node-near/4.2.0
