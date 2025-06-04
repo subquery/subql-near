@@ -9,7 +9,7 @@ import { ConfigureModule } from './configure/configure.module';
 import { FetchModule } from './indexer/fetch.module';
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
-const { version: nearSdkVersion } = require('near-api-js/package.json');
+const { version: nearSdkVersion } = require('@near-js/providers/package.json');
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const { version: packageVersion } = require('../package.json');
 
@@ -23,7 +23,7 @@ const { version: packageVersion } = require('../package.json');
     FetchModule,
     MetaModule.forRoot({
       version: packageVersion,
-      sdkVersion: { name: 'near-api-js', version: nearSdkVersion },
+      sdkVersion: { name: '@near-js/providers', version: nearSdkVersion },
     }),
   ],
   controllers: [],

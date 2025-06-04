@@ -1,7 +1,16 @@
 // Copyright 2020-2025 SubQuery Pte Ltd authors & contributors
 // SPDX-License-Identifier: GPL-3.0
 
-import { ConnectionInfo } from '@near-js/providers/lib/fetch_json';
+import { JsonRpcProvider } from '@near-js/providers';
+import {
+  AccessKeyWithPublicKey,
+  BlockChangeResult,
+  BlockReference,
+  BlockResult,
+  ChangeResult,
+  EpochValidatorInfo,
+  GasPrice,
+} from '@near-js/types';
 import { Injectable } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 
@@ -14,16 +23,6 @@ import {
   IBlock,
   exitWithError,
 } from '@subql/node-core';
-import * as Near from 'near-api-js';
-import {
-  AccessKeyWithPublicKey,
-  BlockChangeResult,
-  BlockReference,
-  BlockResult,
-  ChangeResult,
-  EpochValidatorInfo,
-  GasPrice,
-} from 'near-api-js/lib/providers/provider';
 
 import { SubqueryProject } from '../configure/SubqueryProject';
 import * as NearUtil from '../utils/near';
@@ -32,16 +31,17 @@ import { BlockContent } from './types';
 
 const logger = getLogger('api');
 
+export type ConnectionInfo = ConstructorParameters<typeof JsonRpcProvider>[0];
 // Force this here as Near can skip blocks and node-core doesn't support null for blocks
 // TODO improve types and follow to where the check to filter out null blocks is
 type ForceFetchBatchFunc = (
-  api: Near.providers.JsonRpcProvider,
+  api: JsonRpcProvider,
   batch: number[],
 ) => Promise<IBlock<BlockContent>[]>;
 
 @Injectable()
 export class ApiService extends BaseApiService<
-  Near.providers.JsonRpcProvider,
+  JsonRpcProvider,
   SafeJsonRpcProvider,
   IBlock<BlockContent>[]
 > {
@@ -89,7 +89,7 @@ export class ApiService extends BaseApiService<
     return apiService;
   }
 
-  get api(): Near.providers.JsonRpcProvider {
+  get api(): JsonRpcProvider {
     return this.unsafeApi;
   }
 
@@ -102,8 +102,8 @@ export class ApiService extends BaseApiService<
   }
 }
 
-export class SafeJsonRpcProvider extends Near.providers.JsonRpcProvider {
-  constructor(private height: number, private connectionInfo: ConnectionInfo) {
+export class SafeJsonRpcProvider extends JsonRpcProvider {
+  constructor(private height: number, connectionInfo: ConnectionInfo) {
     super(connectionInfo);
   }
 

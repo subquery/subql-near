@@ -1,6 +1,7 @@
 // Copyright 2020-2025 SubQuery Pte Ltd authors & contributors
 // SPDX-License-Identifier: GPL-3.0
 
+import { JsonRpcProvider } from '@near-js/providers';
 import { Inject, Injectable } from '@nestjs/common';
 import {
   isBlockHandlerProcessor,
@@ -33,7 +34,6 @@ import {
   NearCustomDatasource,
   NearBlockFilter,
 } from '@subql/types-near';
-import { JsonRpcProvider } from 'near-api-js/lib/providers';
 import { BlockchainService } from '../blockchain.service';
 import * as NearUtil from '../utils/near';
 import { ApiService, SafeJsonRpcProvider } from './api.service';

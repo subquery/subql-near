@@ -1,6 +1,7 @@
 // Copyright 2020-2025 SubQuery Pte Ltd authors & contributors
 // SPDX-License-Identifier: GPL-3.0
 
+import { JsonRpcProvider } from '@near-js/providers';
 import { IBlock } from '@subql/node-core';
 import {
   NearAction,
@@ -8,7 +9,6 @@ import {
   NearReceiptFilter,
   NearTransactionReceipt,
 } from '@subql/types-near';
-import * as Near from 'near-api-js';
 import { BlockContent } from '../indexer/types';
 import { fetchBlocksBatches, filterAction, filterReceipt } from './near';
 
@@ -30,11 +30,12 @@ function filterActions(
 }
 
 describe('Near api', () => {
-  let nearApi: Near.providers.JsonRpcProvider;
+  let nearApi: JsonRpcProvider;
 
   beforeAll(() => {
-    nearApi = new Near.providers.JsonRpcProvider({
-      url: 'https://archival-rpc.mainnet.near.org',
+    nearApi = new JsonRpcProvider({
+      // url: 'https://archival-rpc.mainnet.near.org',
+      url: 'https://near.lava.build:443',
     });
   });
 

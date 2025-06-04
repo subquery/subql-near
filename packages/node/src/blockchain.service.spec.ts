@@ -1,12 +1,12 @@
 // Copyright 2020-2025 SubQuery Pte Ltd authors & contributors
 // SPDX-License-Identifier: GPL-3.0
 
-import * as Near from 'near-api-js';
+import { JsonRpcProvider } from '@near-js/providers';
 import { BlockchainService } from './blockchain.service';
 import { ApiService } from './indexer/api.service';
 
 const mockApiService = (): ApiService => {
-  const api = new Near.providers.JsonRpcProvider({
+  const api = new JsonRpcProvider({
     url: 'https://archival-rpc.mainnet.near.org',
   });
 

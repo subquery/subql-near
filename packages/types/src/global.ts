@@ -1,9 +1,9 @@
 // Copyright 2020-2025 SubQuery Pte Ltd authors & contributors
 // SPDX-License-Identifier: GPL-3.0
 
-import {providers} from 'near-api-js';
+import type {JsonRpcProvider} from '@near-js/providers';
 import '@subql/types-core/dist/global';
 
 declare global {
-  const api: providers.JsonRpcProvider;
+  const api: JsonRpcProvider;
 }
