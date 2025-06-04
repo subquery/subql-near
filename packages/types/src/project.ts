@@ -1,6 +1,7 @@
 // Copyright 2020-2025 SubQuery Pte Ltd authors & contributors
 // SPDX-License-Identifier: GPL-3.0
 
+import {JsonRpcProvider} from '@near-js/providers';
 import {
   BaseTemplateDataSource,
   IProjectNetworkConfig,
@@ -15,7 +16,6 @@ import {
   SecondLayerHandlerProcessor_1_0_0,
   DsProcessor,
 } from '@subql/types-core';
-import {providers} from 'near-api-js';
 import {NearBlock, NearTransaction, NearAction, NearTransactionReceipt, ActionType} from './interfaces';
 
 export type RuntimeDatasourceTemplate = BaseTemplateDataSource<NearRuntimeDatasource>;
@@ -269,7 +269,7 @@ export type NearDatasourceProcessor<
     string,
     SecondLayerHandlerProcessorArray<K, F, any, DS>
   >
-> = DsProcessor<DS, P, providers.JsonRpcProvider>;
+> = DsProcessor<DS, P, JsonRpcProvider>;
 
 export type SecondLayerHandlerProcessor<
   K extends NearHandlerKind,
@@ -277,24 +277,8 @@ export type SecondLayerHandlerProcessor<
   E,
   DS extends NearCustomDatasource = NearCustomDatasource
 > =
-  | SecondLayerHandlerProcessor_0_0_0<
-      K,
-      RuntimeHandlerInputMap,
-      RuntimeHandlerFilterMap,
-      F,
-      E,
-      DS,
-      providers.JsonRpcProvider
-    >
-  | SecondLayerHandlerProcessor_1_0_0<
-      K,
-      RuntimeHandlerInputMap,
-      RuntimeHandlerFilterMap,
-      F,
-      E,
-      DS,
-      providers.JsonRpcProvider
-    >;
+  | SecondLayerHandlerProcessor_0_0_0<K, RuntimeHandlerInputMap, RuntimeHandlerFilterMap, F, E, DS, JsonRpcProvider>
+  | SecondLayerHandlerProcessor_1_0_0<K, RuntimeHandlerInputMap, RuntimeHandlerFilterMap, F, E, DS, JsonRpcProvider>;
 
 export type NearProject<DS extends NearDatasource = NearRuntimeDatasource> = CommonSubqueryProject<
   IProjectNetworkConfig,

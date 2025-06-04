@@ -17,9 +17,8 @@
     "/dist"
   ],
   "dependencies": {
-    "@subql/types-core": "^2.0.2",
-    "bn.js": "5.2.1",
-    "near-api-js": "^1.1.0"
+    "@near-js/providers": "^2.0.2",
+    "@subql/types-core": "^2.0.2"
   },
   "devDependencies": {
     "@types/app-module-path": "^2.2.0"

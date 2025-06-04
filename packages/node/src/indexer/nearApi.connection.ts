@@ -1,7 +1,7 @@
 // Copyright 2020-2025 SubQuery Pte Ltd authors & contributors
 // SPDX-License-Identifier: GPL-3.0
 
-import { ConnectionInfo } from '@near-js/providers/lib/fetch_json';
+import { JsonRpcProvider } from '@near-js/providers';
 import {
   ApiConnectionError,
   ApiErrorType,
@@ -10,14 +10,13 @@ import {
   NetworkMetadataPayload,
 } from '@subql/node-core';
 import { IEndpointConfig } from '@subql/types-core';
-import * as Near from 'near-api-js';
-import { SafeJsonRpcProvider } from './api.service';
+import { SafeJsonRpcProvider, ConnectionInfo } from './api.service';
 import { BlockContent } from './types';
 
 const GENESIS_BLOCK = 9_820_210;
 
 type FetchFunc = (
-  api: Near.providers.JsonRpcProvider,
+  api: JsonRpcProvider,
   batch: number[],
 ) => Promise<IBlock<BlockContent>[]>;
 
@@ -27,7 +26,7 @@ const { version: packageVersion } = require('../../package.json');
 export class NearApiConnection
   implements
     IApiConnectionSpecific<
-      Near.providers.JsonRpcProvider,
+      JsonRpcProvider,
       SafeJsonRpcProvider,
       IBlock<BlockContent>[]
     >
@@ -35,7 +34,7 @@ export class NearApiConnection
   readonly networkMeta: NetworkMetadataPayload;
 
   private constructor(
-    public unsafeApi: Near.providers.JsonRpcProvider,
+    public unsafeApi: JsonRpcProvider,
     private fetchBlocksBatches: FetchFunc,
     chainId: string,
     genesisHash: string,
@@ -64,7 +63,7 @@ export class NearApiConnection
       headers: headers,
     };
 
-    const api = new Near.providers.JsonRpcProvider(connectionInfo);
+    const api = new JsonRpcProvider(connectionInfo);
     return new NearApiConnection(
       api,
       fetchBlockBatches,

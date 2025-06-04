@@ -1,8 +1,7 @@
 // Copyright 2020-2025 SubQuery Pte Ltd authors & contributors
 // SPDX-License-Identifier: GPL-3.0
 
-import BN from 'bn.js';
-import {Chunk, BlockHeader} from 'near-api-js/lib/providers/provider';
+import type {Chunk, BlockHeader} from '@near-js/types';
 
 // eslint-disable-next-line @typescript-eslint/ban-types
 export interface IArgs extends String {
@@ -19,7 +18,7 @@ export interface NearBlock {
 }
 
 export interface NearTransaction {
-  nonce: BN;
+  nonce: bigint;
   signer_id: string;
   public_key: string;
   receiver_id: string;
@@ -45,7 +44,7 @@ export interface NearTransactionReceipt {
   predecessor_id: string;
   Action?: {
     actions: NearAction[];
-    gas_price: BN;
+    gas_price: bigint;
     input_data_ids: string[];
     output_data_receivers: {
       data_id: string;
@@ -71,22 +70,22 @@ export interface DeployContract {
 export interface FunctionCall {
   method_name: string;
   args: IArgs;
-  gas: BN;
-  deposit: BN;
+  gas: bigint;
+  deposit: bigint;
 }
 
 export interface Transfer {
-  deposit: BN;
+  deposit: bigint;
 }
 
 export interface Stake {
-  stake: BN;
+  stake: bigint;
   public_key: string;
 }
 
 export interface AddKey {
   public_key: string;
-  access_key: {nonce: BN; permission: string};
+  access_key: {nonce: bigint; permission: string};
 }
 
 export interface DeleteKey {
@@ -113,7 +112,7 @@ export interface DelegateAction {
   actions: NonDelegateAction[];
   /// Nonce to ensure that the same delegate action is not sent twice by a relayer and should match for given account's `public_key`.
   /// After this action is processed it will increment.
-  nonce: BN;
+  nonce: bigint;
   /// The maximal height of the block in the blockchain below which the given DelegateAction is valid.
   max_block_height: number;
   /// Public key that is used to sign this delegated action.

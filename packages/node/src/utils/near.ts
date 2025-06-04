@@ -1,7 +1,13 @@
 // Copyright 2020-2025 SubQuery Pte Ltd authors & contributors
 // SPDX-License-Identifier: GPL-3.0
 
-import { BN } from '@polkadot/util';
+import { JsonRpcProvider } from '@near-js/providers';
+import {
+  BlockHeader,
+  BlockResult,
+  ChunkResult,
+  FinalExecutionOutcome,
+} from '@near-js/types';
 import {
   getLogger,
   Header,
@@ -31,18 +37,15 @@ import {
   SignedDelegate,
 } from '@subql/types-near';
 import { get, range } from 'lodash';
-import { providers } from 'near-api-js';
-import {
-  BlockHeader,
-  BlockResult,
-  Transaction,
-} from 'near-api-js/lib/providers/provider';
 import { SubqlProjectBlockFilter } from '../configure/SubqueryProject';
 import { BlockContent } from '../indexer/types';
 
-const logger = getLogger('fetch');
-const DEFAULT_TIME = new BN(6_000);
+type Transaction = ChunkResult['transactions'][number];
 
+const logger = getLogger('fetch');
+const DEFAULT_TIME = 6_000; // 6 seconds
+
+// RPC receipt type, not defined in near-api-js
 interface Receipt {
   predecessor_id: string;
   receipt: {
@@ -102,7 +105,7 @@ export const mappingFilterAction: Record<
 };
 
 export async function wrapBlock(
-  api: providers.JsonRpcProvider,
+  api: JsonRpcProvider,
   blockResult: BlockResult,
 ): Promise<NearBlock> {
   const nearBlock: NearBlock = {
@@ -122,6 +125,7 @@ export async function wrapBlock(
           transaction.hash,
           transaction.signer_id,
         );
+
         const wrappedTx = wrapTransaction(
           blockResult,
           transaction,
@@ -167,7 +171,7 @@ export async function wrapBlock(
 export function wrapTransaction(
   block: BlockResult,
   txn: Transaction,
-  exectuionOutcome: any,
+  exectuionOutcome: FinalExecutionOutcome,
 ): NearTransaction {
   return {
     ...txn,
@@ -201,7 +205,7 @@ function wrapTransactionReceipt(
         predecessor_id: item.predecessor_id,
         Action: {
           actions,
-          gas_price: new BN(item.receipt.Action.gas_price),
+          gas_price: BigInt(item.receipt.Action.gas_price),
           input_data_ids: item.receipt.Action.input_data_ids,
           output_data_receivers: item.receipt.Action.output_data_receivers,
           signer_id: item.receipt.Action.signer_id,
@@ -258,16 +262,16 @@ function parseNearAction(type: ActionType, action: any): Action {
 }
 
 export function wrapAction(
-  action: Record<string, any> | string,
+  action: Record<string, unknown> | string,
   id: number,
   transaction?: NearTransaction,
 ): NearAction {
-  let type, actionValue;
+  let type: ActionType, actionValue: Action;
   if (action === 'CreateAccount') {
     type = 'CreateAccount';
     actionValue = parseNearAction(type, {});
   } else {
-    type = Object.keys(action)[0];
+    type = Object.keys(action)[0] as ActionType;
     actionValue = parseNearAction(type, action[type]);
   }
 
@@ -380,7 +384,7 @@ export function filterAction(
 
 // eslint-disable-next-line @typescript-eslint/require-await
 export async function getBlockByHeight(
-  api: providers.JsonRpcProvider,
+  api: JsonRpcProvider,
   height: number,
 ): Promise<BlockResult> {
   return api.block({ blockId: height }).catch((e) => {
@@ -390,7 +394,7 @@ export async function getBlockByHeight(
 }
 
 export async function fetchBlocksRange(
-  api: providers.JsonRpcProvider,
+  api: JsonRpcProvider,
   startHeight: number,
   endHeight: number,
 ): Promise<BlockResult[]> {
@@ -402,7 +406,7 @@ export async function fetchBlocksRange(
 }
 
 export async function fetchBlocksArray(
-  api: providers.JsonRpcProvider,
+  api: JsonRpcProvider,
   blockArray: number[],
 ): Promise<(BlockResult | null)[]> {
   const results = await Promise.all(
@@ -446,7 +450,7 @@ export function formatBlockUtil<B extends BlockContent = BlockContent>(
 }
 
 export async function fetchBlocksBatches(
-  api: providers.JsonRpcProvider,
+  api: JsonRpcProvider,
   blockArray: number[],
 ): Promise<(IBlock<BlockContent> | null)[]> {
   const blocks = await fetchBlocksArray(api, blockArray);
@@ -465,6 +469,6 @@ export async function fetchBlocksBatches(
   return Promise.all(blockContentPromises);
 }
 
-export function calcInterval(api: providers.JsonRpcProvider): BN {
+export function calcInterval(api: JsonRpcProvider): number {
   return DEFAULT_TIME;
 }
