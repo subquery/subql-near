@@ -6,6 +6,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [4.3.3] - 2025-06-04
+### Changed
+- Update @types/types-near
+
 ## [4.3.2] - 2025-05-01
 ### Changed
 - Re release of previously failed release
@@ -126,7 +130,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add transaction receipts handlers and filters (#13)
 
 ## [1.0.0] - 2023-01-26
-[Unreleased]: https://github.com/subquery/subql-near/compare/common-near/4.3.2...HEAD
+[Unreleased]: https://github.com/subquery/subql-near/compare/common-near/4.3.3...HEAD
+[4.3.3]: https://github.com/subquery/subql-near/compare/common-near/4.3.2...common-near/4.3.3
 [4.3.2]: https://github.com/subquery/subql-near/compare/common-near/4.3.1...common-near/4.3.2
 [4.3.1]: https://github.com/subquery/subql-near/compare/common-near/4.3.0...common-near/4.3.1
 [4.3.0]: https://github.com/subquery/subql-near/compare/common-near/4.2.1...common-near/4.3.0
