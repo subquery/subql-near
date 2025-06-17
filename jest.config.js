@@ -20,10 +20,7 @@ module.exports = {
   // collectCoverage: false,
 
   // An array of glob patterns indicating a set of files for which coverage information should be collected
-  collectCoverageFrom: [
-    'packages/common-near/src/**/*.ts',
-    'packages/node/src/**/*.ts',
-  ],
+  collectCoverageFrom: ['packages/common-near/src/**/*.ts', 'packages/node/src/**/*.ts'],
 
   // The directory where Jest should output its coverage files
   coverageDirectory: 'coverage',
@@ -179,10 +176,9 @@ module.exports = {
     '^.+\\.(ts|tsx)?$': [
       'ts-jest',
       {
-        tsconfig: 'tsconfig.test.json'
-      }
+        tsconfig: 'tsconfig.test.json',
+      },
     ],
-    '^.+\\.(js|jsx)$': 'babel-jest',
   },
 
   // An array of regexp pattern strings that are matched against all source file paths, matched files will skip transformation
@@ -191,9 +187,7 @@ module.exports = {
   //   "\\.pnp\\.[^\\/]+$"
   // ],
 
-  "transformIgnorePatterns": [
-    "node_modules/(?!(@polkadot|@babel/runtime/helpers/esm)/)"
-  ],
+  transformIgnorePatterns: ['node_modules/(?!(@polkadot)/)'],
 
   // An array of regexp pattern strings that are matched against all modules before the module loader will automatically return a mock for them
   // unmockedModulePathPatterns: undefined,
