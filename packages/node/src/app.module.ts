@@ -9,9 +9,10 @@ import { ConfigureModule } from './configure/configure.module';
 import { FetchModule } from './indexer/fetch.module';
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
-const { version: nearSdkVersion } = require('@near-js/providers/package.json');
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const { version: packageVersion } = require('../package.json');
+const { dependencies, version: packageVersion } = require('../package.json');
+
+// This is an ESM module that doesn't let us require the package.json directly.
+const nearSdkVersion = dependencies['@near-js/providers'];
 
 @Module({
   imports: [

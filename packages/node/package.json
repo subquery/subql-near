@@ -27,7 +27,7 @@
     "@nestjs/schedule": "^5.0.1",
     "@subql/common": "^5.6.0",
     "@subql/common-near": "workspace:*",
-    "@subql/node-core": "^18.1.0",
+    "@subql/node-core": "^18.1.1",
     "@subql/types-near": "workspace:*",
     "lodash": "^4.17.21",
     "reflect-metadata": "^0.1.13",
