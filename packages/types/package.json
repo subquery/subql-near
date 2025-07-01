@@ -18,7 +18,7 @@
   ],
   "dependencies": {
     "@near-js/providers": "^2.0.2",
-    "@subql/types-core": "^2.0.2"
+    "@subql/types-core": "^2.1.0"
   },
   "devDependencies": {
     "@types/app-module-path": "^2.2.0"
