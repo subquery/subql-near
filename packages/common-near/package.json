@@ -16,7 +16,7 @@
   "dependencies": {
     "@subql/common": "^5.7.0",
     "@subql/types-near": "workspace:*",
-    "js-yaml": "^4.1.0",
+    "js-yaml": "^4.1.1",
     "reflect-metadata": "^0.1.13"
   },
   "peerDependencies": {
