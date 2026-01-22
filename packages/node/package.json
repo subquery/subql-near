@@ -29,7 +29,7 @@
     "@subql/common-near": "workspace:*",
     "@subql/node-core": "^18.2.0",
     "@subql/types-near": "workspace:*",
-    "lodash": "^4.17.21",
+    "lodash": "^4.17.23",
     "reflect-metadata": "^0.1.13",
     "rimraf": "^3.0.2",
     "yargs": "^16.2.0"
